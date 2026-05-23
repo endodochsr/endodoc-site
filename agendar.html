@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agendar — EndoDoc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f4f7f7;--surface:#fff;--surface-2:#f0f5f4;--ink:#16302f;--muted:#5e706f;--primary:#0e7c7b;--primary-d:#0a5d5c;--primary-soft:#e3f1f0;--accent:#c2a063;--success:#2e7d57;--success-soft:#e4f3ec;--danger:#c0492f;--danger-soft:#fbeae6;--border:#e4ecec;--shadow:0 1px 2px rgba(16,48,47,.04),0 8px 24px rgba(16,48,47,.06);--shadow-lg:0 12px 40px rgba(16,48,47,.16)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  input,select,textarea{font-family:inherit;font-size:15px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700}
+  .logo .mark{width:34px;height:34px;border-radius:10px;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:18px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:12px;font-weight:600;font-size:15px;transition:.15s}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(14,124,123,.25)}
+  .btn-primary:hover{background:var(--primary-d)}
+  .btn-ghost{background:var(--surface-2);color:var(--ink)}
+  .btn-block{width:100%}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:11px;background:var(--surface);color:var(--ink)}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+  .field textarea{resize:vertical;min-height:70px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .pub-banner{background:var(--primary-soft);color:var(--primary-d);text-align:center;font-size:13px;font-weight:600;padding:8px}
+  .pub-top{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--surface)}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 20px 70px}
+  .prof{display:flex;align-items:center;gap:16px;margin-bottom:22px}
+  .prof .av{width:60px;height:60px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:26px}
+  .prof h1{font-size:24px}.prof p{color:var(--muted)}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:22px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .cal-nav{display:flex;gap:8px}
+  .cal-nav button{width:38px;height:38px;border-radius:10px;background:var(--surface-2);font-size:18px;color:var(--ink);display:grid;place-items:center}
+  .cal-month{font-family:'Fraunces',serif;font-size:20px;text-transform:capitalize}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+  .cal-dow{text-align:center;font-size:11.5px;font-weight:600;color:var(--muted);padding:3px 0;text-transform:uppercase}
+  .cal-cell{aspect-ratio:1/1;border-radius:11px;border:1.5px solid transparent;background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  .cal-cell.empty{background:transparent}
+  .cal-cell.muted{color:#b9c6c5;background:#fafcfc}
+  .cal-cell .num{font-weight:600;font-size:15px}
+  .cal-cell.today{border-color:var(--accent)}
+  .cal-cell.avail{cursor:pointer;background:var(--primary-soft);color:var(--primary-d)}
+  .cal-cell.avail:hover{border-color:var(--primary)}
+  .slot-dot{font-size:10px;font-weight:600;color:var(--primary)}
+  .legend{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+  .legend i{width:13px;height:13px;border-radius:4px;display:inline-block}
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{padding:10px 16px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface);font-weight:600;font-size:14px;color:var(--ink)}
+  .chip:hover{border-color:var(--primary)}
+  .chip.sel{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .overlay{position:fixed;inset:0;background:rgba(16,48,47,.42);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
+  .overlay.show{display:flex}
+  .modal{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:460px;max-height:90vh;overflow:auto;padding:26px}
+  .modal h3{font-size:21px}.modal .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:6px 0 10px}
+  .center{min-height:60vh;display:grid;place-items:center;color:var(--muted);text-align:center;padding:20px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:80;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.err{background:#9c3a25}.toast.ok{background:#1f5d4b}
+</style>
+</head>
+<body>
+<div class="pub-banner">Página de agendamento — escolha um horário disponível</div>
+<div class="pub-top"><div class="logo"><div class="mark">E</div><span>EndoDoc</span></div></div>
+
+<div id="root"><div class="center">Carregando…</div></div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const SUPA_URL='https://tuolwdniugjwbepujqoy.supabase.co';
+const SUPA_KEY='sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
+let sb=null;
+const PROCEDURES=['Tratamento de canal','Retratamento endodôntico','Pulpectomia','Urgência endodôntica','Avaliação / diagnóstico'];
+const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+let prof=null, availMap={}, calRef=new Date(); calRef.setDate(1);
+let book={date:null,slot:null};
+
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayISO(){const d=new Date();d.setHours(0,0,0,0);return iso(d);}
+function hhmm(t){return (t||'').slice(0,5);}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtLong(s){const[y,m,d]=s.split('-').map(Number);return DOW[new Date(y,m-1,d).getDay()]+', '+d+' de '+MES[m-1];}
+function getSlug(){const p=new URLSearchParams(location.search);let s=p.get('slug')||p.get('p')||'';if(!s){const path=location.pathname.split('/').filter(Boolean).pop();if(path&&!path.endsWith('.html'))s=path;}return s;}
+let tT;function toast(t,type){const e=document.getElementById('toast');e.textContent=(type==='ok'?'✓ ':type==='err'?'⚠ ':'')+t;e.className='toast show '+(type||'');clearTimeout(tT);tT=setTimeout(()=>e.className='toast',3200);}
+function openModal(h){document.getElementById('modal').innerHTML=h;document.getElementById('overlay').classList.add('show');}
+function closeModal(){document.getElementById('overlay').classList.remove('show');}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
+
+async function init(){
+  if(!window.supabase){document.getElementById('root').innerHTML='<div class="center">Não consegui carregar a biblioteca. Recarregue a página.</div>';return;}
+  sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+  const slug=getSlug();
+  if(!slug){ askSlug(); return; }
+  const {data,error}=await sb.from('public_professionals').select('*').eq('slug',slug).maybeSingle();
+  if(error||!data){ document.getElementById('root').innerHTML='<div class="center">Profissional não encontrado.<br>Verifique o link.</div>'; return; }
+  prof=data;
+  await loadAvailability();
+  render();
+}
+function askSlug(){
+  document.getElementById('root').innerHTML=`<div class="wrap"><div class="card">
+    <div class="section-title">Demonstração</div>
+    <div class="field"><label>Qual o link do profissional? (slug)</label><input id="slugInp" placeholder="ex.: hudson-real"></div>
+    <button class="btn btn-primary" onclick="goSlug()">Abrir agenda</button>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:10px">No site final, o endereço endodoc.com.br/nome-do-profissional já abre direto.</p>
+  </div></div>`;
+}
+function goSlug(){const s=document.getElementById('slugInp').value.trim();if(s)location.search='?slug='+encodeURIComponent(s);}
+
+async function loadAvailability(){
+  availMap={};
+  const from=todayISO();
+  const end=new Date();end.setDate(end.getDate()+90);
+  const {data,error}=await sb.rpc('get_availability',{p_slug:prof.slug,p_from:from,p_to:iso(end)});
+  if(error){toast('Erro ao carregar horários: '+error.message,'err');return;}
+  (data||[]).forEach(r=>{const d=r.slot_date;(availMap[d]=availMap[d]||[]).push(hhmm(r.slot_time));});
+  Object.values(availMap).forEach(a=>a.sort());
+}
+
+function render(){
+  const av=(prof.name||'').replace(/^Dr[a]?\.\s*/i,'')[0]||'D';
+  document.getElementById('root').innerHTML=`<div class="wrap">
+    <div class="prof"><div class="av">${esc(av)}</div>
+      <div><h1>${esc(prof.name)}</h1><p>${esc(prof.specialty||'Endodontia')} · atendimento no seu consultório</p></div></div>
+    <div class="card">${calendarHTML()}</div>
+  </div>`;
+}
+function calendarHTML(){
+  const y=calRef.getFullYear(),m=calRef.getMonth();
+  const first=new Date(y,m,1),start=first.getDay(),days=new Date(y,m+1,0).getDate();
+  const t=todayISO();let cells='';
+  for(let i=0;i<start;i++)cells+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=days;d++){
+    const ds=iso(new Date(y,m,d));const free=(availMap[ds]||[]).length;const past=ds<t;
+    let cls='cal-cell',extra='',click='';
+    if(ds===t)cls+=' today';
+    if(past||free===0){cls+=' muted';}
+    else{cls+=' avail';click=`onclick="openDay('${ds}')"`;extra=`<div class="slot-dot">${free} ${free===1?'vaga':'vagas'}</div>`;}
+    cells+=`<div class="${cls}" ${click}><div class="num">${d}</div>${extra}</div>`;
+  }
+  return `<div class="cal-head"><div class="cal-month">${MES[m]} ${y}</div>
+    <div class="cal-nav"><button onclick="moveMonth(-1)">‹</button><button onclick="moveMonth(1)">›</button></div></div>
+    <div class="cal-grid">${DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('')}</div>
+    <div class="cal-grid" style="margin-top:7px">${cells}</div>
+    <div class="legend"><span><i style="background:var(--primary-soft)"></i> Disponível</span><span><i style="background:#fafcfc;border:1px solid var(--border)"></i> Indisponível</span></div>`;
+}
+function moveMonth(n){calRef.setMonth(calRef.getMonth()+n);render();}
+
+function openDay(ds){book={date:ds,slot:null};renderBooking();}
+function renderBooking(){
+  const free=availMap[book.date]||[];
+  openModal(`<h3>${fmtLong(book.date)}</h3><p class="sub">Escolha um horário e preencha seus dados.</p>
+    <div class="section-title">Horários livres</div>
+    <div class="chips" style="margin-bottom:18px">${free.map(s=>`<button class="chip ${book.slot===s?'sel':''}" onclick="pickSlot('${s}')">${s}</button>`).join('')||'<span style="color:var(--muted)">Sem vagas.</span>'}</div>
+    <div class="section-title">Dados do consultório</div>
+    <div class="field"><label>Nome do consultório *</label><input id="bkName" placeholder="Clínica Sorriso"></div>
+    <div class="row2"><div class="field"><label>Responsável</label><input id="bkResp" placeholder="Dr. João"></div>
+      <div class="field"><label>Telefone</label><input id="bkPhone" placeholder="(11) 90000-0000"></div></div>
+    <div class="field"><label>E-mail</label><input id="bkEmail" type="email" placeholder="contato@consultorio.com"></div>
+    <div class="field"><label>Endereço do consultório * — onde será o atendimento</label><input id="bkAddr" placeholder="Rua, nº, complemento, bairro, cidade"></div>
+    <div class="field"><label>Procedimento</label><select id="bkProc">${PROCEDURES.map(p=>`<option>${p}</option>`).join('')}</select></div>
+    <div class="field"><label>Observações * — nome do paciente e breve relato</label><textarea id="bkNotes" placeholder="Ex.: Paciente: João Silva. Procedimento: tratamento de canal no dente 36, dor há 3 dias."></textarea></div>
+    <div class="field"><label>Documento (opcional) — exame, raio-x, encaminhamento</label><input type="file" id="bkFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-block" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary btn-block" id="bkConfirm" ${book.slot?'':'disabled'} onclick="confirmBooking()">Confirmar</button></div>`);
+}
+function pickSlot(s){book.slot=s;document.querySelectorAll('#modal .chips .chip').forEach(c=>c.classList.toggle('sel',c.textContent.trim()===s));const b=document.getElementById('bkConfirm');if(b)b.disabled=false;}
+async function confirmBooking(){
+  const name=document.getElementById('bkName').value.trim();
+  if(!name){toast('Informe o nome do consultório.','err');return;}
+  const addr=document.getElementById('bkAddr').value.trim();
+  if(!addr){toast('Informe o endereço do consultório (onde será o atendimento).','err');return;}
+  const notes=document.getElementById('bkNotes').value.trim();
+  if(!notes){toast('Preencha as observações (nome do paciente e o procedimento).','err');return;}
+  const btn=document.getElementById('bkConfirm');btn.disabled=true;btn.textContent='Confirmando…';
+  let docPath=null;
+  const fileInp=document.getElementById('bkFile');
+  const file=fileInp&&fileInp.files&&fileInp.files[0];
+  if(file){
+    if(file.size>10*1024*1024){toast('Documento muito grande (máx. 10 MB).','err');btn.disabled=false;btn.textContent='Confirmar';return;}
+    const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    docPath=prof.slug+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'-'+safe;
+    const {error:upErr}=await sb.storage.from('documentos').upload(docPath,file,{upsert:false});
+    if(upErr){toast('Erro ao enviar o documento: '+upErr.message,'err');btn.disabled=false;btn.textContent='Confirmar';return;}
+  }
+  const {error}=await sb.rpc('create_booking',{
+    p_slug:prof.slug,p_date:book.date,p_time:book.slot,
+    p_office_name:name,p_office_responsible:document.getElementById('bkResp').value.trim(),
+    p_office_phone:document.getElementById('bkPhone').value.trim(),p_office_email:document.getElementById('bkEmail').value.trim(),
+    p_office_address:addr,p_procedure:document.getElementById('bkProc').value,p_notes:notes,p_document_path:docPath
+  });
+  if(error){
+    toast(error.message,'err');
+    await loadAvailability(); render(); // recarrega caso o horário tenha sido tomado
+    closeModal();
+    return;
+  }
+  // sucesso
+  const d=book.date, s=book.slot;
+  // remove o slot localmente
+  availMap[d]=(availMap[d]||[]).filter(x=>x!==s);
+  render();
+  openModal(`<div style="text-align:center"><div style="font-size:46px">✅</div>
+    <h3 style="margin-top:6px">Agendamento confirmado!</h3>
+    <p class="sub" style="margin-top:8px">${esc(name)}<br>${fmtLong(d)} às ${s}<br>com ${esc(prof.name)}</p>
+    <button class="btn btn-primary btn-block" onclick="closeModal()">Concluir</button></div>`);
+}
+
+init();
+</script>
+</body>
+</html>
