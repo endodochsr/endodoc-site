@@ -80,6 +80,8 @@
   .muted{color:var(--muted)}
   .ok{color:var(--success);font-weight:600}
   .empty{text-align:center;color:var(--muted);padding:34px 16px}
+  .badge-admin{display:inline-block;background:var(--primary-soft);color:var(--primary-d);font-weight:700;font-size:12px;padding:4px 9px;border-radius:99px;white-space:nowrap}
+  .linkbtn{color:var(--danger);font-weight:600;font-size:12.5px;text-decoration:underline;background:none;padding:0 0 0 4px}
   .sel{padding:7px 10px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
   .sel:focus{outline:none;border-color:var(--primary)}
   .sel.st-trial{color:var(--gold);border-color:#ecdcb4;background:var(--gold-soft)}
@@ -165,6 +167,7 @@
               <th>Google</th>
               <th>Agend. (ativos/total)</th>
               <th>Cadastro</th>
+              <th>Dono</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -182,6 +185,7 @@ const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
 const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
 let sb = null;
 let ROWS = [];
+let MY_ID = null;
 
 const STATUS_LABEL = { trial:'Em teste', active:'Ativo', past_due:'Inadimplente', canceled:'Cancelado' };
 const PLAN_OPTS = [ ['','—'], ['essencial','Essencial'], ['pro','Pro'], ['clinica','Clínica'] ];
@@ -229,7 +233,7 @@ async function enter(){
   if(error){ hide('loading'); show('authView'); msg(traduz(error),'err'); return; }
   if(!stats || !stats.length){ hide('loading'); hide('authView'); show('deniedView'); return; }
   hide('loading'); hide('authView'); hide('deniedView'); show('adminView');
-  try{ const { data:{ user } } = await sb.auth.getUser(); document.getElementById('whoami').textContent = user ? user.email : ''; }catch(e){}
+  try{ const { data:{ user } } = await sb.auth.getUser(); MY_ID = user ? user.id : null; document.getElementById('whoami').textContent = user ? user.email : ''; }catch(e){}
   renderStats(stats[0]);
   await loadList();
 }
@@ -263,7 +267,7 @@ function renderTable(){
     || (r.slug||'').toLowerCase().includes(q));
   document.getElementById('count').textContent = rows.length+' de '+ROWS.length;
   const tb=document.getElementById('tbody');
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="8" class="empty">Nenhum assinante encontrado.</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="9" class="empty">Nenhum assinante encontrado.</td></tr>'; return; }
   tb.innerHTML = rows.map(r => {
     const statusSel='<select class="sel st-'+r.subscription_status+'" onchange="changeStatus(\''+r.id+'\',this.value)">'+
       Object.keys(STATUS_LABEL).map(k=>'<option value="'+k+'"'+(k===r.subscription_status?' selected':'')+'>'+STATUS_LABEL[k]+'</option>').join('')+'</select>';
@@ -278,8 +282,27 @@ function renderTable(){
       '<td>'+(r.google_connected?'<span class="ok">Sim</span>':'<span class="muted">Não</span>')+'</td>'+
       '<td>'+r.bookings_active+' <span class="muted">/ '+r.bookings_total+'</span></td>'+
       '<td>'+fmtDate(r.created_at)+'</td>'+
+      '<td>'+adminCell(r)+'</td>'+
     '</tr>';
   }).join('');
+}
+
+function adminCell(r){
+  if(r.is_admin && r.id===MY_ID) return '<span class="badge-admin">Você</span>';
+  if(r.is_admin) return '<span class="badge-admin">Dono</span><button class="linkbtn" onclick="setAdmin(\''+r.id+'\',false)">remover</button>';
+  return '<button class="btn btn-ghost btn-sm" onclick="setAdmin(\''+r.id+'\',true)">Tornar dono</button>';
+}
+
+async function setAdmin(id, value){
+  const r=ROWS.find(x=>x.id===id); if(!r) return;
+  const quem = r.name || r.email || 'esta conta';
+  const q = value
+    ? 'Tornar "'+quem+'" dono da plataforma? Essa pessoa poderá ver e gerenciar todos os assinantes.'
+    : 'Remover o acesso de dono de "'+quem+'"?';
+  if(!window.confirm(q)) return;
+  const { error } = await sb.rpc('admin_set_admin', { p_id:id, p_value:value });
+  if(error){ toast(traduz(error),'err'); return; }
+  r.is_admin=value; toast(value?'Agora é dono':'Acesso de dono removido','ok'); renderTable();
 }
 
 async function changeStatus(id, status){
