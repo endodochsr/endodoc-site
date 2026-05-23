@@ -48,18 +48,32 @@
   .auth-card .foot{margin-top:16px;font-size:12.5px;color:var(--muted)}
   /* topbar */
   .topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;height:64px;gap:10px}
+  .topbar nav{display:flex;gap:4px}
+  .topbar nav button{padding:9px 15px;border-radius:10px;font-weight:600;font-size:14px;color:var(--muted)}
+  .topbar nav button:hover{background:var(--surface-2);color:var(--ink)}
+  .topbar nav button.active{background:var(--primary-soft);color:var(--primary-d)}
   .topbar .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--primary-d);background:var(--primary-soft);padding:4px 9px;border-radius:99px}
   .userchip{display:flex;align-items:center;gap:12px}
-  .userchip .who{font-size:13px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .container{max-width:1120px;margin:0 auto;padding:26px 22px 70px}
+  .userchip .who{font-size:13px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .container{max-width:1180px;margin:0 auto;padding:24px 22px 70px}
   .page-head{margin-bottom:18px}
   .page-head h1{font-size:26px}.page-head p{color:var(--muted);margin-top:4px}
   /* stats */
-  .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px}
-  .stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px 16px 14px}
-  .stat .n{font-family:'Fraunces',serif;font-size:28px;font-weight:600;line-height:1}
-  .stat .l{font-size:12.5px;color:var(--muted);margin-top:6px}
-  .stat.gold .n{color:var(--gold)}.stat.green .n{color:var(--success)}.stat.red .n{color:var(--danger)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:15px 16px}
+  .stat .n{font-family:'Fraunces',serif;font-size:25px;font-weight:600;line-height:1}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:6px}
+  .stat .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .stat.gold .n{color:var(--gold)}.stat.green .n{color:var(--success)}.stat.red .n{color:var(--danger)}.stat.teal .n{color:var(--primary)}
+  /* charts */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:18px}
+  .panel h3{font-size:15px;margin-bottom:2px}
+  .panel .cap{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .panel .chartbox{position:relative;height:240px}
+  .panel .chartbox.sm{height:210px}
+  .note{font-size:12px;color:var(--muted);background:var(--gold-soft);border:1px solid #ecdcb4;color:var(--gold);padding:10px 13px;border-radius:11px;margin-top:14px}
   /* toolbar */
   .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
   .toolbar .search{flex:1;min-width:220px;position:relative}
@@ -69,7 +83,7 @@
   .toolbar .count{font-size:13px;color:var(--muted)}
   /* table */
   .tablewrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:auto}
-  table{width:100%;border-collapse:collapse;font-size:14px;min-width:920px}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:980px}
   thead th{text-align:left;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:14px 16px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface-2)}
   tbody td{padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
   tbody tr:last-child td{border-bottom:none}
@@ -92,15 +106,12 @@
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:60}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.ok{background:var(--success)}.toast.err{background:var(--danger)}
-  @media(max-width:860px){.stats{grid-template-columns:repeat(3,1fr)}}
-  @media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:980px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
   <!-- LOADING -->
-  <div id="loading" class="center-load">
-    <div><div class="spin"></div>Carregando…</div>
-  </div>
+  <div id="loading" class="center-load"><div><div class="spin"></div>Carregando…</div></div>
 
   <!-- LOGIN -->
   <div id="authView" class="auth-wrap hidden">
@@ -132,44 +143,59 @@
   <div id="adminView" class="hidden">
     <div class="topbar">
       <div class="logo"><div class="mark">E</div><div class="name">EndoDoc<small>Painel do dono</small></div></div>
+      <nav>
+        <button id="navResumo" class="active" onclick="go('resumo')">Resumo</button>
+        <button id="navAssin" onclick="go('assinantes')">Assinantes</button>
+      </nav>
       <div class="userchip">
         <span class="tag">Admin</span>
         <span class="who" id="whoami"></span>
         <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sair</button>
       </div>
     </div>
-    <div class="container">
+
+    <!-- RESUMO -->
+    <div id="viewResumo" class="container">
       <div class="page-head">
-        <h1>Assinantes</h1>
-        <p>Todos os endodontistas cadastrados no EndoDoc.</p>
+        <h1>Resumo</h1>
+        <p>Visão geral da plataforma EndoDoc.</p>
       </div>
 
-      <div class="stats" id="stats"></div>
+      <div class="stats" id="kpis"></div>
 
+      <div class="grid2">
+        <div class="panel"><h3>Crescimento de assinantes</h3><div class="cap">Total acumulado por mês</div><div class="chartbox"><canvas id="chGrowth"></canvas></div></div>
+        <div class="panel"><h3>Novos cadastros por mês</h3><div class="cap">Quantos profissionais entraram a cada mês</div><div class="chartbox"><canvas id="chSignups"></canvas></div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel"><h3>Agendamentos por mês</h3><div class="cap">Por data do atendimento — ativos x cancelados</div><div class="chartbox"><canvas id="chBookings"></canvas></div></div>
+        <div class="panel"><h3>Receita recorrente estimada (MRR)</h3><div class="cap">Estimativa pelos planos ativos · não é receita cobrada</div><div class="chartbox"><canvas id="chRevenue"></canvas></div></div>
+      </div>
+
+      <div class="grid3">
+        <div class="panel"><h3>Assinantes por status</h3><div class="cap">Distribuição atual</div><div class="chartbox sm"><canvas id="chStatus"></canvas></div></div>
+        <div class="panel"><h3>Assinantes por plano</h3><div class="cap">Distribuição atual</div><div class="chartbox sm"><canvas id="chPlan"></canvas></div></div>
+        <div class="panel"><h3>Top profissionais</h3><div class="cap">Mais agendamentos (total)</div><div class="chartbox sm"><canvas id="chTop"></canvas></div></div>
+      </div>
+
+      <div class="note">A receita é uma <b>estimativa</b> (assinantes ativos × preço do plano: Essencial R$ 49, Profissional R$ 99, Clínica R$ 199). A receita real cobrada aparecerá quando o Asaas for integrado. Para ajustar os preços, edite <b>PLAN_PRICES</b> no topo do código.</div>
+    </div>
+
+    <!-- ASSINANTES -->
+    <div id="viewAssin" class="container hidden">
+      <div class="page-head"><h1>Assinantes</h1><p>Todos os endodontistas cadastrados no EndoDoc.</p></div>
       <div class="toolbar">
-        <div class="search">
-          <span class="ic">⌕</span>
-          <input id="search" type="search" placeholder="Buscar por nome, e-mail ou link…" oninput="renderTable()">
-        </div>
+        <div class="search"><span class="ic">⌕</span><input id="search" type="search" placeholder="Buscar por nome, e-mail ou link…" oninput="renderTable()"></div>
         <span class="count" id="count"></span>
         <button class="btn btn-ghost btn-sm" onclick="refresh()">↻ Atualizar</button>
       </div>
-
       <div class="tablewrap">
         <table>
-          <thead>
-            <tr>
-              <th>Profissional</th>
-              <th>Contato</th>
-              <th>Status</th>
-              <th>Plano</th>
-              <th>Teste</th>
-              <th>Google</th>
-              <th>Agend. (ativos/total)</th>
-              <th>Cadastro</th>
-              <th>Dono</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th>Profissional</th><th>Contato</th><th>Status</th><th>Plano</th>
+            <th>Teste</th><th>Google</th><th>Agend. (ativos/total)</th><th>Cadastro</th><th>Dono</th>
+          </tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -179,16 +205,22 @@
   <div id="toast" class="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-/* ===== CONFIG (chave pública) ===== */
+/* ===== CONFIG ===== */
 const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
 const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
-let sb = null;
-let ROWS = [];
-let MY_ID = null;
+// Preços mensais por plano (R$). Ajuste aqui quando definir os valores finais.
+const PLAN_PRICES = { essencial:49, pro:99, clinica:199 };
+
+let sb = null, ROWS = [], BYMONTH = [], MY_ID = null, view='resumo';
+const charts = {};
 
 const STATUS_LABEL = { trial:'Em teste', active:'Ativo', past_due:'Inadimplente', canceled:'Cancelado' };
 const PLAN_OPTS = [ ['','—'], ['essencial','Essencial'], ['pro','Pro'], ['clinica','Clínica'] ];
+const PLAN_LABEL = { essencial:'Essencial', pro:'Profissional', clinica:'Clínica' };
+const C = { teal:'#0e7c7b', tealD:'#0a5d5c', gold:'#c2a063', green:'#2e7d57', red:'#c0492f', muted:'#9bb0ae', soft:'#cfe6e4' };
+const BRL = n => 'R$ ' + (n||0).toLocaleString('pt-BR');
 
 /* ===== helpers ===== */
 function show(id){ document.getElementById(id).classList.remove('hidden'); }
@@ -197,8 +229,8 @@ function val(id){ return (document.getElementById(id).value || '').trim(); }
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function msg(text,type){ const m=document.getElementById('msg'); m.textContent=text||''; m.className='msg '+(type||''); }
 let tT; function toast(t,type){ const e=document.getElementById('toast'); e.textContent=(type==='ok'?'✓ ':type==='err'?'⚠ ':'')+t; e.className='toast show '+(type||''); clearTimeout(tT); tT=setTimeout(()=>e.className='toast',2600); }
-
 function fmtDate(s){ if(!s) return '—'; const d=new Date(s); return isNaN(d)?'—':d.toLocaleDateString('pt-BR'); }
+function ymLabel(ym){ const [y,m]=ym.split('-'); return ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][(+m)-1]+'/'+y.slice(2); }
 function trialInfo(r){
   if(r.subscription_status!=='trial' || !r.trial_ends_at) return '<span class="muted">—</span>';
   const days=Math.ceil((new Date(r.trial_ends_at)-new Date())/86400000);
@@ -228,37 +260,141 @@ async function boot(){
 }
 
 async function enter(){
-  // admin_stats só retorna linha se a conta logada for admin
   const { data:stats, error } = await sb.rpc('admin_stats');
   if(error){ hide('loading'); show('authView'); msg(traduz(error),'err'); return; }
   if(!stats || !stats.length){ hide('loading'); hide('authView'); show('deniedView'); return; }
   hide('loading'); hide('authView'); hide('deniedView'); show('adminView');
-  try{ const { data:{ user } } = await sb.auth.getUser(); MY_ID = user ? user.id : null; document.getElementById('whoami').textContent = user ? user.email : ''; }catch(e){}
-  renderStats(stats[0]);
-  await loadList();
+  try{ const { data:{ user } } = await sb.auth.getUser(); MY_ID = user?user.id:null; document.getElementById('whoami').textContent = user?user.email:''; }catch(e){}
+  await loadAll(stats[0]);
 }
 
-function renderStats(s){
+function go(v){
+  view=v;
+  document.getElementById('navResumo').classList.toggle('active', v==='resumo');
+  document.getElementById('navAssin').classList.toggle('active', v==='assinantes');
+  document.getElementById('viewResumo').classList.toggle('hidden', v!=='resumo');
+  document.getElementById('viewAssin').classList.toggle('hidden', v!=='assinantes');
+}
+
+async function loadAll(stats){
+  const [a,b] = await Promise.all([ sb.rpc('admin_list_professionals'), sb.rpc('admin_bookings_by_month') ]);
+  if(a.error){ toast(traduz(a.error),'err'); } ROWS = a.data || [];
+  if(b.error){ toast(traduz(b.error),'err'); } BYMONTH = b.data || [];
+  renderKpis(stats);
+  renderTable();
+  renderCharts();
+}
+
+/* ===== KPIs ===== */
+function mrr(){ return ROWS.filter(r=>r.subscription_status==='active').reduce((s,r)=>s+(PLAN_PRICES[r.plan]||0),0); }
+function bookingsThisMonth(){
+  const ym = new Date().toISOString().slice(0,7);
+  const row = BYMONTH.find(x=>x.ym===ym);
+  return row ? Number(row.active) : 0;
+}
+function renderKpis(s){
+  const total=Number(s.total||0), active=Number(s.active||0), trials=Number(s.trials||0), past=Number(s.past_due||0);
+  const gConn = ROWS.filter(r=>r.google_connected).length;
+  const gPct = total? Math.round(gConn/total*100):0;
   const cards=[
-    ['Assinantes', s.total, ''],
-    ['Em teste', s.trials, 'gold'],
-    ['Ativos', s.active, 'green'],
-    ['Inadimplentes', s.past_due, 'red'],
-    ['Cancelados', s.canceled, ''],
-    ['Agendamentos', s.bookings_total, '']
+    ['Assinantes', total, '', ''],
+    ['Ativos', active, 'green', trials+' em teste · '+past+' inadimpl.'],
+    ['MRR estimado', BRL(mrr()), 'teal', 'recorrência mensal'],
+    ['Agend. no mês', bookingsThisMonth(), 'gold', Number(s.bookings_total||0)+' no total'],
   ];
-  document.getElementById('stats').innerHTML = cards.map(c =>
-    '<div class="stat '+c[2]+'"><div class="n">'+(c[1]==null?0:c[1])+'</div><div class="l">'+c[0]+'</div></div>'
+  document.getElementById('kpis').innerHTML = cards.map(c =>
+    '<div class="stat '+c[2]+'"><div class="n">'+c[1]+'</div><div class="l">'+c[0]+'</div>'+(c[3]?'<div class="sub">'+c[3]+'</div>':'')+'</div>'
   ).join('');
 }
 
-async function loadList(){
-  const { data, error } = await sb.rpc('admin_list_professionals');
-  if(error){ toast(traduz(error),'err'); return; }
-  ROWS = data || [];
-  renderTable();
+/* ===== meses base (últimos 12) ===== */
+function lastMonths(n){
+  const out=[]; const d=new Date(); d.setDate(1);
+  for(let i=n-1;i>=0;i--){ const x=new Date(d.getFullYear(),d.getMonth()-i,1); out.push(x.toISOString().slice(0,7)); }
+  return out;
 }
 
+/* ===== charts ===== */
+function destroyCharts(){ Object.keys(charts).forEach(k=>{ try{charts[k].destroy();}catch(e){} delete charts[k]; }); }
+function renderCharts(){
+  if(!window.Chart){ return; }
+  Chart.defaults.font.family='Inter, system-ui, sans-serif';
+  Chart.defaults.color='#5e706f';
+  destroyCharts();
+
+  const months = lastMonths(12);
+  const labels = months.map(ymLabel);
+
+  // cadastros por mês + acumulado
+  const signByMonth = {}; months.forEach(m=>signByMonth[m]=0);
+  ROWS.forEach(r=>{ const m=(r.created_at||'').slice(0,7); if(m in signByMonth) signByMonth[m]++; });
+  const signups = months.map(m=>signByMonth[m]);
+  // acumulado: total antes da janela + soma corrente
+  const before = ROWS.filter(r=>{ const m=(r.created_at||'').slice(0,7); return m && m < months[0]; }).length;
+  let run=before; const growth = months.map(m=>{ run+=signByMonth[m]; return run; });
+
+  charts.growth = new Chart('chGrowth', { type:'line',
+    data:{ labels, datasets:[{ label:'Assinantes', data:growth, borderColor:C.teal, backgroundColor:'rgba(14,124,123,.12)', fill:true, tension:.3, pointRadius:3, borderWidth:2 }] },
+    options:baseOpts(true) });
+
+  charts.signups = new Chart('chSignups', { type:'bar',
+    data:{ labels, datasets:[{ label:'Novos', data:signups, backgroundColor:C.teal, borderRadius:6, maxBarThickness:34 }] },
+    options:baseOpts(true) });
+
+  // agendamentos por mês (ativos x cancelados)
+  const bym = {}; BYMONTH.forEach(x=>bym[x.ym]=x);
+  const bkActive = months.map(m=> bym[m]? Number(bym[m].active):0 );
+  const bkCanc   = months.map(m=> bym[m]? Number(bym[m].cancelled):0 );
+  charts.bookings = new Chart('chBookings', { type:'bar',
+    data:{ labels, datasets:[
+      { label:'Ativos', data:bkActive, backgroundColor:C.teal, borderRadius:5, stack:'b', maxBarThickness:34 },
+      { label:'Cancelados', data:bkCanc, backgroundColor:C.red, borderRadius:5, stack:'b', maxBarThickness:34 }
+    ]},
+    options:baseOpts(true, true) });
+
+  // receita estimada (MRR) por mês: ativos criados até o mês × preço
+  const actives = ROWS.filter(r=>r.subscription_status==='active');
+  const revenue = months.map(m=>
+    actives.filter(r=>(r.created_at||'').slice(0,7) <= m).reduce((s,r)=>s+(PLAN_PRICES[r.plan]||0),0)
+  );
+  charts.revenue = new Chart('chRevenue', { type:'line',
+    data:{ labels, datasets:[{ label:'MRR estimado', data:revenue, borderColor:C.gold, backgroundColor:'rgba(194,160,99,.15)', fill:true, tension:.3, pointRadius:3, borderWidth:2 }] },
+    options:baseOpts(true, false, true) });
+
+  // status doughnut
+  const st={trial:0,active:0,past_due:0,canceled:0};
+  ROWS.forEach(r=>{ if(r.subscription_status in st) st[r.subscription_status]++; });
+  charts.status = new Chart('chStatus', { type:'doughnut',
+    data:{ labels:['Em teste','Ativo','Inadimplente','Cancelado'], datasets:[{ data:[st.trial,st.active,st.past_due,st.canceled], backgroundColor:[C.gold,C.green,C.red,C.muted], borderWidth:0 }] },
+    options:donutOpts() });
+
+  // plano doughnut
+  const pl={essencial:0,pro:0,clinica:0,none:0};
+  ROWS.forEach(r=>{ pl[r.plan && pl.hasOwnProperty(r.plan)? r.plan : 'none']++; });
+  charts.plan = new Chart('chPlan', { type:'doughnut',
+    data:{ labels:['Essencial','Profissional','Clínica','Sem plano'], datasets:[{ data:[pl.essencial,pl.pro,pl.clinica,pl.none], backgroundColor:[C.teal,C.gold,C.tealD,C.muted], borderWidth:0 }] },
+    options:donutOpts() });
+
+  // top profissionais por agendamentos
+  const top=[...ROWS].sort((a,b)=>Number(b.bookings_total)-Number(a.bookings_total)).slice(0,6);
+  charts.top = new Chart('chTop', { type:'bar',
+    data:{ labels:top.map(r=>r.name||r.slug||'—'), datasets:[{ label:'Agendamentos', data:top.map(r=>Number(r.bookings_total)), backgroundColor:C.teal, borderRadius:5, maxBarThickness:22 }] },
+    options:Object.assign(baseOpts(false), { indexAxis:'y' }) });
+}
+function baseOpts(showGridY, stacked, money){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display: !!stacked, position:'bottom', labels:{ boxWidth:12, boxHeight:12, usePointStyle:true } },
+      tooltip:{ callbacks: money? { label:c=>c.dataset.label+': '+BRL(c.parsed.y) } : {} } },
+    scales:{
+      x:{ stacked:!!stacked, grid:{ display:false }, ticks:{ font:{size:11} } },
+      y:{ stacked:!!stacked, beginAtZero:true, grid:{ color:'#eef3f3' }, ticks:{ precision:0, font:{size:11}, callback: money? (v=>'R$ '+v) : (v=>v) } }
+    }
+  };
+}
+function donutOpts(){ return { responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, boxHeight:12, usePointStyle:true, font:{size:11.5} } } } }; }
+
+/* ===== table ===== */
 function renderTable(){
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
   const rows = ROWS.filter(r => !q
@@ -286,40 +422,41 @@ function renderTable(){
     '</tr>';
   }).join('');
 }
-
 function adminCell(r){
   if(r.is_admin && r.id===MY_ID) return '<span class="badge-admin">Você</span>';
   if(r.is_admin) return '<span class="badge-admin">Dono</span><button class="linkbtn" onclick="setAdmin(\''+r.id+'\',false)">remover</button>';
   return '<button class="btn btn-ghost btn-sm" onclick="setAdmin(\''+r.id+'\',true)">Tornar dono</button>';
 }
 
-async function setAdmin(id, value){
-  const r=ROWS.find(x=>x.id===id); if(!r) return;
-  const quem = r.name || r.email || 'esta conta';
-  const q = value
-    ? 'Tornar "'+quem+'" dono da plataforma? Essa pessoa poderá ver e gerenciar todos os assinantes.'
-    : 'Remover o acesso de dono de "'+quem+'"?';
-  if(!window.confirm(q)) return;
-  const { error } = await sb.rpc('admin_set_admin', { p_id:id, p_value:value });
-  if(error){ toast(traduz(error),'err'); return; }
-  r.is_admin=value; toast(value?'Agora é dono':'Acesso de dono removido','ok'); renderTable();
-}
-
+/* ===== ações ===== */
 async function changeStatus(id, status){
-  const r=ROWS.find(x=>x.id===id); if(!r) return;
-  const prev=r.subscription_status;
+  const r=ROWS.find(x=>x.id===id); if(!r) return; const prev=r.subscription_status;
   const { error } = await sb.rpc('admin_set_status', { p_id:id, p_status:status, p_plan:r.plan });
   if(error){ toast(traduz(error),'err'); r.subscription_status=prev; renderTable(); return; }
-  r.subscription_status=status; toast('Status atualizado','ok'); renderTable();
+  r.subscription_status=status; toast('Status atualizado','ok'); renderTable(); renderCharts(); refreshKpis();
 }
 async function changePlan(id, plan){
   const r=ROWS.find(x=>x.id===id); if(!r) return;
   const { error } = await sb.rpc('admin_set_status', { p_id:id, p_status:r.subscription_status, p_plan: plan||null });
   if(error){ toast(traduz(error),'err'); return; }
-  r.plan=plan; toast('Plano atualizado','ok');
+  r.plan=plan; toast('Plano atualizado','ok'); renderCharts(); refreshKpis();
 }
-
-async function refresh(){ const { data:stats } = await sb.rpc('admin_stats'); if(stats&&stats.length) renderStats(stats[0]); await loadList(); toast('Atualizado','ok'); }
+async function setAdmin(id, value){
+  const r=ROWS.find(x=>x.id===id); if(!r) return;
+  const quem = r.name || r.email || 'esta conta';
+  const q = value ? 'Tornar "'+quem+'" dono da plataforma? Essa pessoa poderá ver e gerenciar todos os assinantes.'
+                  : 'Remover o acesso de dono de "'+quem+'"?';
+  if(!window.confirm(q)) return;
+  const { error } = await sb.rpc('admin_set_admin', { p_id:id, p_value:value });
+  if(error){ toast(traduz(error),'err'); return; }
+  r.is_admin=value; toast(value?'Agora é dono':'Acesso de dono removido','ok'); renderTable();
+}
+async function refreshKpis(){ const { data } = await sb.rpc('admin_stats'); if(data&&data.length) renderKpis(data[0]); }
+async function refresh(){
+  const { data:stats } = await sb.rpc('admin_stats');
+  await loadAll(stats&&stats.length?stats[0]:{});
+  toast('Atualizado','ok');
+}
 
 /* ===== auth ===== */
 async function doLogin(e){
