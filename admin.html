@@ -96,10 +96,17 @@
   .empty{text-align:center;color:var(--muted);padding:34px 16px}
   .badge-admin{display:inline-block;background:var(--primary-soft);color:var(--primary-d);font-weight:700;font-size:12px;padding:4px 9px;border-radius:99px;white-space:nowrap}
   .linkbtn{color:var(--danger);font-weight:600;font-size:12.5px;text-decoration:underline;background:none;padding:0 0 0 4px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .check{display:flex;align-items:center;gap:8px;font-size:14px;margin:4px 0 16px;cursor:pointer}
+  .planrow{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}
+  .planrow:last-child{border-bottom:none}
+  .planprice{margin-left:auto;font-weight:700;font-size:14px;white-space:nowrap}
+  .planacts{display:flex;align-items:center;gap:8px}
   .sel{padding:7px 10px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
   .sel:focus{outline:none;border-color:var(--primary)}
   .sel.st-trial{color:var(--gold);border-color:#ecdcb4;background:var(--gold-soft)}
   .sel.st-active{color:var(--success);border-color:#bfe0cd;background:var(--success-soft)}
+  .sel.st-courtesy{color:var(--primary-d);border-color:#cfe6e4;background:var(--primary-soft)}
   .sel.st-past_due{color:var(--danger);border-color:#f0cabf;background:var(--danger-soft)}
   .sel.st-canceled{color:var(--muted)}
   /* toast */
@@ -146,6 +153,7 @@
       <nav>
         <button id="navResumo" class="active" onclick="go('resumo')">Resumo</button>
         <button id="navAssin" onclick="go('assinantes')">Assinantes</button>
+        <button id="navPlanos" onclick="go('planos')">Planos</button>
       </nav>
       <div class="userchip">
         <span class="tag">Admin</span>
@@ -200,6 +208,33 @@
         </table>
       </div>
     </div>
+
+    <!-- PLANOS -->
+    <div id="viewPlanos" class="container hidden">
+      <div class="page-head"><h1>Planos</h1><p>Defina os preços e crie novos planos. Esses valores alimentam os gráficos de receita e o seletor de plano dos assinantes.</p></div>
+      <div class="grid2" style="align-items:start">
+        <div class="panel">
+          <h3 id="planFormTitle">Novo plano</h3>
+          <div class="cap">O código é curto, sem espaços, e identifica o plano internamente.</div>
+          <div class="field"><label>Código</label><input id="plCode" placeholder="ex.: premium"></div>
+          <div class="field"><label>Nome</label><input id="plName" placeholder="ex.: Premium"></div>
+          <div class="row2">
+            <div class="field"><label>Preço mensal (R$)</label><input id="plPrice" type="number" min="0" step="1" placeholder="0"></div>
+            <div class="field"><label>Ordem de exibição</label><input id="plSort" type="number" min="0" step="1" placeholder="0"></div>
+          </div>
+          <label class="check"><input id="plActive" type="checkbox" checked> Plano ativo (disponível para uso)</label>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="savePlan()">Salvar plano</button>
+            <button id="plCancel" class="btn btn-ghost hidden" onclick="resetPlanForm()">Cancelar edição</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Planos cadastrados</h3>
+          <div class="cap">Clique em "Editar" para alterar preço ou nome.</div>
+          <div id="plansList"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="toast" class="toast"></div>
@@ -210,16 +245,15 @@
 /* ===== CONFIG ===== */
 const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
 const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
-// Preços mensais por plano (R$). Ajuste aqui quando definir os valores finais.
-const PLAN_PRICES = { essencial:49, pro:99, clinica:199 };
+// Preços de reserva (R$). São recarregados da tabela 'plans' do banco.
+let PLAN_PRICES = { essencial:49, pro:99, clinica:199 };
 
-let sb = null, ROWS = [], BYMONTH = [], MY_ID = null, view='resumo';
+let sb = null, ROWS = [], BYMONTH = [], PLANS = [], MY_ID = null, view='resumo';
 const charts = {};
 
-const STATUS_LABEL = { trial:'Em teste', active:'Ativo', past_due:'Inadimplente', canceled:'Cancelado' };
-const PLAN_OPTS = [ ['','—'], ['essencial','Essencial'], ['pro','Pro'], ['clinica','Clínica'] ];
-const PLAN_LABEL = { essencial:'Essencial', pro:'Profissional', clinica:'Clínica' };
+const STATUS_LABEL = { trial:'Em teste', active:'Ativo', courtesy:'Cortesia', past_due:'Inadimplente', canceled:'Cancelado' };
 const C = { teal:'#0e7c7b', tealD:'#0a5d5c', gold:'#c2a063', green:'#2e7d57', red:'#c0492f', muted:'#9bb0ae', soft:'#cfe6e4' };
+const PALETTE = ['#0e7c7b','#c2a063','#0a5d5c','#2e7d57','#5fa8a6','#b98a4a','#c0492f'];
 const BRL = n => 'R$ ' + (n||0).toLocaleString('pt-BR');
 
 /* ===== helpers ===== */
@@ -272,17 +306,91 @@ function go(v){
   view=v;
   document.getElementById('navResumo').classList.toggle('active', v==='resumo');
   document.getElementById('navAssin').classList.toggle('active', v==='assinantes');
+  document.getElementById('navPlanos').classList.toggle('active', v==='planos');
   document.getElementById('viewResumo').classList.toggle('hidden', v!=='resumo');
   document.getElementById('viewAssin').classList.toggle('hidden', v!=='assinantes');
+  document.getElementById('viewPlanos').classList.toggle('hidden', v!=='planos');
 }
 
 async function loadAll(stats){
-  const [a,b] = await Promise.all([ sb.rpc('admin_list_professionals'), sb.rpc('admin_bookings_by_month') ]);
+  const [a,b,c] = await Promise.all([
+    sb.rpc('admin_list_professionals'),
+    sb.rpc('admin_bookings_by_month'),
+    sb.from('plans').select('*').order('sort_order',{ascending:true})
+  ]);
   if(a.error){ toast(traduz(a.error),'err'); } ROWS = a.data || [];
   if(b.error){ toast(traduz(b.error),'err'); } BYMONTH = b.data || [];
+  if(!c.error && c.data){ PLANS = c.data; }
+  if(PLANS.length){ PLAN_PRICES = {}; PLANS.forEach(p=>{ PLAN_PRICES[p.code]=Number(p.price)||0; }); }
   renderKpis(stats);
   renderTable();
+  renderPlans();
   renderCharts();
+}
+
+async function reloadPlans(){
+  const { data } = await sb.from('plans').select('*').order('sort_order',{ascending:true});
+  PLANS = data || [];
+  PLAN_PRICES = {}; PLANS.forEach(p=>{ PLAN_PRICES[p.code]=Number(p.price)||0; });
+  renderPlans(); renderTable(); renderCharts(); refreshKpis();
+}
+
+function planSelectHtml(current){
+  let opts = '<option value="">—</option>';
+  PLANS.forEach(p=>{ opts += '<option value="'+esc(p.code)+'"'+(p.code===(current||'')?' selected':'')+'>'+esc(p.name)+'</option>'; });
+  if(current && !PLANS.some(p=>p.code===current)) opts += '<option value="'+esc(current)+'" selected>'+esc(current)+'</option>';
+  return opts;
+}
+
+/* ===== planos (CRUD) ===== */
+function renderPlans(){
+  const el=document.getElementById('plansList'); if(!el) return;
+  if(!PLANS.length){ el.innerHTML='<p class="muted" style="padding:10px 0">Nenhum plano cadastrado. Crie o primeiro ao lado.</p>'; return; }
+  el.innerHTML = PLANS.map(p=>{
+    const used = ROWS.filter(r=>r.plan===p.code).length;
+    return '<div class="planrow">'+
+      '<div><div class="nm">'+esc(p.name)+(p.active?'':' <span class="muted">(inativo)</span>')+'</div>'+
+        '<div class="sub">'+esc(p.code)+' · '+used+' assinante'+(used===1?'':'s')+'</div></div>'+
+      '<div class="planprice">'+BRL(Number(p.price))+'<span class="muted">/mês</span></div>'+
+      '<div class="planacts">'+
+        '<button class="btn btn-ghost btn-sm" onclick="editPlan(\''+esc(p.code)+'\')">Editar</button>'+
+        '<button class="linkbtn" onclick="deletePlan(\''+esc(p.code)+'\')">excluir</button>'+
+      '</div></div>';
+  }).join('');
+}
+function editPlan(code){
+  const p=PLANS.find(x=>x.code===code); if(!p) return;
+  document.getElementById('plCode').value=p.code; document.getElementById('plCode').disabled=true;
+  document.getElementById('plName').value=p.name;
+  document.getElementById('plPrice').value=p.price;
+  document.getElementById('plSort').value=p.sort_order;
+  document.getElementById('plActive').checked=!!p.active;
+  document.getElementById('planFormTitle').textContent='Editar plano';
+  document.getElementById('plCancel').classList.remove('hidden');
+  document.getElementById('viewPlanos').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function resetPlanForm(){
+  ['plCode','plName','plPrice','plSort'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('plCode').disabled=false;
+  document.getElementById('plActive').checked=true;
+  document.getElementById('planFormTitle').textContent='Novo plano';
+  document.getElementById('plCancel').classList.add('hidden');
+}
+async function savePlan(){
+  const code=val('plCode'), name=val('plName');
+  const price=parseFloat(document.getElementById('plPrice').value||'0')||0;
+  const sort=parseInt(document.getElementById('plSort').value||'0',10)||0;
+  const active=document.getElementById('plActive').checked;
+  if(!code){ toast('Informe o código do plano','err'); return; }
+  const { error } = await sb.rpc('admin_save_plan', { p_code:code, p_name:name, p_price:price, p_active:active, p_sort:sort });
+  if(error){ toast(traduz(error),'err'); return; }
+  toast('Plano salvo','ok'); resetPlanForm(); await reloadPlans();
+}
+async function deletePlan(code){
+  if(!window.confirm('Excluir o plano "'+code+'"? Só é possível se nenhum assinante estiver usando.')) return;
+  const { error } = await sb.rpc('admin_delete_plan', { p_code:code });
+  if(error){ toast(traduz(error),'err'); return; }
+  toast('Plano excluído','ok'); await reloadPlans();
 }
 
 /* ===== KPIs ===== */
@@ -293,12 +401,11 @@ function bookingsThisMonth(){
   return row ? Number(row.active) : 0;
 }
 function renderKpis(s){
-  const total=Number(s.total||0), active=Number(s.active||0), trials=Number(s.trials||0), past=Number(s.past_due||0);
-  const gConn = ROWS.filter(r=>r.google_connected).length;
-  const gPct = total? Math.round(gConn/total*100):0;
+  const total=Number(s.total||0), active=Number(s.active||0), trials=Number(s.trials||0),
+        courtesy=Number(s.courtesy||0), past=Number(s.past_due||0);
   const cards=[
-    ['Assinantes', total, '', ''],
-    ['Ativos', active, 'green', trials+' em teste · '+past+' inadimpl.'],
+    ['Assinantes', total, '', trials+' em teste'],
+    ['Ativos', active, 'green', courtesy+' cortesia · '+past+' inadimpl.'],
     ['MRR estimado', BRL(mrr()), 'teal', 'recorrência mensal'],
     ['Agend. no mês', bookingsThisMonth(), 'gold', Number(s.bookings_total||0)+' no total'],
   ];
@@ -362,17 +469,19 @@ function renderCharts(){
     options:baseOpts(true, false, true) });
 
   // status doughnut
-  const st={trial:0,active:0,past_due:0,canceled:0};
+  const st={trial:0,active:0,courtesy:0,past_due:0,canceled:0};
   ROWS.forEach(r=>{ if(r.subscription_status in st) st[r.subscription_status]++; });
   charts.status = new Chart('chStatus', { type:'doughnut',
-    data:{ labels:['Em teste','Ativo','Inadimplente','Cancelado'], datasets:[{ data:[st.trial,st.active,st.past_due,st.canceled], backgroundColor:[C.gold,C.green,C.red,C.muted], borderWidth:0 }] },
+    data:{ labels:['Em teste','Ativo','Cortesia','Inadimplente','Cancelado'], datasets:[{ data:[st.trial,st.active,st.courtesy,st.past_due,st.canceled], backgroundColor:[C.gold,C.green,C.teal,C.red,C.muted], borderWidth:0 }] },
     options:donutOpts() });
 
-  // plano doughnut
-  const pl={essencial:0,pro:0,clinica:0,none:0};
-  ROWS.forEach(r=>{ pl[r.plan && pl.hasOwnProperty(r.plan)? r.plan : 'none']++; });
+  // plano doughnut (dinâmico, a partir da tabela de planos)
+  const planLabels = PLANS.map(p=>p.name).concat('Sem plano');
+  const planData = PLANS.map(p=>ROWS.filter(r=>r.plan===p.code).length)
+                       .concat(ROWS.filter(r=>!r.plan || !PLANS.some(p=>p.code===r.plan)).length);
+  const planColors = PLANS.map((_,i)=>PALETTE[i%PALETTE.length]).concat(C.muted);
   charts.plan = new Chart('chPlan', { type:'doughnut',
-    data:{ labels:['Essencial','Profissional','Clínica','Sem plano'], datasets:[{ data:[pl.essencial,pl.pro,pl.clinica,pl.none], backgroundColor:[C.teal,C.gold,C.tealD,C.muted], borderWidth:0 }] },
+    data:{ labels:planLabels, datasets:[{ data:planData, backgroundColor:planColors, borderWidth:0 }] },
     options:donutOpts() });
 
   // top profissionais por agendamentos
@@ -407,8 +516,7 @@ function renderTable(){
   tb.innerHTML = rows.map(r => {
     const statusSel='<select class="sel st-'+r.subscription_status+'" onchange="changeStatus(\''+r.id+'\',this.value)">'+
       Object.keys(STATUS_LABEL).map(k=>'<option value="'+k+'"'+(k===r.subscription_status?' selected':'')+'>'+STATUS_LABEL[k]+'</option>').join('')+'</select>';
-    const planSel='<select class="sel" onchange="changePlan(\''+r.id+'\',this.value)">'+
-      PLAN_OPTS.map(p=>'<option value="'+p[0]+'"'+(p[0]===(r.plan||'')?' selected':'')+'>'+p[1]+'</option>').join('')+'</select>';
+    const planSel='<select class="sel" onchange="changePlan(\''+r.id+'\',this.value)">'+planSelectHtml(r.plan)+'</select>';
     return '<tr>'+
       '<td><div class="nm">'+esc(r.name)+'</div><a class="lk" href="/'+esc(r.slug)+'" target="_blank" rel="noopener">/'+esc(r.slug)+'</a></td>'+
       '<td>'+esc(r.email)+(r.phone?'<div class="sub">'+esc(r.phone)+'</div>':'')+'</td>'+
