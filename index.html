@@ -3,85 +3,79 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>EndoDoc — Agenda inteligente para endodontistas</title>
-<meta name="description" content="EndoDoc é a plataforma de agendamento para endodontistas: link próprio de agendamento, agenda sincronizada com o Google Calendar, lembretes automáticos e zero choque de horários." />
+<title>EndoDoc — Sua agenda cheia, sem viver no WhatsApp</title>
+<meta name="description" content="EndoDoc é a agenda inteligente para endodontistas: um link de agendamento, os consultórios marcam sozinhos, sincronizado com o Google Calendar e sem choque de horários." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
-  :root{--ink:#16302f;--muted:#5e706f;--primary:#0e7c7b;--primary-d:#0a5d5c;--primary-soft:#e3f1f0;--accent:#c2a063;--accent-d:#9c7c3f;--border:#e4ecec;--bg:#f4f7f7;--surface:#fff;--shadow:0 1px 2px rgba(16,48,47,.04),0 10px 30px rgba(16,48,47,.07);--shadow-lg:0 24px 64px rgba(16,48,47,.16)}
+  :root{--ink:#16302f;--muted:#5e706f;--primary:#0e7c7b;--primary-d:#0a5d5c;--deep:#0a4f4d;--deep2:#08403e;--primary-soft:#e3f1f0;--accent:#f2683c;--accent-d:#c2511f;--accent-soft:#fff3ee;--danger:#c0492f;--danger-soft:#fcf3f1;--border:#e4ecec;--bg:#f4f7f7;--surface:#fff;--shadow:0 1px 2px rgba(16,48,47,.04),0 10px 30px rgba(16,48,47,.07);--shadow-lg:0 24px 64px rgba(16,48,47,.18)}
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);line-height:1.6;background:#fff;-webkit-font-smoothing:antialiased}
-  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.12}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.1}
   a{color:var(--primary);text-decoration:none;font-weight:600}
   .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--primary);color:#fff;padding:14px 26px;border-radius:12px;font-weight:600;font-size:15px;transition:.18s;box-shadow:0 8px 22px rgba(14,124,123,.25);border:none;cursor:pointer}
-  .btn:hover{background:var(--primary-d);transform:translateY(-1px)}
-  .btn.ghost{background:var(--primary-soft);color:var(--primary-d);box-shadow:none}
-  .btn.ghost:hover{background:#d3e9e7}
-  .btn.lg{padding:16px 30px;font-size:16px}
-  .btn.white{background:#fff;color:var(--primary-d);box-shadow:0 8px 22px rgba(0,0,0,.12)}
-  .btn.white:hover{background:#eef7f6}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;padding:14px 26px;border-radius:12px;font-weight:700;font-size:15px;transition:.18s;box-shadow:0 10px 24px rgba(242,104,60,.32);border:none;cursor:pointer}
+  .btn:hover{background:var(--accent-d);transform:translateY(-2px)}
+  .btn.lg{padding:16px 32px;font-size:16px}
+  .btn.teal{background:var(--primary);box-shadow:0 10px 24px rgba(14,124,123,.28)}
+  .btn.teal:hover{background:var(--primary-d)}
+  .btn.outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.45);box-shadow:none}
+  .btn.outline:hover{background:rgba(255,255,255,.12);transform:translateY(-2px)}
+  .btn.softteal{background:var(--primary-soft);color:var(--primary-d);box-shadow:none}
+  .btn.softteal:hover{background:#d3e9e7}
   .logo{display:flex;align-items:center;gap:11px;font-weight:700}
-  .logo .mark{width:38px;height:38px;border-radius:11px;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:20px;box-shadow:0 6px 16px rgba(14,124,123,.3)}
+  .logo .mark{width:38px;height:38px;border-radius:11px;background:var(--accent);color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:20px;box-shadow:0 6px 16px rgba(242,104,60,.35)}
   .logo .name{font-size:19px}
-  header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-  .top{max-width:1100px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .top{max-width:1100px;margin:0 auto;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
   .top nav .lnk{color:var(--muted);font-weight:500;font-size:14.5px}
   .top nav .lnk:hover{color:var(--ink)}
   .top .actions{display:flex;gap:12px;align-items:center}
   .top .enter{color:var(--ink)}
   .menu-links{display:flex;gap:26px;align-items:center}
-  .kicker{text-transform:uppercase;letter-spacing:.08em;font-size:12.5px;font-weight:700;color:var(--accent-d);margin-bottom:12px}
+  .kicker{text-transform:uppercase;letter-spacing:.09em;font-size:12.5px;font-weight:800;color:var(--accent-d)}
   /* hero */
-  .hero{position:relative;overflow:hidden;background:radial-gradient(1100px 520px at 75% -160px,#e8f4f3 0%,#fff 72%)}
-  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:66px 0 58px}
-  .eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--primary-soft);color:var(--primary-d);padding:7px 15px;border-radius:99px;font-size:13px;font-weight:600;margin-bottom:22px}
-  .hero h1{font-size:clamp(33px,4.6vw,50px);margin-bottom:18px}
-  .hero h1 .hl{color:var(--primary)}
-  .hero p.sub{font-size:clamp(16px,2vw,19px);color:var(--muted);max-width:540px;margin:0 0 26px}
+  .hero{background:radial-gradient(900px 500px at 80% -120px,#0f6360 0%,var(--deep) 55%);color:#fff;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-120px;top:-120px;width:360px;height:360px;border-radius:50%;background:rgba(242,104,60,.16);filter:blur(20px)}
+  .hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:64px 0 70px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);color:#ffd9c2;padding:7px 15px;border-radius:99px;font-size:13px;font-weight:600;margin-bottom:22px}
+  .hero h1{font-size:clamp(34px,5vw,54px);margin-bottom:18px;color:#fff}
+  .hero h1 .hl{color:#ff9d5c}
+  .hero p.sub{font-size:clamp(16px,2vw,19px);color:#cfe6e4;max-width:540px;margin:0 0 28px}
   .hero .cta{display:flex;gap:13px;flex-wrap:wrap}
-  .hero .trust{margin-top:18px;font-size:13.5px;color:var(--muted)}
+  .hero .trust{margin-top:18px;font-size:13.5px;color:#9ec7c4}
   /* booking mockup */
-  .mock{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-lg);padding:20px;max-width:420px;margin-left:auto}
+  .mock{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-lg);padding:20px;max-width:420px;margin-left:auto;color:var(--ink)}
   .mock .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
   .mock .mhead .u{font-size:14px;font-weight:700;color:var(--primary-d)}
   .mock .mhead .m{font-size:12px;color:var(--muted)}
   .mock .days{display:flex;gap:7px;margin-bottom:14px}
   .mock .day{flex:1;text-align:center;font-size:11px;color:var(--muted);padding:8px 0;border-radius:9px;background:var(--bg)}
   .mock .day b{display:block;font-size:15px;color:var(--ink);margin-top:3px}
-  .mock .day.sel{background:var(--primary);color:#fff}
-  .mock .day.sel b{color:#fff}
+  .mock .day.sel{background:var(--primary);color:#fff}.mock .day.sel b{color:#fff}
   .mock .slots{display:flex;flex-wrap:wrap;gap:8px}
   .mock .slot{font-size:13px;padding:9px 14px;border-radius:10px;background:var(--primary-soft);color:var(--primary-d);font-weight:600}
   .mock .slot.off{background:var(--bg);color:#b9c6c5;text-decoration:line-through}
-  .mock .slot.on{background:var(--primary);color:#fff}
+  .mock .slot.on{background:var(--accent);color:#fff}
   .mock .mfoot{margin-top:16px;border-top:1px solid var(--border);padding-top:13px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
   .mock .mfoot .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
-  /* trust */
-  .trustbar{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg)}
-  .trustbar .row{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 34px;padding:18px 24px}
-  .trustbar .item{display:inline-flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:var(--muted)}
-  .trustbar .item svg{width:19px;height:19px;color:var(--primary)}
+  /* benefit strip */
+  .bstrip{background:var(--deep2);color:#bfe0dd}
+  .bstrip .row{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 40px;padding:20px 24px;font-size:13.5px}
+  .bstrip b{color:#ff9d5c;font-size:18px;font-family:'Fraunces',serif}
   /* sections */
   section.block{padding:74px 0}
   .section-head{text-align:center;max-width:680px;margin:0 auto 44px}
+  .section-head .kicker{margin-bottom:12px}
   .section-head h2{font-size:clamp(27px,3.4vw,38px);margin-bottom:14px}
   .section-head p{color:var(--muted);font-size:16.5px}
-  /* pains */
-  .pains-sec{background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-  .pains{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .pain{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow)}
-  .pain .ic{width:46px;height:46px;border-radius:13px;background:#fbeae6;color:#c0492f;display:grid;place-items:center;margin-bottom:14px}
-  .pain .ic svg{width:23px;height:23px}
-  .pain h3{font-size:16px;margin-bottom:6px}
-  .pain p{font-size:14px;color:var(--muted)}
   /* features */
   .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .feature{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:var(--shadow);transition:.18s}
-  .feature:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
-  .feature .ic{width:50px;height:50px;border-radius:14px;background:var(--primary-soft);color:var(--primary-d);display:grid;place-items:center;margin-bottom:16px}
+  .feature:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .feature .ic{width:50px;height:50px;border-radius:14px;background:var(--accent);color:#fff;display:grid;place-items:center;margin-bottom:16px;box-shadow:0 8px 18px rgba(242,104,60,.28)}
   .feature .ic svg{width:25px;height:25px}
   .feature h3{font-size:18px;margin-bottom:8px}
   .feature p{font-size:14.5px;color:var(--muted)}
@@ -92,52 +86,47 @@
   .deep p.lead{color:var(--muted);font-size:16px;margin-bottom:20px}
   .ticklist{display:grid;gap:13px}
   .tick{display:flex;gap:12px;align-items:flex-start}
-  .tick .ck{flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);display:grid;place-items:center;margin-top:1px}
+  .tick .ck{flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent-d);display:grid;place-items:center;margin-top:1px}
   .tick .ck svg{width:14px;height:14px}
-  .tick b{display:block;font-size:15px}
-  .tick span{font-size:14px;color:var(--muted)}
+  .tick b{display:block;font-size:15px}.tick span{font-size:14px;color:var(--muted)}
   .visual{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:26px}
-  /* sync illustration */
   .sync{display:flex;align-items:center;justify-content:center;gap:16px}
   .sync .node{flex:1;text-align:center;border:1px solid var(--border);border-radius:14px;padding:20px 12px;background:var(--bg)}
   .sync .node .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin:0 auto 10px}
   .sync .node .ic.t{background:var(--primary);color:#fff}
-  .sync .node .ic.g{background:#fff;border:1px solid var(--border);color:#0a5d5c}
+  .sync .node .ic.g{background:#fff;border:1px solid var(--border);color:var(--primary-d)}
   .sync .node b{font-size:14px}.sync .node span{font-size:12px;color:var(--muted)}
-  .sync .arrows{display:flex;flex-direction:column;gap:8px;color:var(--primary)}
+  .sync .arrows{display:flex;flex-direction:column;gap:8px;color:var(--accent)}
   .sync .arrows svg{width:26px;height:26px}
-  /* agenda card visual */
   .ag{border:1px solid var(--border);border-radius:14px;padding:16px;background:var(--bg)}
   .ag .agh{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
   .ag .agd{width:52px;text-align:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:7px 0}
   .ag .agd .d{font-family:'Fraunces',serif;font-size:20px;line-height:1}.ag .agd .mo{font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:600}
   .ag .agt b{font-size:14px}.ag .agt span{display:block;font-size:12.5px;color:var(--muted)}
   .ag .agmap{height:96px;border-radius:10px;background:linear-gradient(135deg,#dcebe9,#e8f4f3);position:relative;border:1px solid var(--border);overflow:hidden}
-  .ag .agmap .pin{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);color:var(--primary);}
+  .ag .agmap .pin{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);color:var(--accent)}
   .ag .agmap .pin svg{width:26px;height:26px}
-  .ag .agrow{display:flex;gap:8px;margin-top:11px}
+  .ag .agrow{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
   .ag .tagp{font-size:12px;font-weight:600;padding:6px 11px;border-radius:8px;background:var(--primary-soft);color:var(--primary-d);display:inline-flex;gap:6px;align-items:center}
   .ag .tagp svg{width:14px;height:14px}
   /* steps */
   .steps-sec{background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
   .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
   .step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px}
-  .step .n{width:34px;height:34px;border-radius:10px;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700;font-family:'Fraunces',serif;margin-bottom:14px}
-  .step h3{font-size:16px;margin-bottom:6px}
-  .step p{font-size:14px;color:var(--muted)}
+  .step .n{width:34px;height:34px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-family:'Fraunces',serif;margin-bottom:14px}
+  .step h3{font-size:16px;margin-bottom:6px}.step p{font-size:14px;color:var(--muted)}
   /* diferenciais */
   .diffs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 26px}
   .diff{display:flex;gap:14px;align-items:flex-start}
   .diff .ic{flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:var(--primary-soft);color:var(--primary-d);display:grid;place-items:center}
   .diff .ic svg{width:21px;height:21px}
-  .diff b{display:block;font-size:15px;margin-bottom:3px}
-  .diff p{font-size:13.5px;color:var(--muted)}
+  .diff b{display:block;font-size:15px;margin-bottom:3px}.diff p{font-size:13.5px;color:var(--muted)}
   /* pricing */
   .pricing-sec{background:var(--bg);border-top:1px solid var(--border)}
   .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
   .plan{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:30px 26px;box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative;transition:.18s}
-  .plan:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
-  .plan.pop{border:2px solid var(--primary);box-shadow:0 20px 50px rgba(14,124,123,.18)}
+  .plan:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .plan.pop{border:2px solid var(--accent);box-shadow:0 20px 50px rgba(242,104,60,.18)}
   .plan .tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:99px;white-space:nowrap}
   .plan .pname{font-family:'Fraunces',serif;font-size:21px;font-weight:600;margin-bottom:4px}
   .plan .pdesc{font-size:13.5px;color:var(--muted);margin-bottom:18px;min-height:38px}
@@ -147,7 +136,7 @@
   .plan .pnote{font-size:12.5px;color:var(--muted);margin-bottom:20px}
   .plan ul{list-style:none;display:grid;gap:11px;margin-bottom:24px;flex:1}
   .plan li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
-  .plan li svg{flex:0 0 18px;width:18px;height:18px;color:var(--primary);margin-top:2px}
+  .plan li svg{flex:0 0 18px;width:18px;height:18px;color:var(--accent);margin-top:2px}
   .plan .btn{width:100%}
   .price-foot{text-align:center;color:var(--muted);font-size:13.5px;margin-top:26px}
   /* faq */
@@ -155,26 +144,31 @@
   details{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px 20px;box-shadow:var(--shadow)}
   details summary{list-style:none;cursor:pointer;padding:16px 0;font-weight:600;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:16px}
   details summary::-webkit-details-marker{display:none}
-  details summary .plus{flex:0 0 auto;color:var(--primary);font-size:22px;line-height:1;transition:.2s}
+  details summary .plus{flex:0 0 auto;color:var(--accent);font-size:22px;line-height:1;transition:.2s}
   details[open] summary .plus{transform:rotate(45deg)}
   details .ans{padding:0 0 18px;color:var(--muted);font-size:14.5px}
   /* cta band */
-  .ctaband{background:linear-gradient(155deg,var(--primary) 0%,var(--primary-d) 100%);color:#fff;text-align:center;border-radius:24px;padding:56px 30px;box-shadow:var(--shadow-lg)}
-  .ctaband h2{font-size:clamp(26px,3.6vw,36px);margin-bottom:12px;color:#fff}
-  .ctaband p{opacity:.92;font-size:17px;margin-bottom:26px}
+  .ctaband{background:radial-gradient(700px 300px at 80% -40px,#0f6360,var(--deep));color:#fff;text-align:center;border-radius:24px;padding:58px 30px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+  .ctaband::after{content:"";position:absolute;left:-80px;bottom:-100px;width:300px;height:300px;border-radius:50%;background:rgba(242,104,60,.18);filter:blur(10px)}
+  .ctaband h2{font-size:clamp(26px,3.6vw,36px);margin-bottom:12px;color:#fff;position:relative;z-index:1}
+  .ctaband p{opacity:.92;font-size:17px;margin-bottom:26px;position:relative;z-index:1;color:#cfe6e4}
+  .ctaband .btn{position:relative;z-index:1}
   /* footer */
   footer{border-top:1px solid var(--border);padding:48px 24px 34px;background:var(--bg)}
   .foot{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:flex-start}
   .foot .col h4{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:12px;font-family:'Inter',sans-serif;font-weight:700}
   .foot .col a{display:block;color:var(--muted);font-weight:500;font-size:14.5px;margin-bottom:8px}
-  .foot .col a:hover{color:var(--primary)}
-  .foot .about{max-width:300px;color:var(--muted);font-size:14px}
-  .foot .about .logo{margin-bottom:12px}
+  .foot .col a:hover{color:var(--accent)}
+  .foot .about{max-width:300px;color:var(--muted);font-size:14px}.foot .about .logo{margin-bottom:12px}
   .legal{max-width:1100px;margin:30px auto 0;padding-top:22px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;text-align:center;line-height:1.7}
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
   @media(max-width:880px){
-    .hero-grid,.deep{grid-template-columns:1fr;gap:34px}
+    .hero-grid,.deep{grid-template-columns:1fr;gap:32px}
     .mock{margin:0 auto}
-    .pains,.features,.diffs{grid-template-columns:1fr}
+    .features,.diffs{grid-template-columns:1fr}
     .plans{grid-template-columns:1fr}
     .steps{grid-template-columns:1fr 1fr}
     .menu-links{display:none}
@@ -204,12 +198,12 @@
     <div class="wrap">
       <div class="hero-grid">
         <div>
-          <div class="eyebrow">⚡ Integrado ao Google Calendar</div>
-          <h1>A agenda inteligente para o <span class="hl">endodontista</span>.</h1>
-          <p class="sub">Seu link próprio de agendamento: os consultórios marcam sozinhos, só nos horários livres, e tudo sincroniza com o Google Calendar — sem choque de horários e sem trocas de mensagens.</p>
+          <div class="eyebrow">⚡ Agenda inteligente para endodontistas</div>
+          <h1>Sua agenda cheia, sem viver no <span class="hl">WhatsApp</span>.</h1>
+          <p class="sub">Um link só, e os consultórios marcam sozinhos nos seus horários livres — sincronizado com o Google Calendar e sem nunca dar choque de horário.</p>
           <div class="cta">
             <a class="btn lg" href="/app">Criar conta grátis — 14 dias</a>
-            <a class="btn ghost lg" href="#planos">Ver planos</a>
+            <a class="btn outline lg" href="#planos">Ver planos</a>
           </div>
           <div class="trust">Sem cartão de crédito · Cancele quando quiser</div>
         </div>
@@ -224,13 +218,9 @@
               <div class="day">sex<b>16</b></div>
             </div>
             <div class="slots">
-              <span class="slot">08:00</span>
-              <span class="slot">09:00</span>
-              <span class="slot off">10:00</span>
-              <span class="slot on">11:00</span>
-              <span class="slot">14:00</span>
-              <span class="slot">15:00</span>
-              <span class="slot">16:00</span>
+              <span class="slot">08:00</span><span class="slot">09:00</span>
+              <span class="slot off">10:00</span><span class="slot on">11:00</span>
+              <span class="slot">14:00</span><span class="slot">15:00</span><span class="slot">16:00</span>
             </div>
             <div class="mfoot"><span class="dot"></span> Horário 11:00 selecionado · confirmação na hora</div>
           </div>
@@ -239,82 +229,53 @@
     </div>
   </section>
 
-  <!-- TRUST -->
-  <div class="trustbar">
+  <!-- BENEFIT STRIP -->
+  <div class="bstrip">
     <div class="row">
-      <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Google Calendar</span>
-      <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Conforme a LGPD</span>
-      <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Agendamento 24/7</span>
-      <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg> Pagamento via Pix</span>
+      <span><b>24/7</b> &nbsp;agendamento sempre aberto</span>
+      <span><b>0</b> &nbsp;choques de horário</span>
+      <span><b>14 dias</b> &nbsp;grátis, sem cartão</span>
     </div>
   </div>
-
-  <!-- PAINS -->
-  <section class="block pains-sec">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="kicker">Os desafios do dia a dia</div>
-        <h2>Cansado de organizar a agenda no improviso?</h2>
-        <p>Quem atende em vários consultórios conhece bem essas dores — e o EndoDoc resolve cada uma delas.</p>
-      </div>
-      <div class="pains">
-        <div class="pain">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg></div>
-          <h3>WhatsApp sem fim</h3>
-          <p>Trocar dezenas de mensagens só para encaixar um único horário, todo santo dia.</p>
-        </div>
-        <div class="pain">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16l6 0M9 16l3 -3M9 16l3 3"/></svg></div>
-          <h3>Choque de horário</h3>
-          <p>Dois consultórios marcando no mesmo horário sem querer — e você no meio do problema.</p>
-        </div>
-        <div class="pain">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
-          <h3>Endereço perdido</h3>
-          <p>Caçar o endereço e o caso do paciente na última hora, espalhados em mil conversas.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- FEATURES -->
   <section class="block" id="funcionalidades">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <div class="kicker">Funcionalidades</div>
-        <h2>Tudo o que sua agenda precisa, num só lugar</h2>
-        <p>Pensado para o endodontista que atende em vários consultórios e não pode perder tempo com telefone e WhatsApp.</p>
+        <h2>Tudo trabalhando por você</h2>
+        <p>Enquanto você atende, o EndoDoc cuida da agenda — do primeiro clique do consultório até o lembrete do atendimento.</p>
       </div>
       <div class="features">
-        <div class="feature">
+        <div class="feature reveal">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div>
           <h3>Seu link de agendamento</h3>
-          <p>Cada endodontista ganha um link próprio (endodoc.com.br/seu-nome) para enviar aos consultórios. Eles marcam sozinhos, no horário que estiver livre.</p>
+          <p>Um endereço só seu (endodoc.com.br/seu-nome) para enviar aos consultórios. Eles marcam sozinhos, no horário que estiver livre.</p>
         </div>
-        <div class="feature">
+        <div class="feature reveal">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></svg></div>
-          <h3>Sincroniza com o Google Calendar</h3>
-          <p>Nos dois sentidos: o que entra no EndoDoc aparece no seu Google, e seus compromissos do Google bloqueiam os horários automaticamente.</p>
+          <h3>Sincroniza com o Google</h3>
+          <p>Nos dois sentidos: o que entra no EndoDoc aparece no seu Google, e seus compromissos do Google bloqueiam os horários.</p>
         </div>
-        <div class="feature">
+        <div class="feature reveal">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-          <h3>Nunca dois no mesmo horário</h3>
+          <h3>Sem choque de horário</h3>
           <p>Trava anti-conflito de verdade: se dois consultórios tentarem o mesmo horário ao mesmo tempo, só um confirma.</p>
         </div>
-        <div class="feature">
+        <div class="feature reveal">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
           <h3>Confirmações e lembretes</h3>
           <p>Confirmação na hora e lembretes automáticos por e-mail e WhatsApp, reduzindo faltas e remarcações.</p>
         </div>
-        <div class="feature">
+        <div class="feature reveal">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
           <h3>Endereço, caso e documentos</h3>
-          <p>Cada agendamento já traz o endereço com mapa, as observações do caso e o anexo de exames — tudo na própria marcação.</p>
+          <p>Cada agendamento traz o endereço com mapa, as observações do caso e o anexo de exames — tudo na própria marcação.</p>
         </div>
-        <div class="feature">
+        <div class="feature reveal">
           <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
           <h3>Cadastro leve para o consultório</h3>
-          <p>O consultório agenda em segundos, sem precisar criar conta nem instalar nada. Menos atrito, mais agendamentos.</p>
+          <p>O consultório agenda em segundos, sem criar conta nem instalar nada. Menos atrito, mais agendamentos.</p>
         </div>
       </div>
     </div>
@@ -323,14 +284,14 @@
   <!-- DEEP DIVES -->
   <section class="block" style="background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
     <div class="wrap">
-      <div class="deep">
+      <div class="deep reveal">
         <div>
           <div class="kicker">Sua agenda, sempre certa</div>
-          <h2>Sincronizada com o Google Calendar</h2>
+          <h2 style="margin-top:12px">Sincronizada com o Google Calendar</h2>
           <p class="lead">O EndoDoc conversa com o seu Google nos dois sentidos, então você nunca tem dois sistemas brigando pela mesma agenda.</p>
           <div class="ticklist">
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Agendou no EndoDoc, entrou no Google</b><span>Cada atendimento marcado vira um evento no seu calendário.</span></div></div>
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Ocupou no Google, bloqueou no EndoDoc</b><span>Seus compromissos pessoais somem dos horários disponíveis.</span></div></div>
+            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Agendou no EndoDoc, entrou no Google</b><span>Cada atendimento vira um evento no seu calendário.</span></div></div>
+            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Ocupou no Google, bloqueou no EndoDoc</b><span>Seus compromissos pessoais somem dos horários.</span></div></div>
             <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Uma agenda só</b><span>Sem planilha paralela, sem dupla digitação.</span></div></div>
           </div>
         </div>
@@ -347,7 +308,7 @@
         </div>
       </div>
 
-      <div class="deep">
+      <div class="deep reveal">
         <div class="visual">
           <div class="ag">
             <div class="agh">
@@ -363,12 +324,12 @@
         </div>
         <div>
           <div class="kicker">Chegou pronto para atender</div>
-          <h2>Cada agendamento, completo</h2>
+          <h2 style="margin-top:12px">Cada agendamento, completo</h2>
           <p class="lead">O consultório informa tudo o que você precisa na hora de marcar — então você abre a agenda e já sabe para onde ir e o que vai fazer.</p>
           <div class="ticklist">
             <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Endereço com mapa e rota</b><span>Toque e o trajeto abre direto no mapa.</span></div></div>
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Observações do caso</b><span>Nome do paciente e o procedimento, sem caça ao tesouro.</span></div></div>
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Exames e documentos anexados</b><span>O consultório anexa o que for preciso, com segurança.</span></div></div>
+            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Observações do caso</b><span>Nome do paciente e o procedimento à mão.</span></div></div>
+            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Exames e documentos anexados</b><span>O consultório anexa o que precisar, com segurança.</span></div></div>
           </div>
         </div>
       </div>
@@ -378,15 +339,15 @@
   <!-- HOW IT WORKS -->
   <section class="block steps-sec" id="como-funciona">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <div class="kicker">Como funciona</div>
         <h2>Pronto para usar em quatro passos</h2>
         <p>Você configura uma vez e a agenda passa a rodar praticamente sozinha.</p>
       </div>
-      <div class="steps">
+      <div class="steps reveal">
         <div class="step"><div class="n">1</div><h3>Conecte o Google</h3><p>Sua agenda do Google Calendar vira a base, nos dois sentidos.</p></div>
         <div class="step"><div class="n">2</div><h3>Defina horários</h3><p>Escolha os dias e horários que você abre para atendimento.</p></div>
-        <div class="step"><div class="n">3</div><h3>Compartilhe o link</h3><p>Os consultórios agendam sozinhos, só nos horários disponíveis.</p></div>
+        <div class="step"><div class="n">3</div><h3>Compartilhe o link</h3><p>Os consultórios agendam sozinhos, só nos horários livres.</p></div>
         <div class="step"><div class="n">4</div><h3>Atenda tranquilo</h3><p>Confirmações e lembretes automáticos por e-mail e WhatsApp.</p></div>
       </div>
     </div>
@@ -395,18 +356,18 @@
   <!-- DIFERENCIAIS -->
   <section class="block">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <div class="kicker">Por que o EndoDoc</div>
         <h2>Feito sob medida para o endodelivery</h2>
         <p>Detalhes que fazem diferença para quem vive na estrada entre consultórios.</p>
       </div>
-      <div class="diffs">
+      <div class="diffs reveal">
         <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg></div><div><b>Sem instalar nada</b><p>100% online, no computador ou no celular.</p></div></div>
         <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><b>Consultório sem cadastro</b><p>Eles marcam em segundos, sem criar conta.</p></div></div>
         <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div><div><b>Link próprio personalizável</b><p>Escolha um endereço fácil de divulgar.</p></div></div>
         <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div><b>Documentos no agendamento</b><p>Exames e arquivos anexados com segurança.</p></div></div>
         <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div><b>Mapa e rota</b><p>O endereço do consultório direto no mapa.</p></div></div>
-        <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></div><div><b>Sem fidelidade</b><p>Cancele quando quiser, sem multa.</p></div></div>
+        <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><b>Sem fidelidade</b><p>Cancele quando quiser, sem multa.</p></div></div>
       </div>
     </div>
   </section>
@@ -414,12 +375,12 @@
   <!-- PRICING -->
   <section class="block pricing-sec" id="planos">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <div class="kicker">Planos</div>
         <h2>Um plano para cada ritmo</h2>
         <p>Comece com 14 dias grátis, sem cartão. Depois escolha o plano que acompanha o seu volume de atendimentos.</p>
       </div>
-      <div class="plans" id="plans-grid">
+      <div class="plans reveal" id="plans-grid">
         <div class="plan">
           <div class="pname">Essencial</div>
           <div class="pdesc">Para quem está começando.</div>
@@ -431,7 +392,7 @@
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Sincronização com Google Calendar</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Confirmações por e-mail</li>
           </ul>
-          <a class="btn ghost" href="/app">Começar grátis</a>
+          <a class="btn softteal" href="/app">Começar grátis</a>
         </div>
         <div class="plan pop">
           <div class="tag">Mais popular</div>
@@ -458,7 +419,7 @@
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Recursos de equipe</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Prioridade máxima no suporte</li>
           </ul>
-          <a class="btn ghost" href="/app">Começar grátis</a>
+          <a class="btn softteal" href="/app">Começar grátis</a>
         </div>
       </div>
       <p class="price-foot">Todos os planos incluem 14 dias de teste grátis, sem cartão. Cobrança via Pix, cartão ou boleto.</p>
@@ -468,11 +429,11 @@
   <!-- FAQ -->
   <section class="block" id="faq">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <div class="kicker">Dúvidas frequentes</div>
         <h2>Perguntas que talvez você tenha</h2>
       </div>
-      <div class="faq">
+      <div class="faq reveal">
         <details><summary>Preciso instalar algum programa? <span class="plus">+</span></summary><div class="ans">Não. O EndoDoc é 100% online: você acessa pelo navegador, no computador ou no celular, e os consultórios usam o seu link sem instalar nada.</div></details>
         <details><summary>O consultório precisa criar uma conta? <span class="plus">+</span></summary><div class="ans">Não. O consultório abre o seu link, escolhe um horário livre e preenche apenas o essencial. É um cadastro leve, em segundos, sem senha.</div></details>
         <details><summary>Como funciona o teste grátis? <span class="plus">+</span></summary><div class="ans">São 14 dias com acesso completo, sem precisar de cartão de crédito. Ao final, você escolhe um plano para continuar — ou simplesmente não continua.</div></details>
@@ -485,10 +446,10 @@
   <!-- CTA BAND -->
   <section class="block">
     <div class="wrap">
-      <div class="ctaband">
-        <h2>Comece hoje. Leva poucos minutos.</h2>
-        <p>Crie sua conta, conecte o Google e compartilhe seu link de agendamento.</p>
-        <a class="btn white lg" href="/app">Criar conta grátis — 14 dias</a>
+      <div class="ctaband reveal">
+        <h2>Pare de marcar consulta no grito do WhatsApp.</h2>
+        <p>Experimente 14 dias grátis. Você configura em poucos minutos.</p>
+        <a class="btn lg" href="/app">Criar conta grátis — 14 dias</a>
       </div>
     </div>
   </section>
@@ -518,14 +479,11 @@
         <a href="/app">Criar conta grátis</a>
       </div>
     </div>
-    <div class="legal">
-      © 2026 EndoDoc · H S REAL COMÉRCIO · CNPJ 28.323.130/0001-84 · endodoc.com.br
-    </div>
+    <div class="legal">© 2026 EndoDoc · H S REAL COMÉRCIO · CNPJ 28.323.130/0001-84 · endodoc.com.br</div>
   </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-/* Preços dinâmicos: lê a tabela 'plans' (pública) e atualiza os cards. */
 const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
 const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
 const POPULAR = 'pro';
@@ -557,12 +515,22 @@ async function loadPlans(){
         '<div class="price"><span class="v">'+priceText(p.price)+'</span>'+(Number(p.price)>0?'<span class="per">/mês</span>':'')+'</div>'+
         '<div class="pnote">após o teste grátis de 14 dias</div>'+
         '<ul>'+feats+'</ul>'+
-        '<a class="btn'+(pop?'':' ghost')+'" href="/app">Começar grátis</a>'+
+        '<a class="btn'+(pop?'':' softteal')+'" href="/app">Começar grátis</a>'+
       '</div>';
     }).join('');
   }catch(e){}
 }
 loadPlans();
+
+/* animações ao rolar */
+(function(){
+  const els = document.querySelectorAll('.reveal');
+  if(!('IntersectionObserver' in window)){ els.forEach(e=>e.classList.add('in')); return; }
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { threshold:.12 });
+  els.forEach(e=>io.observe(e));
+})();
 </script>
 </body>
 </html>
