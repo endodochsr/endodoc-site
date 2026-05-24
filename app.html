@@ -76,6 +76,11 @@
   .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:8px 12px;border-radius:9px;background:var(--surface-2);color:var(--ink);text-decoration:none;border:none;cursor:pointer}
   .pill.dl{background:var(--primary-soft);color:var(--primary-d)}
   .pill.cancel{background:var(--danger-soft);color:var(--danger);margin-left:auto}
+  .slugrow{display:flex;align-items:center;gap:2px;border:1.5px solid var(--border);border-radius:12px;padding:0 12px;background:var(--surface)}
+  .slugrow:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+  .slugpre{color:var(--muted);font-size:14px;white-space:nowrap}
+  .slugrow input{border:none!important;padding:12px 2px!important;box-shadow:none!important;flex:1;background:transparent}
+  .slugrow input:focus{outline:none;box-shadow:none!important;border:none!important}
   .hidden{display:none!important}
   .center-load{min-height:100vh;display:grid;place-items:center;color:var(--muted)}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:80}
@@ -332,6 +337,17 @@ async function applyRecurring(){
 /* ===== perfil ===== */
 function viewPerfil(){
   const p=currentProf||{};
+  const slug=esc(p.slug||'');
+  let linkBlock;
+  if(p.slug_changed){
+    linkBlock=`<div class="field"><label>Seu link (personalizado)</label><input value="endodoc.com.br/${slug}" disabled></div>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:-6px">O link já foi personalizado e não pode mais ser alterado.</p>`;
+  } else {
+    linkBlock=`<div class="field"><label>Endereço do seu link</label>
+        <div class="slugrow"><span class="slugpre">endodoc.com.br/</span><input id="pfSlug" value="${slug}" placeholder="dra-marina" autocapitalize="off" autocorrect="off"></div></div>
+      <div class="hint gold">Você pode personalizar o seu link <b>uma única vez</b>. Depois ele fica fixo, porque os consultórios já vão ter esse endereço salvo. Use letras, números e hífen (ex.: <b>dra-marina</b>).</div>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="changeSlug()">Salvar meu link</button>`;
+  }
   return `<div class="page-head"><h1>Meu perfil</h1><p>Seus dados de profissional.</p></div>
   <div class="card" style="max-width:560px">
     <div class="field"><label>Nome</label><input id="pfName" value="${esc(p.name||'')}"></div>
@@ -339,8 +355,11 @@ function viewPerfil(){
       <div class="field"><label>Especialidade</label><input id="pfSpec" value="${esc(p.specialty||'')}"></div>
       <div class="field"><label>Telefone</label><input id="pfPhone" value="${esc(p.phone||'')}"></div>
     </div>
-    <div class="field"><label>Seu link (não muda)</label><input value="endodoc.com.br/${esc(p.slug||'')}" disabled></div>
     <button class="btn btn-primary" onclick="saveProfile()">Salvar alterações</button>
+  </div>
+  <div class="card" style="max-width:560px">
+    <div class="section-title">Link de agendamento</div>
+    ${linkBlock}
   </div>`;
 }
 async function saveProfile(){
@@ -349,6 +368,16 @@ async function saveProfile(){
   if(error){toast(error.message,'err');return;}
   currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;
   setAvatar(); toast('Perfil atualizado','ok');
+}
+async function changeSlug(){
+  const raw=val('pfSlug');
+  if(!raw){ toast('Digite o novo link','err'); return; }
+  if(!confirm('Você só pode personalizar o seu link UMA vez.\n\nDefinir como:\nendodoc.com.br/'+raw+'\n\nDepois disso não será possível mudar. Confirmar?')) return;
+  const { data, error } = await sb.rpc('change_my_slug',{ p_new_slug: raw });
+  if(error){ toast((error.message||'Não foi possível alterar o link'),'err'); return; }
+  currentProf.slug=data; currentProf.slug_changed=true;
+  toast('Link personalizado com sucesso!','ok');
+  go('perfil');
 }
 
 /* ===== agenda ===== */
