@@ -149,6 +149,11 @@ const SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 let currentProf=null, appView='visao', dispoDate=todayISO();
 
+/* ===== Google Calendar ===== */
+const GOOGLE_CLIENT_ID='907559413522-b63p3o7nlmtb052voa98rf7bjogjdt0n.apps.googleusercontent.com';
+const GOOGLE_REDIRECT='https://www.endodoc.com.br/google-callback';
+const GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar.events';
+
 /* ===== helpers ===== */
 function show(id){document.getElementById(id).classList.remove('hidden');}
 function hide(id){document.getElementById(id).classList.add('hidden');}
@@ -226,6 +231,15 @@ async function openApp(){
   setAvatar();
   show('appView');
   go('visao');
+  handleGoogleReturn();
+}
+function handleGoogleReturn(){
+  const g=new URLSearchParams(location.search).get('google');
+  if(!g) return;
+  if(g==='ok') toast('Google conectado com sucesso!','ok');
+  else if(g==='expirado') toast('A conexão expirou. Tente de novo.','err');
+  else toast('Não foi possível conectar o Google.','err');
+  history.replaceState(null,'',location.pathname);
 }
 function setAvatar(){ document.getElementById('avatar').textContent=((currentProf&&currentProf.name)||'D').replace(/^Dr[a]?\.\s*/i,'')[0].toUpperCase(); }
 function go(v){
@@ -255,9 +269,33 @@ function viewVisao(){
       <p style="font-size:13px;color:var(--muted);margin-top:10px">Defina seus horários na aba <b>Disponibilidade</b> para os consultórios poderem agendar por esse link.</p>
     </div>
     <div class="card">
-      <div class="section-title">Próximas etapas (em construção 🚧)</div>
-      <p style="font-size:14px;color:var(--muted)">Página pública de agendamento · conexão com o Google Calendar · agenda de atendimentos. Vamos liberar em seguida.</p>
+      <div class="section-title">Google Calendar</div>
+      ${googleCard(p)}
     </div>`;
+}
+function googleCard(p){
+  if(p.google_connected){
+    return `<div class="hint">✓ Conectado${p.google_email?(' como <b>'+esc(p.google_email)+'</b>'):''}. Sua agenda sincroniza com o Google.</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="disconnectGoogle()">Desconectar Google</button>`;
+  }
+  return `<p style="font-size:14px;color:var(--muted)">Conecte sua conta do Google para os atendimentos entrarem na sua agenda e seus compromissos do Google bloquearem horários automaticamente.</p>
+    <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="connectGoogle()">Conectar Google</button>`;
+}
+function connectGoogle(){
+  const state=(crypto.randomUUID?crypto.randomUUID():(''+Math.random()).slice(2)+Date.now());
+  localStorage.setItem('endodoc_gstate', state);
+  const u='https://accounts.google.com/o/oauth2/v2/auth?'+new URLSearchParams({
+    client_id:GOOGLE_CLIENT_ID, redirect_uri:GOOGLE_REDIRECT, response_type:'code',
+    scope:GOOGLE_SCOPE, access_type:'offline', prompt:'consent', include_granted_scopes:'true', state
+  }).toString();
+  location.href=u;
+}
+async function disconnectGoogle(){
+  if(!confirm('Desconectar sua conta do Google? Os atendimentos param de sincronizar com a sua agenda.')) return;
+  const { error } = await sb.rpc('google_disconnect');
+  if(error){ toast(error.message,'err'); return; }
+  currentProf.google_connected=false; currentProf.google_email=null;
+  toast('Google desconectado','ok'); go('visao');
 }
 function copyLink(u){navigator.clipboard?.writeText('https://'+u);toast('Link copiado!','ok');}
 

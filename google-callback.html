@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Conectando ao Google… — EndoDoc</title>
+<style>
+  :root{--ink:#16302f;--muted:#5e706f;--primary:#0e7c7b;--primary-d:#0a5d5c;--accent:#f2683c;--border:#e4ecec;--bg:#f4f7f7}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:24px}
+  .box{background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(16,48,47,.08);padding:34px;max-width:400px;width:100%;text-align:center}
+  .mark{width:46px;height:46px;border-radius:13px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:700;margin:0 auto 18px;font-family:Georgia,serif}
+  .spin{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp 1s linear infinite;margin:6px auto 16px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  h1{font-size:20px;margin-bottom:8px}
+  p{color:var(--muted);font-size:14.5px;line-height:1.6}
+  .btn{display:none;margin-top:18px;background:var(--primary);color:#fff;text-decoration:none;padding:12px 22px;border-radius:11px;font-weight:600;font-size:15px}
+  .btn.show{display:inline-block}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="mark">E</div>
+    <div class="spin" id="spin"></div>
+    <h1 id="t">Conectando sua agenda…</h1>
+    <p id="m">Aguarde só um instante.</p>
+    <a class="btn" id="back" href="/app">Voltar ao painel</a>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
+const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
+const FN = 'https://tuolwdniugjwbepujqoy.supabase.co/functions/v1/google-oauth-callback';
+
+function fail(msg){
+  var sp=document.getElementById('spin'); if(sp) sp.style.display='none';
+  document.getElementById('t').textContent='Não deu certo';
+  document.getElementById('m').textContent=msg;
+  document.getElementById('back').classList.add('show');
+}
+
+(async function(){
+  try{
+    const qs=new URLSearchParams(location.search);
+    const code=qs.get('code'), state=qs.get('state'), err=qs.get('error');
+    if(err || !code){ return fail('A conexão foi cancelada. Você pode tentar de novo pelo painel.'); }
+
+    const saved=localStorage.getItem('endodoc_gstate');
+    if(!state || !saved || state!==saved){ return fail('Sessão de conexão inválida. Volte ao painel e clique em Conectar Google novamente.'); }
+    localStorage.removeItem('endodoc_gstate');
+
+    if(!window.supabase || !window.supabase.createClient){ return fail('Erro ao carregar. Recarregue a página.'); }
+    const sb=window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session){ return fail('Você precisa estar logado no EndoDoc. Entre no painel e tente de novo.'); }
+
+    const res=await fetch(FN, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token },
+      body:JSON.stringify({ code })
+    });
+    const out=await res.json().catch(()=>({}));
+    if(!res.ok || !out.ok){ return fail('Não foi possível conectar ('+(out.error||res.status)+'). Tente de novo pelo painel.'); }
+
+    document.getElementById('t').textContent='Conectado!';
+    document.getElementById('m').textContent='Sua agenda do Google está sincronizada. Redirecionando…';
+    location.replace('/app?google=ok');
+  }catch(e){
+    fail('Algo deu errado: '+((e&&e.message)||e));
+  }
+})();
+</script>
+</body>
+</html>
