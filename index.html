@@ -139,6 +139,15 @@
   .plan li svg{flex:0 0 18px;width:18px;height:18px;color:var(--accent);margin-top:2px}
   .plan .btn{width:100%}
   .price-foot{text-align:center;color:var(--muted);font-size:13.5px;margin-top:26px}
+  .plan .permonth{font-size:13px;color:var(--muted);margin-bottom:8px}
+  .plan .save{display:inline-block;background:var(--accent-soft);color:var(--accent-d);font-weight:700;font-size:12px;padding:4px 11px;border-radius:99px;margin-bottom:14px}
+  .plan .pnote{margin-top:auto}
+  .included{max-width:720px;margin:30px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:24px 28px}
+  .included .inc-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin-bottom:16px;text-align:center}
+  .inc-list{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .inc-list li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+  .inc-list li svg{flex:0 0 18px;width:18px;height:18px;color:var(--accent);margin-top:2px}
+  @media(max-width:620px){.inc-list{grid-template-columns:1fr}}
   /* faq */
   .faq{max-width:760px;margin:0 auto;display:grid;gap:12px}
   details{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px 20px;box-shadow:var(--shadow)}
@@ -377,52 +386,46 @@
     <div class="wrap">
       <div class="section-head reveal">
         <div class="kicker">Planos</div>
-        <h2>Um plano para cada ritmo</h2>
-        <p>Comece com 14 dias grátis, sem cartão. Depois escolha o plano que acompanha o seu volume de atendimentos.</p>
+        <h2>Um plano, do seu jeito</h2>
+        <p>Todos os recursos do EndoDoc. Escolha como pagar — quanto maior o período, mais você economiza.</p>
       </div>
       <div class="plans reveal" id="plans-grid">
         <div class="plan">
-          <div class="pname">Essencial</div>
-          <div class="pdesc">Para quem está começando.</div>
-          <div class="price"><span class="v">R$ 49</span><span class="per">/mês</span></div>
-          <div class="pnote">após o teste grátis de 14 dias</div>
-          <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> 1 profissional</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Link público de agendamento</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Sincronização com Google Calendar</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Confirmações por e-mail</li>
-          </ul>
+          <div class="pname">Mensal</div>
+          <div class="price"><span class="v">R$ 59</span><span class="per">/mês</span></div>
+          <div class="pnote">14 dias grátis, sem cartão</div>
           <a class="btn softteal" href="/app">Começar grátis</a>
         </div>
         <div class="plan pop">
           <div class="tag">Mais popular</div>
-          <div class="pname">Profissional</div>
-          <div class="pdesc">Para quem está em ritmo constante.</div>
-          <div class="price"><span class="v">R$ 99</span><span class="per">/mês</span></div>
-          <div class="pnote">após o teste grátis de 14 dias</div>
-          <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Tudo do Essencial</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Lembretes por WhatsApp</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Maior volume de agendamentos</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Relatórios e suporte prioritário</li>
-          </ul>
+          <div class="pname">Anual</div>
+          <div class="price"><span class="v">R$ 566</span><span class="per">/ano</span></div>
+          <div class="permonth">equivale a R$ 47/mês</div>
+          <div class="save">Economize 20%</div>
+          <div class="pnote">14 dias grátis, sem cartão</div>
           <a class="btn" href="/app">Começar grátis</a>
         </div>
         <div class="plan">
-          <div class="pname">Clínica</div>
-          <div class="pdesc">Para equipes e alto volume.</div>
-          <div class="price"><span class="v">R$ 199</span><span class="per">/mês</span></div>
-          <div class="pnote">após o teste grátis de 14 dias</div>
-          <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Vários profissionais</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Alto volume de agendamentos</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Recursos de equipe</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Prioridade máxima no suporte</li>
-          </ul>
+          <div class="pname">Semestral</div>
+          <div class="price"><span class="v">R$ 319</span><span class="per">/semestre</span></div>
+          <div class="permonth">equivale a R$ 53/mês</div>
+          <div class="save">Economize 10%</div>
+          <div class="pnote">14 dias grátis, sem cartão</div>
           <a class="btn softteal" href="/app">Começar grátis</a>
         </div>
       </div>
-      <p class="price-foot">Todos os planos incluem 14 dias de teste grátis, sem cartão. Cobrança via Pix, cartão ou boleto.</p>
+      <div class="included reveal">
+        <div class="inc-title">Tudo incluído, em qualquer período</div>
+        <ul class="inc-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Link próprio de agendamento</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Sincronização com o Google Calendar</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Agenda sem choque de horário</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Endereço com mapa, observações e documentos</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Confirmações e lembretes por e-mail e WhatsApp</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg> Cadastro leve para o consultório</li>
+        </ul>
+      </div>
+      <p class="price-foot">Todos os períodos incluem 14 dias de teste grátis, sem cartão. Cobrança via Pix, cartão ou boleto.</p>
     </div>
   </section>
 
@@ -486,16 +489,11 @@
 <script>
 const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
 const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
-const POPULAR = 'pro';
-const PLAN_INFO = {
-  essencial: { desc:'Para quem está começando.', feats:['1 profissional','Link público de agendamento','Sincronização com Google Calendar','Confirmações por e-mail'] },
-  pro:       { desc:'Para quem está em ritmo constante.', feats:['Tudo do Essencial','Lembretes por WhatsApp','Maior volume de agendamentos','Relatórios e suporte prioritário'] },
-  clinica:   { desc:'Para equipes e alto volume.', feats:['Vários profissionais','Alto volume de agendamentos','Recursos de equipe','Prioridade máxima no suporte'] }
-};
-const DEFAULT_FEATS = ['Link público de agendamento','Sincronização com Google Calendar','Confirmações e lembretes','Agenda sem choque de horários'];
-const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg>';
+const POPULAR = 'anual';
+const PERIOD_LABEL  = { mensal:'/mês', semestral:'/semestre', anual:'/ano' };
+const PERIOD_MONTHS = { mensal:1, semestral:6, anual:12 };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const priceText = v => { const n=Number(v); return (!n||n<=0) ? 'Grátis' : 'R$ '+n.toLocaleString('pt-BR'); };
+const brl = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR');
 
 async function loadPlans(){
   try{
@@ -503,18 +501,28 @@ async function loadPlans(){
     const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
     const { data, error } = await sb.from('plans').select('*').eq('active', true).order('sort_order', { ascending:true });
     if(error || !data || !data.length) return;
+    const mensal = data.find(p => p.code === 'mensal');
+    const baseMonth = mensal ? Number(mensal.price) : null;
     const grid = document.getElementById('plans-grid');
     grid.innerHTML = data.map(p => {
-      const info = PLAN_INFO[p.code] || { desc:'', feats:DEFAULT_FEATS };
+      const months = PERIOD_MONTHS[p.code] || 1;
+      const per = PERIOD_LABEL[p.code] || '';
       const pop = p.code === POPULAR;
-      const feats = (info.feats || DEFAULT_FEATS).map(f => '<li>'+TICK+' '+esc(f)+'</li>').join('');
+      let extra = '';
+      if(months > 1){
+        const perMonth = Number(p.price) / months;
+        extra += '<div class="permonth">equivale a '+brl(Math.round(perMonth))+'/mês</div>';
+        if(baseMonth){
+          const off = Math.round((1 - perMonth / baseMonth) * 100);
+          if(off > 0) extra += '<div class="save">Economize '+off+'%</div>';
+        }
+      }
       return '<div class="plan'+(pop?' pop':'')+'">'+
         (pop ? '<div class="tag">Mais popular</div>' : '')+
         '<div class="pname">'+esc(p.name)+'</div>'+
-        '<div class="pdesc">'+esc(info.desc||'')+'</div>'+
-        '<div class="price"><span class="v">'+priceText(p.price)+'</span>'+(Number(p.price)>0?'<span class="per">/mês</span>':'')+'</div>'+
-        '<div class="pnote">após o teste grátis de 14 dias</div>'+
-        '<ul>'+feats+'</ul>'+
+        '<div class="price"><span class="v">'+brl(p.price)+'</span><span class="per">'+per+'</span></div>'+
+        extra+
+        '<div class="pnote">14 dias grátis, sem cartão</div>'+
         '<a class="btn'+(pop?'':' softteal')+'" href="/app">Começar grátis</a>'+
       '</div>';
     }).join('');

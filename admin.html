@@ -246,7 +246,10 @@
 const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
 const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
 // Preços de reserva (R$). São recarregados da tabela 'plans' do banco.
-let PLAN_PRICES = { essencial:49, pro:99, clinica:199 };
+let PLAN_PRICES = { mensal:59, semestral:319, anual:566 };
+// Quantos meses cada período cobre (para normalizar a receita por mês / MRR).
+const PERIOD_MONTHS = { mensal:1, semestral:6, anual:12 };
+const planMonths = code => PERIOD_MONTHS[code] || 1;
 
 let sb = null, ROWS = [], BYMONTH = [], PLANS = [], MY_ID = null, view='resumo';
 const charts = {};
@@ -394,7 +397,7 @@ async function deletePlan(code){
 }
 
 /* ===== KPIs ===== */
-function mrr(){ return ROWS.filter(r=>r.subscription_status==='active').reduce((s,r)=>s+(PLAN_PRICES[r.plan]||0),0); }
+function mrr(){ return Math.round(ROWS.filter(r=>r.subscription_status==='active').reduce((s,r)=>s+((PLAN_PRICES[r.plan]||0)/planMonths(r.plan)),0)); }
 function bookingsThisMonth(){
   const ym = new Date().toISOString().slice(0,7);
   const row = BYMONTH.find(x=>x.ym===ym);
@@ -462,7 +465,7 @@ function renderCharts(){
   // receita estimada (MRR) por mês: ativos criados até o mês × preço
   const actives = ROWS.filter(r=>r.subscription_status==='active');
   const revenue = months.map(m=>
-    actives.filter(r=>(r.created_at||'').slice(0,7) <= m).reduce((s,r)=>s+(PLAN_PRICES[r.plan]||0),0)
+    Math.round(actives.filter(r=>(r.created_at||'').slice(0,7) <= m).reduce((s,r)=>s+((PLAN_PRICES[r.plan]||0)/planMonths(r.plan)),0))
   );
   charts.revenue = new Chart('chRevenue', { type:'line',
     data:{ labels, datasets:[{ label:'MRR estimado', data:revenue, borderColor:C.gold, backgroundColor:'rgba(194,160,99,.15)', fill:true, tension:.3, pointRadius:3, borderWidth:2 }] },
