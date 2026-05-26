@@ -106,7 +106,7 @@ async function init(){
   const {data,error}=await sb.from('public_professionals').select('*').eq('slug',slug).maybeSingle();
   if(error||!data){ document.getElementById('root').innerHTML='<div class="center">Profissional não encontrado.<br>Verifique o link.</div>'; return; }
   prof=data;
-  await loadAvailability();
+  if(prof.accepting_bookings!==false){ await loadAvailability(); }
   render();
 }
 function askSlug(){
@@ -131,10 +131,17 @@ async function loadAvailability(){
 
 function render(){
   const av=(prof.name||'').replace(/^Dr[a]?\.\s*/i,'')[0]||'D';
+  const body = (prof.accepting_bookings===false)
+    ? `<div class="card" style="text-align:center;padding:34px 22px">
+        <div style="font-size:38px;line-height:1;margin-bottom:10px">📵</div>
+        <h2 style="font-family:'Fraunces',serif;font-size:22px;margin-bottom:8px">Não estou aceitando agendamentos no momento</h2>
+        <p style="color:var(--muted);font-size:14.5px">Tente novamente em breve, ou entre em contato direto com o profissional.</p>
+       </div>`
+    : `<div class="card">${calendarHTML()}</div>`;
   document.getElementById('root').innerHTML=`<div class="wrap">
     <div class="prof"><div class="av">${esc(av)}</div>
       <div><h1>${esc(prof.name)}</h1><p>${esc(prof.specialty||'Endodontia')} · atendimento no seu consultório</p></div></div>
-    <div class="card">${calendarHTML()}</div>
+    ${body}
   </div>`;
 }
 function calendarHTML(){

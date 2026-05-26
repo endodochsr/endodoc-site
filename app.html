@@ -255,8 +255,31 @@ function go(v){
   const body=document.getElementById('appBody');
   if(v==='visao') body.innerHTML=viewVisao();
   else if(v==='perfil') body.innerHTML=viewPerfil();
+  else if((v==='agenda'||v==='dispo') && !hasAccess(currentProf)){
+    body.innerHTML=lockedView(v);
+  }
   else if(v==='agenda'){ body.innerHTML='<div class="page-head"><h1>Agenda</h1><p>Carregando…</p></div>'; renderAgenda(); }
   else if(v==='dispo'){ body.innerHTML=dispoShell(); loadDispoSlots(); }
+}
+function hasAccess(p){
+  if(!p) return false;
+  const st=p.subscription_status;
+  if(st==='active'||st==='courtesy') return true;
+  if(st==='trial' && p.trial_ends_at && new Date(p.trial_ends_at)>new Date()) return true;
+  if(st==='past_due' && p.current_period_end && new Date(p.current_period_end) > new Date(Date.now() - 3*86400000)) return true;
+  return false;
+}
+function lockedView(v){
+  const titulo = v==='agenda' ? 'Agenda' : 'Disponibilidade';
+  return `<div class="page-head"><h1>${titulo}</h1></div>
+    <div class="card" style="text-align:center;padding:30px 22px">
+      <div style="font-size:34px;line-height:1;margin-bottom:10px">🔒</div>
+      <h2 style="font-family:'Fraunces',serif;font-size:20px;margin-bottom:8px">Acesso bloqueado</h2>
+      <p style="color:var(--muted);font-size:14.5px;margin-bottom:14px">
+        Seu teste/assinatura está fora do prazo. Assine para liberar a ${titulo.toLowerCase()} e voltar a receber agendamentos.
+      </p>
+      <button class="btn btn-primary" onclick="go('visao')">Ver opções de assinatura</button>
+    </div>`;
 }
 
 /* ===== visão geral ===== */
