@@ -148,6 +148,9 @@ let sb = null;
 const SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 let currentProf=null, appView='visao', dispoDate=todayISO();
+let PLANS_APP=[], selectedSubPeriod=null;
+const PERIOD_LABEL_APP={ mensal:'Mensal', semestral:'Semestral', anual:'Anual' };
+const PERIOD_MONTHS_APP={ mensal:1, semestral:6, anual:12 };
 
 /* ===== Google Calendar ===== */
 const GOOGLE_CLIENT_ID='907559413522-b63p3o7nlmtb052voa98rf7bjogjdt0n.apps.googleusercontent.com';
@@ -228,6 +231,10 @@ async function openApp(){
     if(user){ await sb.from('professionals').insert({ id:user.id, slug:'prof-'+user.id.slice(0,8), name:user.user_metadata?.name||'Profissional', specialty:user.user_metadata?.specialty||'Endodontia', phone:user.user_metadata?.phone||null }); const r=await sb.from('professionals').select('*').maybeSingle(); prof=r.data; }
   }
   currentProf=prof;
+  try{
+    const { data:pl } = await sb.from('plans').select('code,name,price,sort_order').eq('active',true).order('sort_order',{ascending:true});
+    PLANS_APP = pl || [];
+  }catch(_){ PLANS_APP = []; }
   setAvatar();
   show('appView');
   go('visao');
@@ -253,25 +260,89 @@ function go(v){
 }
 
 /* ===== visão geral ===== */
+function accessInfo(p){
+  const now=new Date();
+  const trialEnd = p.trial_ends_at ? new Date(p.trial_ends_at) : null;
+  const trialDays = trialEnd ? Math.max(0,Math.ceil((trialEnd-now)/86400000)) : 0;
+  const periodEnd = p.current_period_end ? new Date(p.current_period_end) : null;
+  const st = p.subscription_status || 'trial';
+  if(st==='active' || st==='courtesy'){
+    const until = periodEnd ? periodEnd.toLocaleDateString('pt-BR') : null;
+    return { hint:`<div class="hint">✓ Assinatura ativa${until?(' até <b>'+until+'</b>'):''}.</div>`, showSubscribe:false };
+  }
+  if(st==='past_due'){
+    return { hint:`<div class="hint gold">⚠ Pagamento em atraso. Regularize abaixo para não perder o acesso.</div>`, showSubscribe:true };
+  }
+  if(st==='canceled' || (trialEnd && trialDays===0 && st!=='active')){
+    return { hint:`<div class="hint gold">⏳ Seu acesso expirou. Assine para continuar.</div>`, showSubscribe:true };
+  }
+  // trial em andamento
+  return { hint:`<div class="hint gold">⏳ Teste grátis — faltam <b>${trialDays} dia(s)</b>.</div>`, showSubscribe:true };
+}
 function viewVisao(){
   const p=currentProf||{};
-  const trialDays=p.trial_ends_at?Math.max(0,Math.ceil((new Date(p.trial_ends_at)-new Date())/86400000)):0;
   const link='endodoc.com.br/'+(p.slug||'');
-  const status = p.subscription_status==='active'
-    ? `<div class="hint">✓ Assinatura ativa.</div>`
-    : `<div class="hint gold">⏳ Teste grátis — faltam <b>${trialDays} dia(s)</b>.</div>`;
+  const a=accessInfo(p);
   return `<div class="page-head"><h1>Olá, ${esc(p.name||'')} 👋</h1><p>Bem-vindo(a) ao seu painel.</p></div>
-    <div style="margin-top:14px">${status}</div>
+    <div style="margin-top:14px">${a.hint}</div>
     <div class="card">
       <div class="section-title">Seu link de agendamento</div>
       <div class="linkbox"><span style="flex:1">🔗 ${link}</span>
         <button class="btn btn-ghost btn-sm" onclick="copyLink('${link}')">Copiar</button></div>
       <p style="font-size:13px;color:var(--muted);margin-top:10px">Defina seus horários na aba <b>Disponibilidade</b> para os consultórios poderem agendar por esse link.</p>
     </div>
+    ${a.showSubscribe ? subscribeCard(p) : ''}
     <div class="card">
       <div class="section-title">Google Calendar</div>
       ${googleCard(p)}
     </div>`;
+}
+function subscribeCard(p){
+  if(!PLANS_APP.length){
+    return `<div class="card"><div class="section-title">Assinatura</div>
+      <p style="font-size:14px;color:var(--muted)">Não consegui carregar os planos agora. Recarregue a página.</p></div>`;
+  }
+  const monthly = (PLANS_APP.find(x=>x.code==='mensal')||{}).price || 0;
+  const chips = PLANS_APP.map(pl=>{
+    const months = PERIOD_MONTHS_APP[pl.code] || 1;
+    const perMonth = Number(pl.price)/months;
+    const off = months>1 && monthly>0 ? Math.round((1 - perMonth/Number(monthly))*100) : 0;
+    const sel = selectedSubPeriod===pl.code ? 'on' : '';
+    const tag = pl.code==='anual' ? ' · <span style="color:var(--accent);font-weight:700">mais popular</span>' : '';
+    const offTxt = off>0 ? ` <span style="color:var(--success);font-weight:700">−${off}%</span>` : '';
+    return `<button type="button" class="chip ${sel}" onclick="selectPeriod('${pl.code}')">
+      ${PERIOD_LABEL_APP[pl.code]||pl.name} · R$ ${Number(pl.price).toFixed(2).replace('.',',')}${offTxt}${tag}
+    </button>`;
+  }).join('');
+  const doc = p.cpf_cnpj || '';
+  return `<div class="card">
+    <div class="section-title">Assinatura</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:10px">Escolha o período. Você paga em uma página segura do Asaas (Pix, cartão ou boleto).</p>
+    <div class="chips">${chips}</div>
+    <div class="field" style="margin-top:16px;max-width:320px">
+      <label>CPF ou CNPJ (para a nota)</label>
+      <input id="subDoc" type="text" inputmode="numeric" placeholder="Somente números" value="${esc(doc)}">
+    </div>
+    <button class="btn btn-primary" onclick="startSubscribe()">Ir para o pagamento →</button>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">Você será redirecionado para o Asaas. Após o pagamento confirmado, sua assinatura é ativada automaticamente.</p>
+  </div>`;
+}
+function selectPeriod(code){
+  selectedSubPeriod=code;
+  go('visao');
+}
+async function startSubscribe(){
+  if(!selectedSubPeriod){ toast('Escolha um período','err'); return; }
+  const inp=document.getElementById('subDoc');
+  const doc=((inp&&inp.value)||'').replace(/\D/g,'');
+  if(doc.length<11){ toast('Informe um CPF ou CNPJ válido','err'); return; }
+  toast('Gerando pagamento…','');
+  try{
+    const { data, error } = await sb.functions.invoke('asaas-subscribe', { body:{ period:selectedSubPeriod, cpfCnpj:doc } });
+    if(error){ toast('Erro ao gerar pagamento. Tente de novo.','err'); return; }
+    if(data && data.url){ location.href=data.url; return; }
+    toast((data&&data.error)||'Não foi possível gerar o pagamento.','err');
+  }catch(e){ toast('Erro de conexão. Tente de novo.','err'); }
 }
 function googleCard(p){
   if(p.google_connected){
