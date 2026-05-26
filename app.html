@@ -338,11 +338,25 @@ async function startSubscribe(){
   if(doc.length<11){ toast('Informe um CPF ou CNPJ válido','err'); return; }
   toast('Gerando pagamento…','');
   try{
-    const { data, error } = await sb.functions.invoke('asaas-subscribe', { body:{ period:selectedSubPeriod, cpfCnpj:doc } });
-    if(error){ toast('Erro ao gerar pagamento. Tente de novo.','err'); return; }
-    if(data && data.url){ location.href=data.url; return; }
-    toast((data&&data.error)||'Não foi possível gerar o pagamento.','err');
-  }catch(e){ toast('Erro de conexão. Tente de novo.','err'); }
+    const { data:{ session } } = await sb.auth.getSession();
+    const r = await fetch(SUPA_URL+'/functions/v1/asaas-subscribe', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+(session?.access_token||''), apikey:SUPA_KEY },
+      body: JSON.stringify({ period:selectedSubPeriod, cpfCnpj:doc })
+    });
+    const data = await r.json().catch(()=>({}));
+    console.log('asaas-subscribe response', r.status, data);
+    if(!r.ok){
+      const why = data.detail || data.error || ('HTTP '+r.status);
+      toast('Falhou: '+why, 'err');
+      return;
+    }
+    if(data.url){ location.href=data.url; return; }
+    toast(data.error || 'Sem URL de pagamento', 'err');
+  }catch(e){
+    console.error(e);
+    toast('Erro de conexão: '+(e.message||e), 'err');
+  }
 }
 function googleCard(p){
   if(p.google_connected){
