@@ -70,23 +70,51 @@
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:80;max-width:90vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.err{background:#9c3a25}.toast.ok{background:#1f5d4b}
-  /* layout clínico/sofisticado */
-  .pub-hero{background:linear-gradient(180deg,#fafbfb 0%,var(--bg) 100%);padding:34px 24px 28px;border-bottom:1px solid var(--border)}
-  .pub-hero-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:22px}
-  .pub-photo{width:108px;height:108px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:42px;font-weight:600;overflow:hidden;flex-shrink:0;box-shadow:0 6px 22px rgba(16,48,47,.14);border:3px solid var(--surface)}
+  /* página pública — clínico aconchegante */
+  body{background:#f5efe6}
+  .pub-banner{background:var(--primary-d);color:#fff}
+  .pub-top{background:#fff}
+  .pub-hero{position:relative;padding:50px 24px 40px;overflow:hidden;background:radial-gradient(1100px 380px at 50% 0%,#0e7c7b 0%,#0a5d5c 60%,#08494a 100%);color:#fff}
+  .pub-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,rgba(194,160,99,.18) 0%,transparent 55%);pointer-events:none}
+  .pub-hero::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:36px;background:linear-gradient(180deg,transparent,#f5efe6);pointer-events:none}
+  .pub-hero-inner{position:relative;max-width:760px;margin:0 auto;display:flex;align-items:center;gap:26px;z-index:2}
+  .pub-photo-wrap{position:relative;flex-shrink:0}
+  .pub-photo-wrap::before{content:"";position:absolute;inset:-8px;border-radius:50%;background:conic-gradient(from 0deg,var(--accent),#e6d3a7,var(--accent));opacity:.55;filter:blur(2px)}
+  .pub-photo{position:relative;width:128px;height:128px;border-radius:50%;background:#fff;color:var(--primary-d);display:grid;place-items:center;font-family:'Fraunces',serif;font-size:50px;font-weight:600;overflow:hidden;box-shadow:0 14px 38px rgba(0,0,0,.25);border:5px solid #fff}
   .pub-photo img{width:100%;height:100%;object-fit:cover;display:block}
-  .pub-name{font-family:'Fraunces',serif;font-size:30px;font-weight:600;line-height:1.15;color:var(--ink);letter-spacing:-.015em}
-  .pub-specialty{font-size:14px;color:var(--muted);margin-top:6px;letter-spacing:.02em;text-transform:uppercase;font-weight:600}
-  .pub-tagline{font-size:14.5px;color:var(--ink);margin-top:8px;opacity:.82}
-  .pub-bio{margin:0 auto 22px;max-width:760px;padding:0 24px;font-family:'Fraunces',serif;font-style:italic;font-size:17px;line-height:1.55;color:#2a4544;border-left:3px solid var(--accent);padding-left:18px}
-  .pub-section{max-width:760px;margin:0 auto 18px;padding:0 22px}
-  .pub-section h3{font-family:'Fraunces',serif;font-size:18px;color:var(--ink);margin-bottom:12px;font-weight:600}
-  .pub-proc-pills{display:flex;flex-wrap:wrap;gap:8px}
-  .pub-proc-pill{padding:8px 14px;border-radius:999px;background:#eef2f2;color:#2a4544;font-size:13.5px;font-weight:500;border:1px solid var(--border)}
-  @media(max-width:520px){
-    .pub-hero-inner{flex-direction:column;text-align:center;gap:14px}
-    .pub-name{font-size:25px}
-    .pub-bio{font-size:15.5px}
+  .pub-name{font-family:'Fraunces',serif;font-size:34px;font-weight:600;line-height:1.1;letter-spacing:-.015em;color:#fff}
+  .pub-specialty{display:inline-block;margin-top:10px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.13);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:#fff;border:1px solid rgba(255,255,255,.22)}
+  .pub-tagline{font-size:14.5px;color:rgba(255,255,255,.84);margin-top:12px;font-family:'Fraunces',serif;font-style:italic}
+  .pub-badges{max-width:760px;margin:-12px auto 28px;padding:0 22px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;position:relative;z-index:3}
+  .pub-badge{background:#fff;border:1px solid #e8dfcf;border-radius:14px;padding:14px 12px;text-align:center;box-shadow:0 4px 14px rgba(64,48,28,.06)}
+  .pub-badge .ico{font-size:22px;margin-bottom:4px}
+  .pub-badge .t{font-size:12.5px;font-weight:700;color:var(--ink);letter-spacing:.01em}
+  .pub-badge .s{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .pub-bio{margin:0 auto 26px;max-width:760px;padding:0 22px}
+  .pub-bio-inner{background:#fffbf2;border:1px solid #ecdfbf;border-left:4px solid var(--accent);border-radius:0 14px 14px 0;padding:18px 22px;font-family:'Fraunces',serif;font-style:italic;font-size:17px;line-height:1.6;color:#3a2f17;position:relative}
+  .pub-bio-inner::before{content:"“";position:absolute;left:14px;top:-6px;font-family:'Fraunces',serif;font-size:48px;color:var(--accent);opacity:.55;line-height:1}
+  .pub-bio-inner{padding-left:42px}
+  .pub-section{max-width:760px;margin:0 auto 22px;padding:0 22px}
+  .pub-section-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .pub-section-head .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .pub-section h3{font-family:'Fraunces',serif;font-size:19px;color:var(--ink);font-weight:600;letter-spacing:-.005em}
+  .pub-proc-pills{display:flex;flex-wrap:wrap;gap:10px}
+  .pub-proc-pill{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:#fff;color:#2a4544;font-size:14px;font-weight:500;border:1px solid #e8dfcf;box-shadow:0 2px 6px rgba(64,48,28,.04)}
+  .pub-proc-pill::before{content:"✓";color:var(--primary);font-weight:700}
+  .pub-howit{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px}
+  .pub-step{background:#fff;border:1px solid #e8dfcf;border-radius:14px;padding:16px 14px;text-align:center}
+  .pub-step .num{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);font-family:'Fraunces',serif;font-weight:700;font-size:15px;margin-bottom:8px}
+  .pub-step .t{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:3px}
+  .pub-step .s{font-size:12.5px;color:var(--muted);line-height:1.4}
+  .pub-cal-card{background:#fff;border:1px solid #e8dfcf;border-radius:18px;padding:22px;box-shadow:0 8px 30px rgba(64,48,28,.08)}
+  .pub-footer{max-width:760px;margin:18px auto 0;padding:24px 22px 40px;text-align:center;color:var(--muted);font-size:12.5px}
+  @media(max-width:560px){
+    .pub-hero{padding:38px 20px 32px}
+    .pub-hero-inner{flex-direction:column;text-align:center;gap:16px}
+    .pub-name{font-size:26px}
+    .pub-badges{grid-template-columns:1fr;margin-top:-6px}
+    .pub-howit{grid-template-columns:1fr}
+    .pub-bio-inner{font-size:15.5px}
   }
 </style>
 </head>
@@ -159,33 +187,48 @@ function render(){
     ? `<img src="${esc(prof.avatar_url)}" alt="">`
     : esc(av);
   const heroHtml = `<div class="pub-hero"><div class="pub-hero-inner">
-    <div class="pub-photo">${fotoHtml}</div>
+    <div class="pub-photo-wrap"><div class="pub-photo">${fotoHtml}</div></div>
     <div>
       <div class="pub-name">${esc(prof.name||'')}</div>
       <div class="pub-specialty">${esc(prof.specialty||'Endodontia')}</div>
-      <div class="pub-tagline">Atendimento no seu consultório · agendamento online</div>
+      <div class="pub-tagline">Atendimento no seu consultório, com agendamento online.</div>
     </div>
   </div></div>`;
+  const badgesHtml = `<div class="pub-badges">
+    <div class="pub-badge"><div class="ico">🦷</div><div class="t">Atendimento delivery</div><div class="s">Vou até o seu consultório</div></div>
+    <div class="pub-badge"><div class="ico">📅</div><div class="t">Agenda online</div><div class="s">Sem WhatsApp, sem espera</div></div>
+    <div class="pub-badge"><div class="ico">✓</div><div class="t">Confirmação automática</div><div class="s">Pelo Google Agenda</div></div>
+  </div>`;
   const bioHtml = prof.bio && prof.bio.trim()
-    ? `<div class="pub-bio">${esc(prof.bio)}</div>`
+    ? `<div class="pub-bio"><div class="pub-bio-inner">${esc(prof.bio)}</div></div>`
     : '';
   const procs = Array.isArray(prof.procedures) ? prof.procedures.filter(Boolean) : [];
   const procsHtml = procs.length
-    ? `<div class="pub-section"><h3>Procedimentos atendidos</h3>
-        <div class="pub-proc-pills">${procs.map(p=>`<span class="pub-proc-pill">${esc(p)}</span>`).join('')}</div>
+    ? `<div class="pub-section">
+         <div class="pub-section-head"><span class="dot"></span><h3>Procedimentos atendidos</h3></div>
+         <div class="pub-proc-pills">${procs.map(p=>`<span class="pub-proc-pill">${esc(p)}</span>`).join('')}</div>
        </div>`
     : '';
+  const howHtml = `<div class="pub-section">
+    <div class="pub-section-head"><span class="dot"></span><h3>Como funciona</h3></div>
+    <div class="pub-howit">
+      <div class="pub-step"><div class="num">1</div><div class="t">Escolha o dia</div><div class="s">Veja os horários livres no calendário abaixo</div></div>
+      <div class="pub-step"><div class="num">2</div><div class="t">Preencha o consultório</div><div class="s">Nome, endereço e o procedimento</div></div>
+      <div class="pub-step"><div class="num">3</div><div class="t">Confirmação na hora</div><div class="s">O profissional recebe e sincroniza na agenda</div></div>
+    </div>
+  </div>`;
   const body = (prof.accepting_bookings===false)
-    ? `<div class="pub-section"><div class="card" style="text-align:center;padding:34px 22px">
+    ? `<div class="pub-section"><div class="pub-cal-card" style="text-align:center;padding:34px 22px">
         <div style="font-size:38px;line-height:1;margin-bottom:10px">📵</div>
         <h2 style="font-family:'Fraunces',serif;font-size:22px;margin-bottom:8px">Não estou aceitando agendamentos no momento</h2>
         <p style="color:var(--muted);font-size:14.5px">Tente novamente em breve, ou entre em contato direto com o profissional.</p>
        </div></div>`
     : `<div class="pub-section">
-         <h3 style="margin-bottom:14px">Escolha um dia</h3>
-         <div class="card">${calendarHTML()}</div>
+         <div class="pub-section-head"><span class="dot"></span><h3>Escolha um dia</h3></div>
+         <div class="pub-cal-card">${calendarHTML()}</div>
        </div>`;
-  document.getElementById('root').innerHTML=`${heroHtml}${bioHtml}${procsHtml}${body}`;
+  const footerHtml = `<div class="pub-footer">Agendamento via EndoDoc · pagamento e procedimentos combinados diretamente com o profissional.</div>`;
+  document.getElementById('root').innerHTML=`${heroHtml}${badgesHtml}${bioHtml}${procsHtml}${howHtml}${body}${footerHtml}`;
 }
 function calendarHTML(){
   const y=calRef.getFullYear(),m=calRef.getMonth();
