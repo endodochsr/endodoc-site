@@ -70,6 +70,24 @@
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:80;max-width:90vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.err{background:#9c3a25}.toast.ok{background:#1f5d4b}
+  /* layout clínico/sofisticado */
+  .pub-hero{background:linear-gradient(180deg,#fafbfb 0%,var(--bg) 100%);padding:34px 24px 28px;border-bottom:1px solid var(--border)}
+  .pub-hero-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:22px}
+  .pub-photo{width:108px;height:108px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:42px;font-weight:600;overflow:hidden;flex-shrink:0;box-shadow:0 6px 22px rgba(16,48,47,.14);border:3px solid var(--surface)}
+  .pub-photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .pub-name{font-family:'Fraunces',serif;font-size:30px;font-weight:600;line-height:1.15;color:var(--ink);letter-spacing:-.015em}
+  .pub-specialty{font-size:14px;color:var(--muted);margin-top:6px;letter-spacing:.02em;text-transform:uppercase;font-weight:600}
+  .pub-tagline{font-size:14.5px;color:var(--ink);margin-top:8px;opacity:.82}
+  .pub-bio{margin:0 auto 22px;max-width:760px;padding:0 24px;font-family:'Fraunces',serif;font-style:italic;font-size:17px;line-height:1.55;color:#2a4544;border-left:3px solid var(--accent);padding-left:18px}
+  .pub-section{max-width:760px;margin:0 auto 18px;padding:0 22px}
+  .pub-section h3{font-family:'Fraunces',serif;font-size:18px;color:var(--ink);margin-bottom:12px;font-weight:600}
+  .pub-proc-pills{display:flex;flex-wrap:wrap;gap:8px}
+  .pub-proc-pill{padding:8px 14px;border-radius:999px;background:#eef2f2;color:#2a4544;font-size:13.5px;font-weight:500;border:1px solid var(--border)}
+  @media(max-width:520px){
+    .pub-hero-inner{flex-direction:column;text-align:center;gap:14px}
+    .pub-name{font-size:25px}
+    .pub-bio{font-size:15.5px}
+  }
 </style>
 </head>
 <body>
@@ -137,18 +155,37 @@ async function loadAvailability(){
 
 function render(){
   const av=(prof.name||'').replace(/^Dr[a]?\.\s*/i,'')[0]||'D';
+  const fotoHtml = prof.avatar_url
+    ? `<img src="${esc(prof.avatar_url)}" alt="">`
+    : esc(av);
+  const heroHtml = `<div class="pub-hero"><div class="pub-hero-inner">
+    <div class="pub-photo">${fotoHtml}</div>
+    <div>
+      <div class="pub-name">${esc(prof.name||'')}</div>
+      <div class="pub-specialty">${esc(prof.specialty||'Endodontia')}</div>
+      <div class="pub-tagline">Atendimento no seu consultório · agendamento online</div>
+    </div>
+  </div></div>`;
+  const bioHtml = prof.bio && prof.bio.trim()
+    ? `<div class="pub-bio">${esc(prof.bio)}</div>`
+    : '';
+  const procs = Array.isArray(prof.procedures) ? prof.procedures.filter(Boolean) : [];
+  const procsHtml = procs.length
+    ? `<div class="pub-section"><h3>Procedimentos atendidos</h3>
+        <div class="pub-proc-pills">${procs.map(p=>`<span class="pub-proc-pill">${esc(p)}</span>`).join('')}</div>
+       </div>`
+    : '';
   const body = (prof.accepting_bookings===false)
-    ? `<div class="card" style="text-align:center;padding:34px 22px">
+    ? `<div class="pub-section"><div class="card" style="text-align:center;padding:34px 22px">
         <div style="font-size:38px;line-height:1;margin-bottom:10px">📵</div>
         <h2 style="font-family:'Fraunces',serif;font-size:22px;margin-bottom:8px">Não estou aceitando agendamentos no momento</h2>
         <p style="color:var(--muted);font-size:14.5px">Tente novamente em breve, ou entre em contato direto com o profissional.</p>
-       </div>`
-    : `<div class="card">${calendarHTML()}</div>`;
-  document.getElementById('root').innerHTML=`<div class="wrap">
-    <div class="prof"><div class="av">${esc(av)}</div>
-      <div><h1>${esc(prof.name)}</h1><p>${esc(prof.specialty||'Endodontia')} · atendimento no seu consultório</p></div></div>
-    ${body}
-  </div>`;
+       </div></div>`
+    : `<div class="pub-section">
+         <h3 style="margin-bottom:14px">Escolha um dia</h3>
+         <div class="card">${calendarHTML()}</div>
+       </div>`;
+  document.getElementById('root').innerHTML=`${heroHtml}${bioHtml}${procsHtml}${body}`;
 }
 function calendarHTML(){
   const y=calRef.getFullYear(),m=calRef.getMonth();
