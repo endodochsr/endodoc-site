@@ -63,6 +63,11 @@
   .chip.locked{background:#fafcfc;color:#b9c6c5;border-color:#eef3f3;cursor:not-allowed}
   .chip[data-d].on{background:var(--success-soft);border-color:var(--success);color:var(--success)}
   .bk-card{border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:14px;background:var(--surface);box-shadow:var(--shadow)}
+  .bk-trajeto{margin:8px 0 0 0;padding:9px 14px;border-left:3px solid var(--primary);background:linear-gradient(90deg,var(--primary-soft),transparent);border-radius:0 10px 10px 0;font-size:13.5px;display:flex;align-items:center;gap:6px}
+  .bk-trajeto-line{color:var(--primary-d)}
+  .bk-trajeto-line b{color:var(--ink)}
+  .bk-trajeto-spinner{color:var(--muted);font-style:italic}
+  .bk-trajeto-warn{color:var(--muted);font-size:12.5px}
   .bk-head{display:flex;align-items:flex-start;gap:14px}
   .bk-date{width:56px;text-align:center;flex-shrink:0;background:var(--surface-2);border-radius:10px;padding:8px 0}
   .bk-date .d{font-family:'Fraunces',serif;font-size:22px;line-height:1}
@@ -533,9 +538,14 @@ async function renderAgenda(){
   const {data,error}=await sb.from('bookings').select('*').eq('status','active').gte('slot_date',todayISO()).order('slot_date',{ascending:true}).order('slot_time',{ascending:true});
   if(error){body.innerHTML='<div class="page-head"><h1>Agenda</h1></div><div class="card">Erro: '+esc(error.message)+'</div>';return;}
   const list=data||[];
-  const cards=list.map(b=>{
+  const cards=list.map((b,i)=>{
     const parts=b.slot_date.split('-');const d=+parts[2],m=+parts[1];
     const q=encodeURIComponent(b.office_address||'');
+    const next=list[i+1];
+    const sameDay = next && next.slot_date===b.slot_date;
+    const trajetoSlot = sameDay
+      ? `<div class="bk-trajeto" data-from="${b.id}" data-to="${next.id}"><span class="bk-trajeto-spinner">🚗 calculando trajeto…</span></div>`
+      : '';
     return `<div class="bk-card">
       <div class="bk-head">
         <div class="bk-date"><div class="d">${d}</div><div class="m">${MES[m-1]}</div></div>
@@ -552,10 +562,46 @@ async function renderAgenda(){
         ${b.office_address?`<a class="pill" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️ Como chegar</a>`:''}
         ${b.document_path?`<button class="pill dl" onclick="downloadDoc('${encodeURIComponent(b.document_path)}')">📎 Baixar documento</button>`:''}
       </div>
-    </div>`;
+    </div>${trajetoSlot}`;
   }).join('');
   body.innerHTML=`<div class="page-head"><h1>Agenda</h1><p>Seus próximos atendimentos (${list.length}).</p></div>`+
     (list.length?cards:'<div class="card" style="text-align:center;color:var(--muted)">Nenhum atendimento futuro ainda. Compartilhe seu link de agendamento!</div>');
+  // calcula trajetos em background
+  enrichTravelTimes(list);
+}
+async function enrichTravelTimes(list){
+  // monta pares consecutivos do mesmo dia que tenham coordenadas nos dois lados
+  const pairs=[]; const slots=[];
+  for(let i=0;i<list.length-1;i++){
+    const a=list[i], b=list[i+1];
+    if(a.slot_date!==b.slot_date) continue;
+    const node=document.querySelector(`.bk-trajeto[data-from="${a.id}"][data-to="${b.id}"]`);
+    if(!node) continue;
+    if(!a.office_lat || !a.office_lng || !b.office_lat || !b.office_lng){
+      node.innerHTML='<span class="bk-trajeto-warn">🚗 sem endereço completo pra calcular o trajeto</span>';
+      continue;
+    }
+    pairs.push({ origin:{lat:a.office_lat,lng:a.office_lng}, dest:{lat:b.office_lat,lng:b.office_lng} });
+    slots.push(node);
+  }
+  if(!pairs.length) return;
+  try{
+    const r=await fetch(SUPA_URL+'/functions/v1/travel-time',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pairs})
+    });
+    if(!r.ok) throw new Error('http '+r.status);
+    const {results}=await r.json();
+    (results||[]).forEach((res,i)=>{
+      const node=slots[i]; if(!node) return;
+      if(!res){ node.innerHTML='<span class="bk-trajeto-warn">🚗 rota não encontrada</span>'; return; }
+      const min=Math.round(res.duration_s/60);
+      const km=(res.distance_m/1000).toFixed(1).replace('.',',');
+      node.innerHTML=`<span class="bk-trajeto-line">🚗 <b>${min} min</b> · ${km} km até o próximo</span>`;
+    });
+  }catch(e){
+    slots.forEach(n=>{ n.innerHTML='<span class="bk-trajeto-warn">🚗 não consegui calcular agora</span>'; });
+  }
 }
 async function cancelBk(id){
   if(!confirm('Cancelar este atendimento? O horário será liberado para novos agendamentos.'))return;

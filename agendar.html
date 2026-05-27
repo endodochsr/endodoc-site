@@ -202,11 +202,22 @@ async function confirmBooking(){
     const {error:upErr}=await sb.storage.from('documentos').upload(docPath,file,{upsert:false});
     if(upErr){toast('Erro ao enviar o documento: '+upErr.message,'err');btn.disabled=false;btn.textContent='Confirmar';return;}
   }
+  // Geocodifica o endereço (não bloqueia se falhar — booking salva sem coords)
+  let lat=null, lng=null;
+  try{
+    const r=await fetch(SUPA_URL+'/functions/v1/geocode-address',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({address:addr})
+    });
+    if(r.ok){ const j=await r.json(); lat=j.lat; lng=j.lng; }
+  }catch(_){ /* silencia: salva sem coords */ }
+
   const {error}=await sb.rpc('create_booking',{
     p_slug:prof.slug,p_date:book.date,p_time:book.slot,
     p_office_name:name,p_office_responsible:document.getElementById('bkResp').value.trim(),
     p_office_phone:document.getElementById('bkPhone').value.trim(),p_office_email:document.getElementById('bkEmail').value.trim(),
-    p_office_address:addr,p_procedure:document.getElementById('bkProc').value,p_notes:notes,p_document_path:docPath
+    p_office_address:addr,p_procedure:document.getElementById('bkProc').value,p_notes:notes,p_document_path:docPath,
+    p_office_lat:lat, p_office_lng:lng
   });
   if(error){
     toast(error.message,'err');
