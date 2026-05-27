@@ -47,7 +47,10 @@
   .topbar nav button:hover{background:var(--surface-2);color:var(--ink)}
   .topbar nav button.active{background:var(--primary-soft);color:var(--primary-d)}
   .userchip{display:flex;align-items:center;gap:10px}
-  .avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700}
+  .avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;overflow:hidden}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .pf-avatar{width:96px;height:96px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:38px;font-weight:600;overflow:hidden;flex-shrink:0;box-shadow:var(--shadow)}
+  .pf-avatar img{width:100%;height:100%;object-fit:cover;display:block}
   .container{max-width:840px;margin:0 auto;padding:28px 22px 70px}
   .page-head{margin-bottom:18px}
   .page-head h1{font-size:26px}.page-head p{color:var(--muted);margin-top:4px}
@@ -152,6 +155,7 @@ let sb = null;
 
 const SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const PROCEDURES_LIST=['Tratamento de canal','Retratamento endodôntico','Pulpectomia','Urgência endodôntica','Avaliação / diagnóstico','Cirurgia perirradicular','Clareamento interno'];
 let currentProf=null, appView='visao', dispoDate=todayISO();
 let PLANS_APP=[], selectedSubPeriod=null;
 const PERIOD_LABEL_APP={ mensal:'Mensal', semestral:'Semestral', anual:'Anual' };
@@ -253,7 +257,14 @@ function handleGoogleReturn(){
   else toast('Não foi possível conectar o Google.','err');
   history.replaceState(null,'',location.pathname);
 }
-function setAvatar(){ document.getElementById('avatar').textContent=((currentProf&&currentProf.name)||'D').replace(/^Dr[a]?\.\s*/i,'')[0].toUpperCase(); }
+function setAvatar(){
+  const el=document.getElementById('avatar'); if(!el) return;
+  if(currentProf && currentProf.avatar_url){
+    el.innerHTML='<img src="'+esc(currentProf.avatar_url)+'" alt="">';
+  } else {
+    el.textContent=((currentProf&&currentProf.name)||'D').replace(/^Dr[a]?\.\s*/i,'')[0].toUpperCase();
+  }
+}
 function go(v){
   appView=v;
   document.querySelectorAll('#appNav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
@@ -489,6 +500,7 @@ async function applyRecurring(){
 function viewPerfil(){
   const p=currentProf||{};
   const slug=esc(p.slug||'');
+  const inicial=((p.name||'D').replace(/^Dr[a]?\.\s*/i,'')[0]||'D').toUpperCase();
   let linkBlock;
   if(p.slug_changed){
     linkBlock=`<div class="field"><label>Seu link (personalizado)</label><input value="endodoc.com.br/${slug}" disabled></div>
@@ -499,12 +511,40 @@ function viewPerfil(){
       <div class="hint gold">Você pode personalizar o seu link <b>uma única vez</b>. Depois ele fica fixo, porque os consultórios já vão ter esse endereço salvo. Use letras, números e hífen (ex.: <b>dra-marina</b>).</div>
       <button class="btn btn-primary" style="margin-top:14px" onclick="changeSlug()">Salvar meu link</button>`;
   }
-  return `<div class="page-head"><h1>Meu perfil</h1><p>Seus dados de profissional.</p></div>
+  const avatarHtml = p.avatar_url
+    ? `<img id="pfAvImg" src="${esc(p.avatar_url)}" alt="">`
+    : `<span id="pfAvLetter">${esc(inicial)}</span>`;
+  return `<div class="page-head"><h1>Meu perfil</h1><p>Como você aparece para os consultórios.</p></div>
+  <div class="card" style="max-width:560px">
+    <div class="section-title">Sua foto</div>
+    <div style="display:flex;gap:18px;align-items:center">
+      <div class="pf-avatar">${avatarHtml}</div>
+      <div style="flex:1">
+        <input type="file" id="pfAvFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadAvatar(this.files&&this.files[0])">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('pfAvFile').click()">${p.avatar_url?'Trocar foto':'Adicionar foto'}</button>
+        ${p.avatar_url?`<button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="removeAvatar()">Remover</button>`:''}
+        <p style="font-size:12px;color:var(--muted);margin-top:10px">JPG, PNG ou WEBP. Máx. 3 MB. Imagem quadrada fica melhor.</p>
+      </div>
+    </div>
+  </div>
   <div class="card" style="max-width:560px">
     <div class="field"><label>Nome</label><input id="pfName" value="${esc(p.name||'')}"></div>
     <div class="row2">
       <div class="field"><label>Especialidade</label><input id="pfSpec" value="${esc(p.specialty||'')}"></div>
       <div class="field"><label>Telefone</label><input id="pfPhone" value="${esc(p.phone||'')}"></div>
+    </div>
+    <div class="field"><label>Sobre você</label>
+      <textarea id="pfBio" rows="4" maxlength="500" placeholder="Ex.: Endodontista há 12 anos, especializada em tratamento de canal com microscópio operatório. Atendo consultórios em toda a região metropolitana.">${esc(p.bio||'')}</textarea>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px">Aparece logo abaixo do seu nome na página de agendamento. Máx. 500 caracteres.</p>
+    </div>
+    <div class="field"><label>Procedimentos que você atende</label>
+      <div id="pfProcs" class="chips">
+        ${PROCEDURES_LIST.map(n=>{
+          const on=(p.procedures||[]).includes(n);
+          return `<button type="button" class="chip ${on?'on':''}" onclick="toggleProc(this)">${esc(n)}</button>`;
+        }).join('')}
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px">Clique pra ativar/desativar. Mostrados em destaque na sua página de agendamento.</p>
     </div>
     <button class="btn btn-primary" onclick="saveProfile()">Salvar alterações</button>
   </div>
@@ -513,11 +553,36 @@ function viewPerfil(){
     ${linkBlock}
   </div>`;
 }
+function toggleProc(btn){ btn.classList.toggle('on'); }
+async function uploadAvatar(file){
+  if(!file) return;
+  if(file.size>3*1024*1024){ toast('Foto muito grande (máx 3 MB)','err'); return; }
+  if(!/^image\/(png|jpe?g|webp)$/.test(file.type)){ toast('Use JPG, PNG ou WEBP','err'); return; }
+  toast('Enviando foto…','');
+  const ext = (file.name.match(/\.(\w+)$/)||[null,'jpg'])[1].toLowerCase();
+  const path = currentProf.id + '/avatar-' + Date.now() + '.' + ext;
+  const { error: upErr } = await sb.storage.from('avatares').upload(path, file, { upsert:true, contentType:file.type });
+  if(upErr){ toast('Erro ao enviar: '+upErr.message,'err'); return; }
+  const { data:{ publicUrl } } = sb.storage.from('avatares').getPublicUrl(path);
+  const { error: dbErr } = await sb.from('professionals').update({ avatar_url: publicUrl }).eq('id', currentProf.id);
+  if(dbErr){ toast('Foto enviada mas não consegui salvar: '+dbErr.message,'err'); return; }
+  currentProf.avatar_url = publicUrl;
+  setAvatar(); toast('Foto atualizada','ok'); go('perfil');
+}
+async function removeAvatar(){
+  if(!confirm('Remover sua foto de perfil?')) return;
+  const { error } = await sb.from('professionals').update({ avatar_url: null }).eq('id', currentProf.id);
+  if(error){ toast(error.message,'err'); return; }
+  currentProf.avatar_url = null;
+  setAvatar(); toast('Foto removida','ok'); go('perfil');
+}
 async function saveProfile(){
   const name=val('pfName'),spec=val('pfSpec'),phone=val('pfPhone');
-  const{error}=await sb.from('professionals').update({name,specialty:spec,phone}).eq('id',currentProf.id);
+  const bio=(document.getElementById('pfBio').value||'').trim().slice(0,500);
+  const procs=[...document.querySelectorAll('#pfProcs .chip.on')].map(c=>c.textContent.trim());
+  const{error}=await sb.from('professionals').update({name,specialty:spec,phone,bio,procedures:procs}).eq('id',currentProf.id);
   if(error){toast(error.message,'err');return;}
-  currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;
+  currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;currentProf.bio=bio;currentProf.procedures=procs;
   setAvatar(); toast('Perfil atualizado','ok');
 }
 async function changeSlug(){
