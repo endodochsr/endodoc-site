@@ -56,6 +56,9 @@
   .chip{padding:10px 16px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface);font-weight:600;font-size:14px;color:var(--ink)}
   .chip:hover{border-color:var(--primary)}
   .chip.sel{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .chip.rec{background:#fff8e7;border-color:#e8c87a;color:#7a5a14}
+  .chip.rec:hover{border-color:#c89a2a}
+  .chip.rec.sel{background:var(--primary);color:#fff;border-color:var(--primary)}
   .overlay{position:fixed;inset:0;background:rgba(16,48,47,.42);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
   .overlay.show{display:flex}
   .modal{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:460px;max-height:90vh;overflow:auto;padding:26px}
@@ -86,6 +89,7 @@ const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 let prof=null, availMap={}, calRef=new Date(); calRef.setDate(1);
 let book={date:null,slot:null};
+let smartHints={}; // {slot_time: true} pro dia atualmente aberto
 
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return iso(d);}
@@ -165,12 +169,29 @@ function calendarHTML(){
 }
 function moveMonth(n){calRef.setMonth(calRef.getMonth()+n);render();}
 
-function openDay(ds){book={date:ds,slot:null};renderBooking();}
+async function openDay(ds){
+  book={date:ds,slot:null};
+  smartHints={};
+  renderBooking(); // mostra slots logo
+  // busca recomendações em background e re-renderiza
+  try{
+    const { data, error } = await sb.rpc('get_day_slots_smart',{p_slug:prof.slug,p_date:ds});
+    if(error || !data) return;
+    const map={}; data.forEach(r=>{ if(r.recommended) map[hhmm(r.slot_time)]=true; });
+    smartHints=map;
+    // só re-renderiza se o modal ainda é deste mesmo dia
+    if(book.date===ds) renderBooking();
+  }catch(_){}
+}
 function renderBooking(){
   const free=availMap[book.date]||[];
   openModal(`<h3>${fmtLong(book.date)}</h3><p class="sub">Escolha um horário e preencha seus dados.</p>
     <div class="section-title">Horários livres</div>
-    <div class="chips" style="margin-bottom:18px">${free.map(s=>`<button class="chip ${book.slot===s?'sel':''}" onclick="pickSlot('${s}')">${s}</button>`).join('')||'<span style="color:var(--muted)">Sem vagas.</span>'}</div>
+    <div class="chips" style="margin-bottom:8px">${free.map(s=>{
+      const rec = smartHints[s];
+      return `<button class="chip ${book.slot===s?'sel':''} ${rec?'rec':''}" onclick="pickSlot('${s}')">${rec?'🌟 ':''}${s}</button>`;
+    }).join('')||'<span style="color:var(--muted)">Sem vagas.</span>'}</div>
+    ${Object.keys(smartHints).length?'<p style="font-size:12.5px;color:var(--muted);margin-bottom:18px">🌟 Horários recomendados encaixam bem na agenda do profissional naquele dia.</p>':'<div style="margin-bottom:18px"></div>'}
     <div class="section-title">Dados do consultório</div>
     <div class="field"><label>Nome do consultório *</label><input id="bkName" placeholder="Clínica Sorriso"></div>
     <div class="row2"><div class="field"><label>Responsável</label><input id="bkResp" placeholder="Dr. João"></div>
