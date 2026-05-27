@@ -59,6 +59,8 @@
   .chip.rec{background:#fff8e7;border-color:#e8c87a;color:#7a5a14}
   .chip.rec:hover{border-color:#c89a2a}
   .chip.rec.sel{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .chip.no-fit{background:#fafcfc;color:#b9c6c5;border-color:#eef3f3;cursor:not-allowed}
+  .chip.no-fit:hover{border-color:#eef3f3}
   .overlay{position:fixed;inset:0;background:rgba(16,48,47,.42);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
   .overlay.show{display:flex}
   .modal{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:460px;max-height:90vh;overflow:auto;padding:26px}
@@ -88,7 +90,7 @@ const PROCEDURES=['Tratamento de canal','Retratamento endodôntico','Pulpectomia
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 let prof=null, availMap={}, calRef=new Date(); calRef.setDate(1);
-let book={date:null,slot:null};
+let book={date:null,slots:[],duration:1}; // duration = quantidade de horas (1, 2, 3)
 let smartHints={}; // {slot_time: true} pro dia atualmente aberto
 
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -170,7 +172,7 @@ function calendarHTML(){
 function moveMonth(n){calRef.setMonth(calRef.getMonth()+n);render();}
 
 async function openDay(ds){
-  book={date:ds,slot:null};
+  book={date:ds,slots:[],duration:1};
   smartHints={};
   renderBooking(); // mostra slots logo
   // busca recomendações em background e re-renderiza
@@ -183,15 +185,46 @@ async function openDay(ds){
     if(book.date===ds) renderBooking();
   }catch(_){}
 }
+function addHour(t,n){
+  const [h,m]=t.split(':').map(Number);
+  const total=h*60+m+n*60;
+  return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+}
+function rangeFromStart(start, n){
+  const out=[start];
+  for(let i=1;i<n;i++) out.push(addHour(start,i));
+  return out;
+}
 function renderBooking(){
   const free=availMap[book.date]||[];
-  openModal(`<h3>${fmtLong(book.date)}</h3><p class="sub">Escolha um horário e preencha seus dados.</p>
-    <div class="section-title">Horários livres</div>
+  const freeSet=new Set(free);
+  openModal(`<h3>${fmtLong(book.date)}</h3><p class="sub">Escolha a duração, o horário inicial e preencha os dados.</p>
+    <div class="section-title">Duração do atendimento</div>
+    <div class="field" style="max-width:220px;margin-bottom:14px">
+      <select id="bkDur" onchange="changeDuration(this.value)">
+        <option value="1" ${book.duration===1?'selected':''}>1 hora</option>
+        <option value="2" ${book.duration===2?'selected':''}>2 horas</option>
+        <option value="3" ${book.duration===3?'selected':''}>3 horas</option>
+      </select>
+    </div>
+    <div class="section-title">Horário inicial</div>
     <div class="chips" style="margin-bottom:8px">${free.map(s=>{
       const rec = smartHints[s];
-      return `<button class="chip ${book.slot===s?'sel':''} ${rec?'rec':''}" onclick="pickSlot('${s}')">${rec?'🌟 ':''}${s}</button>`;
+      const range = rangeFromStart(s, book.duration);
+      const fits = range.every(t=>freeSet.has(t));
+      const selected = book.slots.includes(s);
+      const cls = [
+        'chip',
+        selected?'sel':'',
+        rec?'rec':'',
+        !fits?'no-fit':''
+      ].filter(Boolean).join(' ');
+      const click = fits ? `onclick="pickSlot('${s}')"` : '';
+      const title = fits ? '' : ` title="não cabe a duração escolhida"`;
+      return `<button class="${cls}" data-s="${s}" ${click}${title}>${rec?'🌟 ':''}${s}</button>`;
     }).join('')||'<span style="color:var(--muted)">Sem vagas.</span>'}</div>
-    ${Object.keys(smartHints).length?'<p style="font-size:12.5px;color:var(--muted);margin-bottom:18px">🌟 Horários recomendados encaixam bem na agenda do profissional naquele dia.</p>':'<div style="margin-bottom:18px"></div>'}
+    ${Object.keys(smartHints).length?'<p style="font-size:12.5px;color:var(--muted);margin-bottom:6px">🌟 Encaixa bem na agenda do profissional naquele dia.</p>':''}
+    ${book.duration>1?'<p style="font-size:12.5px;color:var(--muted);margin-bottom:18px">Horários acinzentados não cabem a duração escolhida.</p>':'<div style="margin-bottom:18px"></div>'}
     <div class="section-title">Dados do consultório</div>
     <div class="field"><label>Nome do consultório *</label><input id="bkName" placeholder="Clínica Sorriso"></div>
     <div class="row2"><div class="field"><label>Responsável</label><input id="bkResp" placeholder="Dr. João"></div>
@@ -202,9 +235,25 @@ function renderBooking(){
     <div class="field"><label>Observações * — nome do paciente e breve relato</label><textarea id="bkNotes" placeholder="Ex.: Paciente: João Silva. Procedimento: tratamento de canal no dente 36, dor há 3 dias."></textarea></div>
     <div class="field"><label>Documento (opcional) — exame, raio-x, encaminhamento</label><input type="file" id="bkFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"></div>
     <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-block" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary btn-block" id="bkConfirm" ${book.slot?'':'disabled'} onclick="confirmBooking()">Confirmar</button></div>`);
+      <button class="btn btn-primary btn-block" id="bkConfirm" ${book.slots.length?'':'disabled'} onclick="confirmBooking()">Confirmar</button></div>`);
 }
-function pickSlot(s){book.slot=s;document.querySelectorAll('#modal .chips .chip').forEach(c=>c.classList.toggle('sel',c.textContent.trim()===s));const b=document.getElementById('bkConfirm');if(b)b.disabled=false;}
+function changeDuration(v){
+  book.duration=Math.max(1,Math.min(3,parseInt(v,10)||1));
+  book.slots=[]; // reseta seleção quando muda duração
+  renderBooking();
+}
+function pickSlot(start){
+  const free=availMap[book.date]||[];
+  const freeSet=new Set(free);
+  const range=rangeFromStart(start, book.duration);
+  if(!range.every(t=>freeSet.has(t))){ toast('Esses horários consecutivos não estão livres.','err'); return; }
+  book.slots=range;
+  // atualiza visual
+  document.querySelectorAll('#modal .chips .chip').forEach(c=>{
+    c.classList.toggle('sel', book.slots.includes(c.dataset.s));
+  });
+  const b=document.getElementById('bkConfirm'); if(b) b.disabled=false;
+}
 async function confirmBooking(){
   const name=document.getElementById('bkName').value.trim();
   if(!name){toast('Informe o nome do consultório.','err');return;}
@@ -233,8 +282,8 @@ async function confirmBooking(){
     if(r.ok){ const j=await r.json(); lat=j.lat; lng=j.lng; }
   }catch(_){ /* silencia: salva sem coords */ }
 
-  const {error}=await sb.rpc('create_booking',{
-    p_slug:prof.slug,p_date:book.date,p_time:book.slot,
+  const {error}=await sb.rpc('create_booking_multi',{
+    p_slug:prof.slug,p_date:book.date,p_times:book.slots,
     p_office_name:name,p_office_responsible:document.getElementById('bkResp').value.trim(),
     p_office_phone:document.getElementById('bkPhone').value.trim(),p_office_email:document.getElementById('bkEmail').value.trim(),
     p_office_address:addr,p_procedure:document.getElementById('bkProc').value,p_notes:notes,p_document_path:docPath,
@@ -247,13 +296,15 @@ async function confirmBooking(){
     return;
   }
   // sucesso
-  const d=book.date, s=book.slot;
-  // remove o slot localmente
-  availMap[d]=(availMap[d]||[]).filter(x=>x!==s);
+  const d=book.date, slots=book.slots.slice();
+  // remove os slots localmente
+  availMap[d]=(availMap[d]||[]).filter(x=>!slots.includes(x));
   render();
+  const fim = addHour(slots[slots.length-1], 1);
+  const horarioStr = slots.length===1 ? `às ${slots[0]}` : `de ${slots[0]} às ${fim}`;
   openModal(`<div style="text-align:center"><div style="font-size:46px">✅</div>
     <h3 style="margin-top:6px">Agendamento confirmado!</h3>
-    <p class="sub" style="margin-top:8px">${esc(name)}<br>${fmtLong(d)} às ${s}<br>com ${esc(prof.name)}</p>
+    <p class="sub" style="margin-top:8px">${esc(name)}<br>${fmtLong(d)} ${horarioStr}<br>com ${esc(prof.name)}</p>
     <button class="btn btn-primary btn-block" onclick="closeModal()">Concluir</button></div>`);
 }
 
