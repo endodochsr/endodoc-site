@@ -115,6 +115,11 @@
     .pub-badges{grid-template-columns:1fr;margin-top:-6px}
     .pub-howit{grid-template-columns:1fr}
     .pub-bio-inner{font-size:15.5px}
+    .pub-cal-card{padding:14px}
+    .cal-grid{gap:5px}
+    .cal-cell .num{font-size:14px}
+    .slot-dot{font-size:9.5px;line-height:1.1}
+    .legend{justify-content:center;font-size:12px}
   }
 </style>
 </head>
@@ -243,6 +248,10 @@ function calendarHTML(){
     else{cls+=' avail';click=`onclick="openDay('${ds}')"`;extra=`<div class="slot-dot">${free} ${free===1?'vaga':'vagas'}</div>`;}
     cells+=`<div class="${cls}" ${click}><div class="num">${d}</div>${extra}</div>`;
   }
+  // padding: completa até múltiplo de 7 (sempre semanas inteiras)
+  const total = start + days;
+  const pad = (7 - (total % 7)) % 7;
+  for(let i=0;i<pad;i++) cells+='<div class="cal-cell empty"></div>';
   return `<div class="cal-head"><div class="cal-month">${MES[m]} ${y}</div>
     <div class="cal-nav"><button onclick="moveMonth(-1)">‹</button><button onclick="moveMonth(1)">›</button></div></div>
     <div class="cal-grid">${DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('')}</div>
