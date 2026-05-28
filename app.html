@@ -1275,9 +1275,10 @@ async function viewAnamnese(anamId){
 async function exportAnamnesePDF(){
   const a = window._lastAnamnese;
   if(!a){ toast('Erro: dados não encontrados','err'); return; }
-  if(typeof html2pdf === 'undefined'){
-    toast('Aguarde a página carregar e tente de novo','err'); return;
-  }
+  // jsPDF vem dentro do bundle do html2pdf
+  const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  if(!jsPDFCtor){ toast('Aguarde a página carregar','err'); return; }
+
   const b = a.bookings || {};
   const pname = b.patient_name || 'Paciente';
   const profName = (currentProf && currentProf.name) || '';
@@ -1287,100 +1288,161 @@ async function exportAnamnesePDF(){
   const consultaTime = b.slot_time ? b.slot_time.slice(0,5) : '';
   const docGenerated = new Date().toLocaleString('pt-BR');
 
-  const rowsHtml = ANAM_QUESTIONS.map(([id,label])=>{
-    const v = (a.data||{})[id];
-    if(!v) return '';
-    const display = v==='sim' ? '<b style="color:#c0492f">SIM</b>'
-                  : v==='nao' ? '<b style="color:#2e7d57">Não</b>'
-                  : v==='naosei' ? '<span style="color:#888">Não sei</span>'
-                  : esc(v);
-    const det = (a.data||{})[id+'_detail'];
-    const detailHtml = det
-      ? `<div style="margin-top:4px;padding:6px 10px;background:#fffbf2;border-left:2px solid #c2a063;font-size:11.5px;color:#3a2f17;line-height:1.4">${esc(det)}</div>`
-      : '';
-    return `<tr>
-      <td style="padding:7px 10px 7px 0;border-bottom:1px solid #eee;color:#5e706f;font-size:11px;vertical-align:top;width:48%">${esc(label)}</td>
-      <td style="padding:7px 0;border-bottom:1px solid #eee;font-size:12px;vertical-align:top">${display}${detailHtml}</td>
-    </tr>`;
-  }).filter(Boolean).join('');
-
-  // monta um container REAL (visível) — html2canvas precisa que opacity seja 1 e o elemento esteja renderizado
-  const container = document.createElement('div');
-  container.style.cssText = 'position:absolute;left:0;top:0;width:720px;background:#ffffff;color:#16302f;font-family:Helvetica,Arial,sans-serif;padding:32px;box-sizing:border-box';
-  container.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:2px solid #0a5d5c;margin-bottom:22px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#0a5d5c;color:#ffffff;text-align:center;line-height:38px;font-family:Georgia,serif;font-size:20px;font-weight:700">E</div>
-        <div>
-          <div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:#0a5d5c">endodoc</div>
-          <div style="font-size:10px;color:#5e706f;letter-spacing:0.05em;text-transform:uppercase">Anamnese pre-consulta</div>
-        </div>
-      </div>
-      <div style="text-align:right;font-size:10.5px;color:#5e706f;line-height:1.5">
-        <div><b style="color:#16302f">${esc(profName)}</b></div>
-        <div>${esc(profSpec)}</div>
-      </div>
-    </div>
-
-    <div style="background:#f5efe6;padding:14px 18px;border-radius:10px;margin-bottom:22px">
-      <table style="width:100%;font-size:12px;border-collapse:collapse">
-        <tr>
-          <td style="padding:3px 12px 3px 0;width:50%"><span style="color:#5e706f">Paciente:</span> <b>${esc(pname)}</b></td>
-          <td style="padding:3px 0"><span style="color:#5e706f">Consulta:</span> <b>${esc(consultaDate)}${consultaTime?' as '+esc(consultaTime):''}</b></td>
-        </tr>
-        <tr>
-          <td style="padding:3px 12px 3px 0"><span style="color:#5e706f">Consultorio:</span> ${esc(b.office_name||'-')}</td>
-          <td style="padding:3px 0"><span style="color:#5e706f">Procedimento:</span> ${esc(b.procedure||'-')}</td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:3px 0"><span style="color:#5e706f">Anamnese preenchida em:</span> ${esc(filledStr)}</td>
-        </tr>
-      </table>
-    </div>
-
-    <table style="width:100%;border-collapse:collapse;border-top:2px solid #16302f">
-      ${rowsHtml}
-    </table>
-
-    <div style="margin-top:30px;padding-top:14px;border-top:1px solid #dddddd;text-align:center;font-size:10px;color:#888888">
-      Documento gerado em ${docGenerated} &middot; EndoDoc &middot; endodoc.com.br
-    </div>
-  `;
-  // overlay que cobre tudo durante a geração (esconde o container que tá visível pra biblioteca)
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,255,0.97);z-index:99999;display:grid;place-items:center;font-family:Inter,sans-serif';
-  overlay.innerHTML = `<div style="text-align:center">
-    <div style="font-size:42px;line-height:1;margin-bottom:14px">📥</div>
-    <div style="font-family:Fraunces,Georgia,serif;font-size:22px;color:#16302f;margin-bottom:6px">Gerando seu PDF…</div>
-    <div style="color:#5e706f;font-size:13.5px">Não feche essa janela.</div>
-  </div>`;
-  document.body.appendChild(overlay);
-
-  document.body.appendChild(container);
-  // força reflow pra garantir que o layout foi calculado antes do canvas capturar
-  void container.offsetHeight;
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-  const safeName = pname.replace(/[^\w\s-]/g,'').replace(/\s+/g,'_');
-  const fileDate = b.slot_date ? b.slot_date.replace(/-/g,'') : '';
-  const filename = `Anamnese_${safeName}${fileDate?'_'+fileDate:''}.pdf`;
-
+  toast('Gerando PDF…','');
   try{
-    await html2pdf().set({
-      margin: 10,
-      filename,
-      image: { type:'jpeg', quality:0.96 },
-      html2canvas: { scale: 2, useCORS:true, logging:false, backgroundColor:'#ffffff' },
-      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-      pagebreak: { mode:['avoid-all','css','legacy'] }
-    }).from(container).save();
+    const doc = new jsPDFCtor({ unit:'mm', format:'a4', orientation:'portrait' });
+    const pageW = 210, pageH = 297;
+    const mL = 15, mR = 15, mB = 18;
+    const contentW = pageW - mL - mR;
+    let y = 15;
+
+    // ===== Cabeçalho =====
+    // bloco "E"
+    doc.setFillColor(10,93,92);
+    doc.roundedRect(mL, y, 12, 12, 2, 2, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(16);
+    doc.text('E', mL+6, y+8.6, {align:'center'});
+
+    // wordmark
+    doc.setTextColor(10,93,92);
+    doc.setFont('helvetica','bold'); doc.setFontSize(16);
+    doc.text('endodoc', mL+16, y+6.5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    doc.setTextColor(94,112,111);
+    doc.text('ANAMNESE PRÉ-CONSULTA', mL+16, y+10);
+
+    // profissional à direita
+    doc.setTextColor(22,48,47);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text(profName, pageW-mR, y+5, {align:'right'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    doc.setTextColor(94,112,111);
+    doc.text(profSpec, pageW-mR, y+10, {align:'right'});
+
+    y += 14;
+    doc.setDrawColor(10,93,92); doc.setLineWidth(0.5);
+    doc.line(mL, y, pageW-mR, y);
+    y += 6;
+
+    // ===== Bloco de dados =====
+    const blocoH = 26;
+    doc.setFillColor(245,239,230);
+    doc.roundedRect(mL, y, contentW, blocoH, 2, 2, 'F');
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    const colL = mL + 4;
+    const colR = mL + contentW/2 + 4;
+    let yy = y + 5;
+
+    doc.setTextColor(94,112,111); doc.text('Paciente:', colL, yy);
+    doc.setTextColor(22,48,47); doc.setFont('helvetica','bold');
+    doc.text(pname, colL+16, yy);
+
+    doc.setFont('helvetica','normal'); doc.setTextColor(94,112,111);
+    doc.text('Consulta:', colR, yy);
+    doc.setTextColor(22,48,47); doc.setFont('helvetica','bold');
+    doc.text(consultaDate + (consultaTime?' às '+consultaTime:''), colR+16, yy);
+
+    yy += 6;
+    doc.setFont('helvetica','normal'); doc.setTextColor(94,112,111);
+    doc.text('Consultório:', colL, yy);
+    doc.setTextColor(22,48,47);
+    doc.text(String(b.office_name||'—'), colL+19, yy);
+    doc.setTextColor(94,112,111);
+    doc.text('Procedimento:', colR, yy);
+    doc.setTextColor(22,48,47);
+    doc.text(String(b.procedure||'—'), colR+22, yy);
+
+    yy += 6;
+    doc.setTextColor(94,112,111);
+    doc.text('Preenchida em:', colL, yy);
+    doc.setTextColor(22,48,47);
+    doc.text(filledStr, colL+23, yy);
+
+    y += blocoH + 6;
+
+    // ===== Tabela de perguntas =====
+    doc.setDrawColor(22,48,47); doc.setLineWidth(0.5);
+    doc.line(mL, y, pageW-mR, y);
+    y += 4;
+
+    const labelW = contentW * 0.50;
+    const answerX = mL + labelW + 4;
+    const answerW = contentW - labelW - 4;
+
+    function checkBreak(extra){
+      if(y + extra > pageH - mB){
+        doc.addPage();
+        y = 15;
+      }
+    }
+
+    for(const [id,label] of ANAM_QUESTIONS){
+      const v = (a.data||{})[id];
+      if(!v) continue;
+
+      // Quebra texto longo
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+      const labelLines = doc.splitTextToSize(label, labelW - 2);
+
+      doc.setFontSize(9);
+      let answerText = v, answerColor = [22,48,47], answerBold = false;
+      if(v==='sim'){ answerText='SIM';    answerColor=[192,73,47];  answerBold=true; }
+      else if(v==='nao'){ answerText='Não'; answerColor=[46,125,87];  answerBold=true; }
+      else if(v==='naosei'){ answerText='Não sei'; answerColor=[136,136,136]; }
+      const answerLines = doc.splitTextToSize(answerText, answerW - 2);
+
+      const lineH = 4.2;
+      const rowH = Math.max(labelLines.length, answerLines.length) * lineH + 2;
+      checkBreak(rowH + 2);
+
+      doc.setTextColor(94,112,111); doc.setFontSize(8.5);
+      doc.setFont('helvetica','normal');
+      doc.text(labelLines, mL, y+3);
+
+      doc.setTextColor(...answerColor);
+      doc.setFont('helvetica', answerBold?'bold':'normal');
+      doc.setFontSize(9);
+      doc.text(answerLines, answerX, y+3);
+
+      y += rowH;
+
+      // detalhe (quando "Sim")
+      const det = (a.data||{})[id+'_detail'];
+      if(det){
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+        const detLines = doc.splitTextToSize(String(det), answerW - 4);
+        const detH = detLines.length * 4 + 4;
+        checkBreak(detH + 2);
+        // background dourado claro
+        doc.setFillColor(255,251,242);
+        doc.rect(answerX-2, y, answerW, detH, 'F');
+        // barra dourada à esquerda
+        doc.setFillColor(194,160,99);
+        doc.rect(answerX-2, y, 1, detH, 'F');
+        doc.setTextColor(58,47,23);
+        doc.text(detLines, answerX+1, y+4);
+        y += detH;
+      }
+
+      // linha separadora
+      doc.setDrawColor(225,225,225); doc.setLineWidth(0.2);
+      doc.line(mL, y+1, pageW-mR, y+1);
+      y += 3;
+    }
+
+    // ===== Rodapé na última página =====
+    doc.setFontSize(7.5); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
+    doc.text('Documento gerado em '+docGenerated+'  ·  EndoDoc  ·  endodoc.com.br', pageW/2, pageH-8, {align:'center'});
+
+    const safeName = pname.replace(/[^\w\s-]/g,'').replace(/\s+/g,'_');
+    const fileDate = b.slot_date ? b.slot_date.replace(/-/g,'') : '';
+    doc.save(`Anamnese_${safeName}${fileDate?'_'+fileDate:''}.pdf`);
     toast('PDF baixado!','ok');
   }catch(e){
     console.error(e);
     toast('Erro ao gerar PDF: '+(e.message||e),'err');
-  }finally{
-    if(container.parentNode) container.parentNode.removeChild(container);
-    if(overlay.parentNode) overlay.parentNode.removeChild(overlay);
   }
 }
 async function resendAnamnese(bookingId){
