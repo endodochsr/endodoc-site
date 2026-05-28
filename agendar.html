@@ -76,6 +76,14 @@
   .overlay.show{display:flex}
   .modal{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:460px;max-height:90vh;overflow:auto;padding:26px}
   .modal h3{font-size:21px}.modal .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .step-bar{display:flex;align-items:center;gap:8px;margin:14px 0 4px}
+  .step-item{display:flex;align-items:center;gap:8px;flex:1;opacity:.45;transition:.18s}
+  .step-item.on{opacity:1}
+  .step-num{width:26px;height:26px;border-radius:50%;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0}
+  .step-item.on .step-num{background:var(--primary);color:#fff}
+  .step-lbl{font-size:13px;font-weight:600;color:var(--ink)}
+  .step-sep{flex:0 0 24px;height:2px;background:var(--surface-2);border-radius:1px}
+  @media(max-width:420px){.step-lbl{font-size:12px}}
   .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:6px 0 10px}
   .center{min-height:60vh;display:grid;place-items:center;color:var(--muted);text-align:center;padding:20px}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:80;max-width:90vw;text-align:center}
@@ -152,7 +160,10 @@ const PROCEDURES=['Tratamento de canal','Retratamento endodôntico','Pulpectomia
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 let prof=null, availMap={}, calRef=new Date(); calRef.setDate(1);
-let book={date:null,slots:[],duration:1}; // duration = quantidade de horas (1, 2, 3)
+let book={date:null,slots:[],duration:1,step:1,
+  officeName:'',officeResp:'',officePhone:'',officeEmail:'',officeAddr:'',
+  patName:'',patPhone:'',procedure:'',notes:''
+}; // step = 1 ou 2
 let smartHints={}; // {slot_time: true} pro dia atualmente aberto
 
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -272,7 +283,10 @@ function calendarHTML(){
 function moveMonth(n){calRef.setMonth(calRef.getMonth()+n);render();}
 
 async function openDay(ds){
-  book={date:ds,slots:[],duration:1};
+  book={date:ds,slots:[],duration:1,step:1,
+    officeName:'',officeResp:'',officePhone:'',officeEmail:'',officeAddr:'',
+    patName:'',patPhone:'',procedure:'',notes:''
+  };
   smartHints={};
   renderBooking(); // mostra slots logo
   // busca recomendações em background e re-renderiza
@@ -295,10 +309,36 @@ function rangeFromStart(start, n){
   for(let i=1;i<n;i++) out.push(addHour(start,i));
   return out;
 }
+function stepIndicator(){
+  return `<div class="step-bar">
+    <div class="step-item ${book.step>=1?'on':''}">
+      <span class="step-num">1</span><span class="step-lbl">Hora e local</span>
+    </div>
+    <div class="step-sep"></div>
+    <div class="step-item ${book.step>=2?'on':''}">
+      <span class="step-num">2</span><span class="step-lbl">Paciente e caso</span>
+    </div>
+  </div>`;
+}
+function maskPhoneInput(e){
+  let v = e.target.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>10)      v = '('+v.slice(0,2)+') '+v.slice(2,7)+'-'+v.slice(7);
+  else if(v.length>6)  v = '('+v.slice(0,2)+') '+v.slice(2,6)+'-'+v.slice(6);
+  else if(v.length>2)  v = '('+v.slice(0,2)+') '+v.slice(2);
+  else if(v.length>0)  v = '('+v;
+  e.target.value = v;
+}
 function renderBooking(){
+  if(book.step===2) return renderBookingStep2();
+  return renderBookingStep1();
+}
+function renderBookingStep1(){
   const free=availMap[book.date]||[];
   const freeSet=new Set(free);
-  openModal(`<h3>${fmtLong(book.date)}</h3><p class="sub">Escolha a duração, o horário inicial e preencha os dados.</p>
+  openModal(`<h3>${fmtLong(book.date)}</h3>
+    ${stepIndicator()}
+    <p class="sub" style="margin-top:14px">Escolha quando vai ser e onde será o atendimento.</p>
+
     <div class="section-title">Duração do atendimento</div>
     <div class="field" style="max-width:220px;margin-bottom:14px">
       <select id="bkDur" onchange="changeDuration(this.value)">
@@ -313,38 +353,75 @@ function renderBooking(){
       const range = rangeFromStart(s, book.duration);
       const fits = range.every(t=>freeSet.has(t));
       const selected = book.slots.includes(s);
-      const cls = [
-        'chip',
-        selected?'sel':'',
-        rec?'rec':'',
-        !fits?'no-fit':''
-      ].filter(Boolean).join(' ');
+      const cls = ['chip',selected?'sel':'',rec?'rec':'',!fits?'no-fit':''].filter(Boolean).join(' ');
       const click = fits ? `onclick="pickSlot('${s}')"` : '';
       const title = fits ? '' : ` title="não cabe a duração escolhida"`;
       return `<button class="${cls}" data-s="${s}" ${click}${title}>${rec?'🌟 ':''}${s}</button>`;
     }).join('')||'<span style="color:var(--muted)">Sem vagas.</span>'}</div>
     ${Object.keys(smartHints).length?'<p style="font-size:12.5px;color:var(--muted);margin-bottom:6px">🌟 Encaixa bem na agenda do profissional naquele dia.</p>':''}
     ${book.duration>1?'<p style="font-size:12.5px;color:var(--muted);margin-bottom:18px">Horários acinzentados não cabem a duração escolhida.</p>':'<div style="margin-bottom:18px"></div>'}
-    <div class="section-title">Dados do consultório</div>
-    <div class="field"><label>Nome do consultório *</label><input id="bkName" placeholder="Clínica Sorriso"></div>
-    <div class="row2"><div class="field"><label>Responsável</label><input id="bkResp" placeholder="Dr. João"></div>
-      <div class="field"><label>Telefone</label><input id="bkPhone" placeholder="(11) 90000-0000"></div></div>
-    <div class="field"><label>E-mail</label><input id="bkEmail" type="email" placeholder="contato@consultorio.com"></div>
-    <div class="field"><label>Endereço do consultório * — onde será o atendimento</label><input id="bkAddr" placeholder="Rua, nº, complemento, bairro, cidade"></div>
-    <div class="field"><label>Procedimento</label><select id="bkProc">${PROCEDURES.map(p=>`<option>${p}</option>`).join('')}</select></div>
 
-    <div class="section-title" style="margin-top:14px">Dados do paciente</div>
-    <div class="field"><label>Nome do paciente *</label><input id="bkPatName" placeholder="João Silva"></div>
-    <div class="field"><label>WhatsApp do paciente</label><input id="bkPatPhone" type="tel" placeholder="(11) 99999-9999" inputmode="tel">
-      <p style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4">📱 Ao confirmar, o EndoDoc envia 1 mensagem no WhatsApp do paciente com a anamnese pré-consulta. Marque vazio se não quiser enviar.</p>
+    <div class="section-title">Dados do consultório</div>
+    <div class="field"><label>Nome do consultório *</label><input id="bkName" placeholder="Clínica Sorriso" value="${esc(book.officeName)}"></div>
+    <div class="row2"><div class="field"><label>Responsável</label><input id="bkResp" placeholder="Dr. João" value="${esc(book.officeResp)}"></div>
+      <div class="field"><label>Telefone</label><input id="bkPhone" type="tel" inputmode="tel" placeholder="(11) 90000-0000" value="${esc(book.officePhone)}" oninput="maskPhoneInput(event)"></div></div>
+    <div class="field"><label>E-mail</label><input id="bkEmail" type="email" placeholder="contato@consultorio.com" value="${esc(book.officeEmail)}"></div>
+    <div class="field"><label>Endereço do consultório * — onde será o atendimento</label><input id="bkAddr" placeholder="Rua, nº, complemento, bairro, cidade" value="${esc(book.officeAddr)}"></div>
+
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-ghost btn-block" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary btn-block" onclick="goToStep2()">Próximo →</button>
+    </div>`);
+}
+function renderBookingStep2(){
+  openModal(`<h3>${fmtLong(book.date)}</h3>
+    ${stepIndicator()}
+    <p class="sub" style="margin-top:14px">Quem é o paciente e qual o caso.</p>
+
+    <div class="section-title">Dados do paciente</div>
+    <div class="field"><label>Nome do paciente *</label><input id="bkPatName" placeholder="João Silva" value="${esc(book.patName)}"></div>
+    <div class="field"><label>WhatsApp do paciente</label><input id="bkPatPhone" type="tel" inputmode="tel" placeholder="(11) 99999-9999" value="${esc(book.patPhone)}" oninput="maskPhoneInput(event)">
+      <p style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4">📱 Ao confirmar, o EndoDoc envia 1 mensagem no WhatsApp do paciente com a anamnese pré-consulta. Deixe vazio se não quiser enviar.</p>
     </div>
 
-    <div class="field"><label>Observações * — breve relato do caso</label><textarea id="bkNotes" placeholder="Ex.: Tratamento de canal no dente 36, dor há 3 dias, sensibilidade ao frio."></textarea></div>
+    <div class="section-title" style="margin-top:14px">Sobre o caso</div>
+    <div class="field"><label>Procedimento</label><select id="bkProc">${PROCEDURES.map(p=>`<option ${book.procedure===p?'selected':''}>${p}</option>`).join('')}</select></div>
+    <div class="field"><label>Observações * — breve relato do caso</label><textarea id="bkNotes" placeholder="Ex.: Tratamento de canal no dente 36, dor há 3 dias, sensibilidade ao frio.">${esc(book.notes)}</textarea></div>
     <div class="field"><label>Documento (opcional) — exame, raio-x, encaminhamento</label><input type="file" id="bkFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"></div>
-    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-block" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary btn-block" id="bkConfirm" ${book.slots.length?'':'disabled'} onclick="confirmBooking()">Confirmar</button></div>`);
+
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-ghost btn-block" onclick="backToStep1()">← Voltar</button>
+      <button class="btn btn-primary btn-block" id="bkConfirm" onclick="confirmBooking()">Confirmar reserva</button>
+    </div>`);
+}
+function saveStep1ToState(){
+  book.officeName  = (document.getElementById('bkName')?.value||'').trim();
+  book.officeResp  = (document.getElementById('bkResp')?.value||'').trim();
+  book.officePhone = (document.getElementById('bkPhone')?.value||'').trim();
+  book.officeEmail = (document.getElementById('bkEmail')?.value||'').trim();
+  book.officeAddr  = (document.getElementById('bkAddr')?.value||'').trim();
+}
+function saveStep2ToState(){
+  book.patName   = (document.getElementById('bkPatName')?.value||'').trim();
+  book.patPhone  = (document.getElementById('bkPatPhone')?.value||'').trim();
+  book.procedure = document.getElementById('bkProc')?.value || '';
+  book.notes     = (document.getElementById('bkNotes')?.value||'').trim();
+}
+function goToStep2(){
+  saveStep1ToState();
+  if(!book.slots.length){ toast('Escolha um horário inicial','err'); return; }
+  if(!book.officeName){ toast('Informe o nome do consultório','err'); return; }
+  if(!book.officeAddr){ toast('Informe o endereço do consultório','err'); return; }
+  book.step = 2;
+  renderBooking();
+}
+function backToStep1(){
+  saveStep2ToState();
+  book.step = 1;
+  renderBooking();
 }
 function changeDuration(v){
+  saveStep1ToState(); // preserva o que já foi digitado
   book.duration=Math.max(1,Math.min(3,parseInt(v,10)||1));
   book.slots=[]; // reseta seleção quando muda duração
   renderBooking();
@@ -362,16 +439,17 @@ function pickSlot(start){
   const b=document.getElementById('bkConfirm'); if(b) b.disabled=false;
 }
 async function confirmBooking(){
-  const name=document.getElementById('bkName').value.trim();
+  saveStep2ToState();
+  const name=book.officeName;
   if(!name){toast('Informe o nome do consultório.','err');return;}
-  const addr=document.getElementById('bkAddr').value.trim();
+  const addr=book.officeAddr;
   if(!addr){toast('Informe o endereço do consultório (onde será o atendimento).','err');return;}
-  const patName=document.getElementById('bkPatName').value.trim();
+  const patName=book.patName;
   if(!patName){toast('Informe o nome do paciente.','err');return;}
-  let patPhone=(document.getElementById('bkPatPhone').value||'').replace(/\D/g,'');
+  let patPhone=(book.patPhone||'').replace(/\D/g,'');
   if(patPhone && patPhone.length<10){toast('WhatsApp do paciente parece incompleto (DDD + número).','err');return;}
   if(patPhone && patPhone.length>11){toast('WhatsApp do paciente com mais dígitos que o esperado.','err');return;}
-  const notes=document.getElementById('bkNotes').value.trim();
+  const notes=book.notes;
   if(!notes){toast('Preencha as observações sobre o caso.','err');return;}
   const btn=document.getElementById('bkConfirm');btn.disabled=true;btn.textContent='Confirmando…';
   let docPath=null;
@@ -396,9 +474,9 @@ async function confirmBooking(){
 
   const {error}=await sb.rpc('create_booking_multi',{
     p_slug:prof.slug,p_date:book.date,p_times:book.slots,
-    p_office_name:name,p_office_responsible:document.getElementById('bkResp').value.trim(),
-    p_office_phone:document.getElementById('bkPhone').value.trim(),p_office_email:document.getElementById('bkEmail').value.trim(),
-    p_office_address:addr,p_procedure:document.getElementById('bkProc').value,p_notes:notes,p_document_path:docPath,
+    p_office_name:name,p_office_responsible:book.officeResp,
+    p_office_phone:book.officePhone,p_office_email:book.officeEmail,
+    p_office_address:addr,p_procedure:book.procedure||'',p_notes:notes,p_document_path:docPath,
     p_office_lat:lat, p_office_lng:lng,
     p_patient_name:patName, p_patient_phone:patPhone||null
   });
