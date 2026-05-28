@@ -1304,43 +1304,53 @@ async function exportAnamnesePDF(){
     </tr>`;
   }).filter(Boolean).join('');
 
-  // monta um container offscreen com layout pra impressão A4
+  // monta um container que vai ficar visível brevemente (não offscreen, html2canvas precisa renderizar)
   const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:760px;background:#fff;color:#16302f;font-family:Helvetica,Arial,sans-serif;padding:40px;box-sizing:border-box';
+  container.style.cssText = 'position:absolute;left:0;top:0;width:720px;background:#ffffff;color:#16302f;font-family:Helvetica,Arial,sans-serif;padding:32px;box-sizing:border-box;z-index:-1;opacity:0;pointer-events:none';
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:2px solid #0a5d5c;margin-bottom:22px">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#0a5d5c;color:#fff;display:grid;place-items:center;font-family:Georgia,serif;font-size:20px;font-weight:700">E</div>
+        <div style="width:38px;height:38px;border-radius:10px;background:#0a5d5c;color:#ffffff;text-align:center;line-height:38px;font-family:Georgia,serif;font-size:20px;font-weight:700">E</div>
         <div>
           <div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:#0a5d5c">endodoc</div>
-          <div style="font-size:9.5px;color:#5e706f;letter-spacing:.05em;text-transform:uppercase">Anamnese pré-consulta</div>
+          <div style="font-size:10px;color:#5e706f;letter-spacing:0.05em;text-transform:uppercase">Anamnese pre-consulta</div>
         </div>
       </div>
-      <div style="text-align:right;font-size:10px;color:#5e706f;line-height:1.5">
+      <div style="text-align:right;font-size:10.5px;color:#5e706f;line-height:1.5">
         <div><b style="color:#16302f">${esc(profName)}</b></div>
         <div>${esc(profSpec)}</div>
       </div>
     </div>
 
     <div style="background:#f5efe6;padding:14px 18px;border-radius:10px;margin-bottom:22px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:11.5px">
-        <div><span style="color:#5e706f">Paciente:</span> <b>${esc(pname)}</b></div>
-        <div><span style="color:#5e706f">Consulta:</span> <b>${esc(consultaDate)}${consultaTime?' às '+esc(consultaTime):''}</b></div>
-        <div><span style="color:#5e706f">Consultório:</span> ${esc(b.office_name||'—')}</div>
-        <div><span style="color:#5e706f">Procedimento:</span> ${esc(b.procedure||'—')}</div>
-        <div><span style="color:#5e706f">Anamnese preenchida em:</span> ${esc(filledStr)}</div>
-      </div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <tr>
+          <td style="padding:3px 12px 3px 0;width:50%"><span style="color:#5e706f">Paciente:</span> <b>${esc(pname)}</b></td>
+          <td style="padding:3px 0"><span style="color:#5e706f">Consulta:</span> <b>${esc(consultaDate)}${consultaTime?' as '+esc(consultaTime):''}</b></td>
+        </tr>
+        <tr>
+          <td style="padding:3px 12px 3px 0"><span style="color:#5e706f">Consultorio:</span> ${esc(b.office_name||'-')}</td>
+          <td style="padding:3px 0"><span style="color:#5e706f">Procedimento:</span> ${esc(b.procedure||'-')}</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:3px 0"><span style="color:#5e706f">Anamnese preenchida em:</span> ${esc(filledStr)}</td>
+        </tr>
+      </table>
     </div>
 
     <table style="width:100%;border-collapse:collapse;border-top:2px solid #16302f">
       ${rowsHtml}
     </table>
 
-    <div style="margin-top:30px;padding-top:14px;border-top:1px solid #ddd;text-align:center;font-size:9.5px;color:#888">
-      Documento gerado em ${docGenerated} · EndoDoc · endodoc.com.br
+    <div style="margin-top:30px;padding-top:14px;border-top:1px solid #dddddd;text-align:center;font-size:10px;color:#888888">
+      Documento gerado em ${docGenerated} &middot; EndoDoc &middot; endodoc.com.br
     </div>
   `;
   document.body.appendChild(container);
+
+  // força reflow pra garantir que o layout foi calculado antes do canvas capturar
+  void container.offsetHeight;
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
   const safeName = pname.replace(/[^\w\s-]/g,'').replace(/\s+/g,'_');
   const fileDate = b.slot_date ? b.slot_date.replace(/-/g,'') : '';
@@ -1349,18 +1359,19 @@ async function exportAnamnesePDF(){
   toast('Gerando PDF…','');
   try{
     await html2pdf().set({
-      margin: 0,
+      margin: 10,
       filename,
       image: { type:'jpeg', quality:0.96 },
-      html2canvas: { scale: 2, useCORS:true },
-      jsPDF: { unit:'px', format:'a4', orientation:'portrait', hotfixes:['px_scaling'] }
+      html2canvas: { scale: 2, useCORS:true, logging:false, backgroundColor:'#ffffff' },
+      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+      pagebreak: { mode:['avoid-all','css','legacy'] }
     }).from(container).save();
     toast('PDF baixado!','ok');
   }catch(e){
     console.error(e);
     toast('Erro ao gerar PDF: '+(e.message||e),'err');
   }finally{
-    document.body.removeChild(container);
+    if(container.parentNode) container.parentNode.removeChild(container);
   }
 }
 async function resendAnamnese(bookingId){
