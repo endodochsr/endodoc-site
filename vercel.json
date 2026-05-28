@@ -2,6 +2,8 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/anamnese/:token", "destination": "/anamnese.html" },
+    { "source": "/anamnese", "destination": "/anamnese.html" },
     { "source": "/:slug", "destination": "/agendar" }
   ]
 }

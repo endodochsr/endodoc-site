@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Anamnese — EndoDoc</title>
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/brand/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+<meta name="theme-color" content="#0a5d5c" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f5efe6;--surface:#fff;--ink:#16302f;--muted:#5e706f;--primary:#0e7c7b;--primary-d:#0a5d5c;--primary-soft:#e3f1f0;--accent:#c2a063;--success:#2e7d57;--success-soft:#e4f3ec;--danger:#c0492f;--border:#e4ecec;--shadow:0 6px 30px rgba(16,48,47,.10)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em}
+  .wrap{max-width:640px;margin:0 auto;padding:24px 18px 60px}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+  .top .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:18px;font-weight:600}
+  .top .name{font-family:'Fraunces',serif;font-weight:600;font-size:17px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:24px}
+  .card+.card{margin-top:14px}
+  .head{margin-bottom:18px;text-align:center}
+  .head h1{font-size:26px;margin-bottom:6px}
+  .head p{color:var(--muted);font-size:14.5px}
+  .prof-pill{display:inline-flex;align-items:center;gap:8px;background:var(--primary-soft);color:var(--primary-d);padding:8px 14px;border-radius:999px;font-size:13.5px;font-weight:600;margin-top:10px}
+  .lgpd{background:#fffbf2;border:1px solid #ecdfbf;border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:14px 18px;font-size:13px;color:#3a2f17;margin-bottom:18px;line-height:1.55}
+  .q{padding:16px 0;border-bottom:1px solid var(--border)}
+  .q:last-child{border-bottom:none}
+  .q-num{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em;margin-bottom:4px}
+  .q-text{font-size:15px;font-weight:600;margin-bottom:10px;line-height:1.4}
+  .opts{display:flex;gap:8px;flex-wrap:wrap}
+  .opt{flex:1;min-width:80px}
+  .opt input{display:none}
+  .opt label{display:block;text-align:center;padding:10px 14px;border:1.5px solid var(--border);border-radius:11px;font-weight:600;font-size:14px;color:var(--ink);cursor:pointer;background:var(--surface);transition:.15s}
+  .opt input:checked + label{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .opt label:hover{border-color:var(--primary)}
+  textarea,input[type=text],input[type=email],input[type=tel]{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:15px;background:var(--surface);color:var(--ink);resize:vertical}
+  textarea:focus,input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+  textarea{min-height:80px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:13px;font-weight:700;font-size:15px;border:none;cursor:pointer;font-family:inherit;width:100%}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(14,124,123,.28)}
+  .btn-primary:hover{background:var(--primary-d)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .ok-state,.err-state{text-align:center;padding:30px 20px}
+  .ok-state .icon{width:74px;height:74px;border-radius:50%;background:var(--success-soft);color:var(--success);display:grid;place-items:center;font-size:38px;margin:0 auto 14px}
+  .err-state .icon{width:74px;height:74px;border-radius:50%;background:#fbeae6;color:var(--danger);display:grid;place-items:center;font-size:38px;margin:0 auto 14px}
+  .center{min-height:60vh;display:grid;place-items:center;color:var(--muted);text-align:center;padding:24px}
+  .footer{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
+  .footer a{color:var(--primary-d);text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="root">
+  <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
+  <div class="center">Carregando…</div>
+</div>
+
+<script>
+const SUPA_URL='https://tuolwdniugjwbepujqoy.supabase.co';
+
+const QUESTIONS = [
+  { id:'queixa',       type:'text',    label:'Queixa Principal' },
+  { id:'tratamento',   type:'snn',     label:'Está sob algum tratamento médico?' },
+  { id:'cardio',       type:'snn',     label:'Possui alguma alteração cardiovascular?' },
+  { id:'hiperdiab',    type:'snn',     label:'Hipertensão / Diabetes?' },
+  { id:'respiratorio', type:'snn',     label:'Tem algum problema respiratório?' },
+  { id:'gastro',       type:'snn',     label:'Tem algum problema gastrointestinal?' },
+  { id:'medicacao',    type:'snn',     label:'Faz uso de alguma medicação diariamente?' },
+  { id:'fumo_alcool',  type:'snn',     label:'Fuma ou ingere bebida alcoólica com frequência?' },
+  { id:'alergia',      type:'snn',     label:'Tem alergia ou intolerância a algum alimento ou medicação?' },
+  { id:'hepatrenal',   type:'snn',     label:'Possui alguma disfunção hepática, renal ou óssea?' },
+  { id:'sindrome',     type:'snn',     label:'Possui alguma síndrome ou doença crônica?' },
+  { id:'infecto',      type:'snn',     label:'Apresenta alguma doença infectocontagiosa?' },
+  { id:'gravidez',     type:'snn',     label:'Está grávida, amamentando ou tomando anticoncepcional?' },
+  { id:'psico',        type:'snn',     label:'Apresenta quadro de depressão, ansiedade, TDAH ou outra condição? Se sim, faz acompanhamento médico e/ou uso de medicamentos?' },
+  { id:'bruxismo',     type:'snn',     label:'Tem bruxismo (ranger os dentes) ou apertamento?' },
+  { id:'dor_agora',    type:'snn',     label:'Está sentindo dor no momento?' },
+  { id:'dor_carac',    type:'text',    label:'Como você caracteriza a dor? (que pulsa, pontada, constante…)' },
+  { id:'dor_term',     type:'snn',     label:'Sente dor ao tomar algo gelado, quente ou doce?' },
+  { id:'inchaco',      type:'snn',     label:'Sentiu inchaço no rosto?' },
+  { id:'mastigar',     type:'snn',     label:'Sente algum incômodo para mastigar?' },
+  { id:'med_alivio',   type:'snn',     label:'Está tomando ou tomou alguma medicação para aliviar?' },
+  { id:'fistula',      type:'snn',     label:'Apareceu na gengiva uma bolinha, como se fosse uma espinha? (fístula)' },
+  { id:'tempo',        type:'text',    label:'Há quanto tempo está com esse incômodo?' },
+];
+
+let state = { token:null, anamnese:null, submitting:false };
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function pickToken(){
+  const m = location.pathname.match(/\/anamnese\/([0-9a-f-]+)/i);
+  if(m) return m[1];
+  return new URLSearchParams(location.search).get('token');
+}
+function fmtDate(iso){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  const dow=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][dt.getDay()];
+  const mes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m-1];
+  return `${dow}, ${d} de ${mes}`;
+}
+function fmtTime(t){ return (t||'').slice(0,5); }
+
+async function init(){
+  const token = pickToken();
+  state.token = token;
+  if(!token){ renderError('Link inválido. Verifique se você copiou o endereço completo.'); return; }
+  try{
+    const r = await fetch(`${SUPA_URL}/functions/v1/anamnese-public?token=${encodeURIComponent(token)}`);
+    if(r.status===404){ renderError('Este link não foi encontrado. Pode ter sido apagado ou estar incorreto.'); return; }
+    if(!r.ok){ renderError('Não consegui carregar agora. Tente recarregar a página.'); return; }
+    state.anamnese = await r.json();
+    render();
+  }catch(e){
+    renderError('Erro de conexão. Verifique sua internet e tente de novo.');
+  }
+}
+
+function renderError(msg){
+  document.getElementById('root').innerHTML = `
+    <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
+    <div class="card">
+      <div class="err-state">
+        <div class="icon">!</div>
+        <h2 style="font-size:20px;margin-bottom:8px">Ops…</h2>
+        <p style="color:var(--muted);font-size:14px">${esc(msg)}</p>
+      </div>
+    </div>`;
+}
+
+function renderSuccess(){
+  document.getElementById('root').innerHTML = `
+    <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
+    <div class="card">
+      <div class="ok-state">
+        <div class="icon">✓</div>
+        <h2 style="font-size:22px;margin-bottom:8px">Obrigado!</h2>
+        <p style="color:var(--muted);font-size:14.5px;margin-bottom:12px">Sua anamnese foi enviada com sucesso. O dentista já tem acesso às suas respostas.</p>
+        <p style="color:var(--muted);font-size:13px">Você pode fechar essa página.</p>
+      </div>
+    </div>
+    <div class="footer">EndoDoc · <a href="https://endodoc.com.br">endodoc.com.br</a></div>`;
+}
+
+function render(){
+  const a = state.anamnese;
+  const filled = !!a.filled_at;
+  const prev = a.data || {};
+  const pname = a.booking?.patient_name || 'paciente';
+  const profName = a.professional?.name || 'profissional';
+  const dataStr = fmtDate(a.booking?.slot_date);
+  const time = fmtTime(a.booking?.slot_time);
+
+  const questionsHtml = QUESTIONS.map((q,i) => renderQuestion(q, i+1, prev[q.id])).join('');
+
+  document.getElementById('root').innerHTML = `
+    <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
+    <div class="card">
+      <div class="head">
+        <h1>Anamnese</h1>
+        <p>Olá, ${esc(pname.split(' ')[0])}! ${filled ? 'Você já preencheu — pode atualizar se quiser.' : 'Preencha as perguntas abaixo (1 min).'}</p>
+        ${profName ? `<div class="prof-pill">👨‍⚕️ ${esc(profName)} · ${esc(dataStr)} às ${esc(time)}</div>` : ''}
+      </div>
+      <div class="lgpd">
+        🔒 Suas respostas serão acessadas apenas pelo profissional que vai te atender.
+        São usadas para preparar o atendimento com segurança. Você pode pedir a exclusão a qualquer momento.
+      </div>
+      <form id="form" onsubmit="return submitForm(event)">
+        ${questionsHtml}
+        <div style="margin-top:22px">
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            ${filled ? 'Atualizar respostas' : 'Enviar respostas'}
+          </button>
+        </div>
+      </form>
+    </div>
+    <div class="footer">Powered by <a href="https://endodoc.com.br">EndoDoc</a></div>
+  `;
+}
+
+function renderQuestion(q, num, value){
+  const isSnn = q.type === 'snn';
+  const isText = q.type === 'text';
+  if(isSnn){
+    return `<div class="q">
+      <div class="q-num">${num}</div>
+      <div class="q-text">${esc(q.label)}</div>
+      <div class="opts">
+        ${['sim','nao','naosei'].map(v=>{
+          const checked = value===v ? 'checked' : '';
+          const label = v==='sim'?'Sim':v==='nao'?'Não':'Não sei';
+          return `<div class="opt">
+            <input type="radio" id="${q.id}-${v}" name="${q.id}" value="${v}" ${checked}>
+            <label for="${q.id}-${v}">${label}</label>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  if(isText){
+    return `<div class="q">
+      <div class="q-num">${num}</div>
+      <div class="q-text">${esc(q.label)}</div>
+      <textarea name="${q.id}" rows="2">${esc(value||'')}</textarea>
+    </div>`;
+  }
+  return '';
+}
+
+async function submitForm(e){
+  e.preventDefault();
+  if(state.submitting) return false;
+  const form = document.getElementById('form');
+  const fd = new FormData(form);
+  const data = {};
+  QUESTIONS.forEach(q => {
+    const v = fd.get(q.id);
+    if(v != null && v !== '') data[q.id] = v;
+  });
+
+  state.submitting = true;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  try{
+    const r = await fetch(`${SUPA_URL}/functions/v1/anamnese-public`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ token: state.token, data })
+    });
+    if(!r.ok){
+      const t = await r.text();
+      btn.disabled=false; btn.textContent='Enviar respostas';
+      state.submitting=false;
+      alert('Não consegui enviar agora. Tente de novo.\n\nErro: '+t);
+      return false;
+    }
+    renderSuccess();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){
+    btn.disabled=false; btn.textContent='Enviar respostas';
+    state.submitting=false;
+    alert('Erro de conexão. Verifique sua internet.');
+  }
+  return false;
+}
+
+init();
+</script>
+
+</body>
+</html>
