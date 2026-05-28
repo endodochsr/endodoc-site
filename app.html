@@ -1249,8 +1249,12 @@ async function viewAnamnese(anamId){
                   : v==='nao' ? '<b style="color:var(--success)">Não</b>'
                   : v==='naosei' ? '<b style="color:var(--muted)">Não sei</b>'
                   : esc(v);
+    const det = (a.data||{})[id+'_detail'];
+    const detailHtml = det
+      ? `<div style="margin-top:6px;padding:8px 12px;background:#fffbf2;border-left:3px solid var(--accent);border-radius:0 8px 8px 0;font-size:13.5px;color:#3a2f17;line-height:1.5">${esc(det)}</div>`
+      : '';
     return `<tr><td style="padding:8px 12px 8px 0;color:var(--muted);font-size:13px;vertical-align:top">${esc(label)}</td>
-            <td style="padding:8px 0;font-size:14px;vertical-align:top">${display}</td></tr>`;
+            <td style="padding:8px 0;font-size:14px;vertical-align:top">${display}${detailHtml}</td></tr>`;
   }).filter(Boolean).join('');
 
   const html = `<h3 style="font-family:'Fraunces',serif">📋 Anamnese</h3>

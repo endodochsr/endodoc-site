@@ -37,6 +37,11 @@
   .opt label{display:block;text-align:center;padding:10px 14px;border:1.5px solid var(--border);border-radius:11px;font-weight:600;font-size:14px;color:var(--ink);cursor:pointer;background:var(--surface);transition:.15s}
   .opt input:checked + label{background:var(--primary);color:#fff;border-color:var(--primary)}
   .opt label:hover{border-color:var(--primary)}
+  .q-detail{margin-top:12px;padding:12px 14px;background:#fffbf2;border-left:3px solid var(--accent);border-radius:0 11px 11px 0}
+  .q-detail-label{display:block;font-size:13px;font-weight:600;color:#7a5a14;margin-bottom:6px}
+  .q-detail textarea{background:#fff;border-color:#ecdfbf}
+  .q.q-err{background:#fcf3f1;border-left:3px solid var(--danger);margin-left:-12px;padding-left:9px;border-radius:0 11px 11px 0}
+  .q.q-err .q-text{color:var(--danger)}
   textarea,input[type=text],input[type=email],input[type=tel]{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:15px;background:var(--surface);color:var(--ink);resize:vertical}
   textarea:focus,input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
   textarea{min-height:80px}
@@ -64,17 +69,17 @@ const SUPA_URL='https://tuolwdniugjwbepujqoy.supabase.co';
 
 const QUESTIONS = [
   { id:'queixa',       type:'text',    label:'Queixa Principal' },
-  { id:'tratamento',   type:'snn',     label:'Está sob algum tratamento médico?' },
+  { id:'tratamento',   type:'snn',     label:'Está sob algum tratamento médico?',                         detail:'Qual tratamento?' },
   { id:'cardio',       type:'snn',     label:'Possui alguma alteração cardiovascular?' },
   { id:'hiperdiab',    type:'snn',     label:'Hipertensão / Diabetes?' },
-  { id:'respiratorio', type:'snn',     label:'Tem algum problema respiratório?' },
-  { id:'gastro',       type:'snn',     label:'Tem algum problema gastrointestinal?' },
-  { id:'medicacao',    type:'snn',     label:'Faz uso de alguma medicação diariamente?' },
+  { id:'respiratorio', type:'snn',     label:'Tem algum problema respiratório?',                          detail:'Qual?' },
+  { id:'gastro',       type:'snn',     label:'Tem algum problema gastrointestinal?',                      detail:'Qual?' },
+  { id:'medicacao',    type:'snn',     label:'Faz uso de alguma medicação diariamente?',                  detail:'Qual(is) medicação(ões)?' },
   { id:'fumo_alcool',  type:'snn',     label:'Fuma ou ingere bebida alcoólica com frequência?' },
-  { id:'alergia',      type:'snn',     label:'Tem alergia ou intolerância a algum alimento ou medicação?' },
-  { id:'hepatrenal',   type:'snn',     label:'Possui alguma disfunção hepática, renal ou óssea?' },
-  { id:'sindrome',     type:'snn',     label:'Possui alguma síndrome ou doença crônica?' },
-  { id:'infecto',      type:'snn',     label:'Apresenta alguma doença infectocontagiosa?' },
+  { id:'alergia',      type:'snn',     label:'Tem alergia ou intolerância a algum alimento, substância ou medicação?', detail:'A quê?' },
+  { id:'hepatrenal',   type:'snn',     label:'Possui alguma disfunção hepática, renal ou óssea?',         detail:'Qual?' },
+  { id:'sindrome',     type:'snn',     label:'Possui alguma síndrome ou doença crônica?',                 detail:'Qual?' },
+  { id:'infecto',      type:'snn',     label:'Apresenta alguma doença infectocontagiosa?',                detail:'Qual?' },
   { id:'gravidez',     type:'snn',     label:'Está grávida, amamentando ou tomando anticoncepcional?' },
   { id:'psico',        type:'snn',     label:'Apresenta quadro de depressão, ansiedade, TDAH ou outra condição? Se sim, faz acompanhamento médico e/ou uso de medicamentos?' },
   { id:'bruxismo',     type:'snn',     label:'Tem bruxismo (ranger os dentes) ou apertamento?' },
@@ -156,7 +161,7 @@ function render(){
   const dataStr = fmtDate(a.booking?.slot_date);
   const time = fmtTime(a.booking?.slot_time);
 
-  const questionsHtml = QUESTIONS.map((q,i) => renderQuestion(q, i+1, prev[q.id])).join('');
+  const questionsHtml = QUESTIONS.map((q,i) => renderQuestion(q, i+1, prev[q.id], prev[q.id+'_detail'])).join('');
 
   document.getElementById('root').innerHTML = `
     <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
@@ -183,45 +188,86 @@ function render(){
   `;
 }
 
-function renderQuestion(q, num, value){
+function renderQuestion(q, num, value, detailValue){
   const isSnn = q.type === 'snn';
   const isText = q.type === 'text';
   if(isSnn){
-    return `<div class="q">
+    const detailVisible = value === 'sim';
+    const detailBlock = q.detail
+      ? `<div class="q-detail" data-detail-for="${q.id}" style="display:${detailVisible?'block':'none'}">
+           <label class="q-detail-label">${esc(q.detail)} *</label>
+           <textarea name="${q.id}_detail" rows="2" placeholder="Descreva brevemente...">${esc(detailValue||'')}</textarea>
+         </div>`
+      : '';
+    return `<div class="q" data-q="${q.id}">
       <div class="q-num">${num}</div>
-      <div class="q-text">${esc(q.label)}</div>
+      <div class="q-text">${esc(q.label)} *</div>
       <div class="opts">
         ${['sim','nao','naosei'].map(v=>{
           const checked = value===v ? 'checked' : '';
           const label = v==='sim'?'Sim':v==='nao'?'Não':'Não sei';
           return `<div class="opt">
-            <input type="radio" id="${q.id}-${v}" name="${q.id}" value="${v}" ${checked}>
+            <input type="radio" id="${q.id}-${v}" name="${q.id}" value="${v}" ${checked} onchange="onAnswerChange('${q.id}', this.value)">
             <label for="${q.id}-${v}">${label}</label>
           </div>`;
         }).join('')}
       </div>
+      ${detailBlock}
     </div>`;
   }
   if(isText){
-    return `<div class="q">
+    return `<div class="q" data-q="${q.id}">
       <div class="q-num">${num}</div>
-      <div class="q-text">${esc(q.label)}</div>
-      <textarea name="${q.id}" rows="2">${esc(value||'')}</textarea>
+      <div class="q-text">${esc(q.label)} *</div>
+      <textarea name="${q.id}" rows="2" placeholder="Sua resposta...">${esc(value||'')}</textarea>
     </div>`;
   }
   return '';
 }
+function onAnswerChange(qid, value){
+  const detail = document.querySelector(`[data-detail-for="${qid}"]`);
+  if(!detail) return;
+  detail.style.display = value === 'sim' ? 'block' : 'none';
+  if(value !== 'sim'){
+    const ta = detail.querySelector('textarea'); if(ta) ta.value='';
+  }
+}
 
+function clearFieldErrors(){
+  document.querySelectorAll('.q.q-err').forEach(el => el.classList.remove('q-err'));
+}
+function markFieldError(qid){
+  const el = document.querySelector(`.q[data-q="${qid}"]`);
+  if(el) el.classList.add('q-err');
+  return el;
+}
 async function submitForm(e){
   e.preventDefault();
   if(state.submitting) return false;
   const form = document.getElementById('form');
   const fd = new FormData(form);
   const data = {};
-  QUESTIONS.forEach(q => {
-    const v = fd.get(q.id);
-    if(v != null && v !== '') data[q.id] = v;
-  });
+
+  // valida: todas obrigatórias + detalhe quando 'sim'
+  clearFieldErrors();
+  const missing = [];
+  for(const q of QUESTIONS){
+    const v = (fd.get(q.id) || '').toString().trim();
+    if(!v){ missing.push(q); continue; }
+    data[q.id] = v;
+    if(q.type === 'snn' && q.detail && v === 'sim'){
+      const det = (fd.get(q.id+'_detail') || '').toString().trim();
+      if(!det){ missing.push({...q, isDetail:true}); continue; }
+      data[q.id+'_detail'] = det;
+    }
+  }
+  if(missing.length){
+    missing.forEach(q => markFieldError(q.id));
+    const firstEl = document.querySelector(`.q[data-q="${missing[0].id}"]`);
+    if(firstEl) firstEl.scrollIntoView({behavior:'smooth', block:'center'});
+    alert(`Faltam ${missing.length} resposta${missing.length===1?'':'s'}. Os campos em vermelho precisam ser preenchidos.`);
+    return false;
+  }
 
   state.submitting = true;
   const btn = document.getElementById('submitBtn');
