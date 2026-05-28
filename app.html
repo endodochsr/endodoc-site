@@ -84,6 +84,38 @@
   .onb-item.done .onb-title{text-decoration:line-through;color:var(--muted)}
   .onb-desc{font-size:12.5px;color:var(--muted)}
   .onb-done{font-size:12px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.05em}
+  .overlay{position:fixed;inset:0;background:rgba(16,48,47,.42);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
+  .overlay.show{display:flex}
+  .modal{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:480px;max-height:90vh;overflow:auto;padding:24px}
+  .modal h3{font-size:20px;margin-bottom:6px}
+  .modal .sub{color:var(--muted);font-size:13.5px;margin-bottom:16px}
+  .mini-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+  .mini-cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:3px 0;text-transform:uppercase}
+  .mini-cal-day{aspect-ratio:1/1;border-radius:9px;background:var(--surface-2);display:grid;place-items:center;font-size:13px;font-weight:600;cursor:pointer}
+  .mini-cal-day.empty{background:transparent;cursor:default}
+  .mini-cal-day.past{color:#b9c6c5;background:#fafcfc;cursor:not-allowed}
+  .mini-cal-day:hover:not(.past):not(.empty){border:1.5px solid var(--primary)}
+  .mini-cal-day.sel{background:var(--primary);color:#fff}
+  .mini-cal-day.today{outline:1.5px solid var(--accent)}
+  .mini-cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .mini-cal-head button{width:30px;height:30px;border-radius:8px;background:var(--surface-2);color:var(--ink)}
+  .mini-cal-month{font-family:'Fraunces',serif;font-size:16px;text-transform:capitalize}
+  .hist-filters{padding:14px 16px}
+  .hist-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+  .hist-filter-row label{font-weight:600}
+  .hist-filter-row select{padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:13.5px}
+  .hist-row{display:flex;align-items:center;gap:14px;padding:14px;border-bottom:1px solid var(--border)}
+  .hist-row:last-child{border-bottom:none}
+  .hist-row.cancelled{opacity:.65}
+  .hist-date{flex-shrink:0;text-align:center;background:var(--surface-2);border-radius:10px;padding:8px 12px;min-width:90px}
+  .hist-d{font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:var(--ink)}
+  .hist-t{font-size:12px;color:var(--muted);margin-top:2px}
+  .hist-main{flex:1;min-width:0}
+  .hist-name{font-size:14.5px;font-weight:600;color:var(--ink)}
+  .hist-meta{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .hist-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+  .hist-badge.done{background:var(--success-soft);color:var(--success)}
+  .hist-badge.cancelled{background:var(--danger-soft);color:var(--danger)}
   .userchip{display:flex;align-items:center;gap:10px}
   .avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;overflow:hidden}
   .avatar img{width:100%;height:100%;object-fit:cover;display:block}
@@ -179,6 +211,7 @@
       <button data-v="visao" class="active" onclick="go('visao')">Visão geral</button>
       <button data-v="agenda" onclick="go('agenda')">Agenda</button>
       <button data-v="dispo" onclick="go('dispo')">Disponibilidade</button>
+      <button data-v="historico" onclick="go('historico')">Histórico</button>
       <button data-v="perfil" onclick="go('perfil')">Perfil</button>
     </nav>
     <div class="userchip"><div class="avatar" id="avatar">D</div><button class="btn btn-ghost btn-sm" onclick="doLogout()">Sair</button></div>
@@ -187,6 +220,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
@@ -331,6 +365,7 @@ function go(v){
   }
   else if(v==='agenda'){ body.innerHTML='<div class="page-head"><h1>Agenda</h1><p>Carregando…</p></div>'; renderAgenda(); }
   else if(v==='dispo'){ body.innerHTML=dispoShell(); loadDispoSlots(); }
+  else if(v==='historico'){ body.innerHTML='<div class="page-head"><h1>Histórico</h1><p>Carregando…</p></div>'; renderHistorico(); }
 }
 function hasAccess(p){
   if(!p) return false;
@@ -844,7 +879,10 @@ function bookingCard(g, opts){
          <button class="pill accept" onclick='confirmBks(${idsAttr})'>✓ Confirmar</button>
          <button class="pill cancel" onclick='rejectBks(${idsAttr})'>Recusar</button>
        </div>`
-    : `<button class="pill cancel" onclick='cancelBks(${idsAttr})'>Cancelar</button>`;
+    : `<div style="display:flex;gap:6px;flex-shrink:0">
+         <button class="pill" onclick='openReschedule(${idsAttr})'>📅 Reagendar</button>
+         <button class="pill cancel" onclick='cancelBks(${idsAttr})'>Cancelar</button>
+       </div>`;
   const ribbon = opts.pending ? `<div class="bk-ribbon">⏳ Aguardando sua confirmação</div>` : '';
   return `<div class="bk-card ${opts.pending?'bk-card-pending':''}">
     ${ribbon}
@@ -954,6 +992,244 @@ async function cancelBks(ids){
   if(error){toast(error.message,'err');return;}
   toast('Atendimento cancelado.','ok'); renderAgenda();
 }
+
+/* ===== histórico ===== */
+let histState = { range:'90d', status:'all', search:'' };
+async function renderHistorico(){
+  const body=document.getElementById('appBody');
+  body.innerHTML = `<div class="page-head"><h1>Histórico</h1><p>Consultas passadas e canceladas.</p></div>
+    <div class="card hist-filters">
+      <div class="hist-filter-row">
+        <label>Período:</label>
+        <select id="histRange" onchange="histState.range=this.value;loadHistorico()">
+          <option value="30d" ${histState.range==='30d'?'selected':''}>Últimos 30 dias</option>
+          <option value="90d" ${histState.range==='90d'?'selected':''}>Últimos 90 dias</option>
+          <option value="1y"  ${histState.range==='1y' ?'selected':''}>Último ano</option>
+          <option value="all" ${histState.range==='all'?'selected':''}>Tudo</option>
+        </select>
+        <label style="margin-left:14px">Status:</label>
+        <select id="histStatus" onchange="histState.status=this.value;loadHistorico()">
+          <option value="all" ${histState.status==='all'?'selected':''}>Todas</option>
+          <option value="active" ${histState.status==='active'?'selected':''}>Realizadas</option>
+          <option value="cancelled" ${histState.status==='cancelled'?'selected':''}>Canceladas</option>
+        </select>
+      </div>
+      <input id="histSearch" type="search" placeholder="Buscar por consultório…" value="${esc(histState.search)}" oninput="histState.search=this.value;loadHistorico()" style="margin-top:10px;width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--surface);color:var(--ink)">
+    </div>
+    <div id="histTotals" class="card" style="display:none"></div>
+    <div id="histList"><div style="color:var(--muted);text-align:center;padding:20px;font-size:14px">Carregando…</div></div>`;
+  loadHistorico();
+}
+async function loadHistorico(){
+  const today=todayISO();
+  const now=new Date();
+  const since=new Date();
+  if(histState.range==='30d') since.setDate(now.getDate()-30);
+  else if(histState.range==='90d') since.setDate(now.getDate()-90);
+  else if(histState.range==='1y') since.setFullYear(now.getFullYear()-1);
+  else since.setFullYear(2020,0,1);
+  const sinceISO=since.getFullYear()+'-'+String(since.getMonth()+1).padStart(2,'0')+'-'+String(since.getDate()).padStart(2,'0');
+
+  let q = sb.from('bookings').select('*').gte('slot_date',sinceISO).order('slot_date',{ascending:false}).order('slot_time',{ascending:true});
+  // realizadas = active E slot_date < hoje. canceladas = qualquer canceladas
+  if(histState.status==='cancelled') q = q.eq('status','cancelled');
+  else if(histState.status==='active') q = q.eq('status','active').lt('slot_date',today);
+  else q = q.in('status',['active','cancelled']).lt('slot_date',today);
+
+  const { data, error } = await q;
+  if(error){ document.getElementById('histList').innerHTML='<div class="card" style="color:var(--danger)">Erro: '+esc(error.message)+'</div>'; return; }
+  let list = data || [];
+  // adiciona cancelados futuros se status==all ou cancelled (já que filtramos lt today acima só pra active)
+  if(histState.status!=='active' && histState.status!=='cancelled'){
+    // active < today já incluído; agora pega cancelled futuro também
+    const { data:future } = await sb.from('bookings').select('*').gte('slot_date',today).eq('status','cancelled').gte('slot_date',sinceISO).order('slot_date',{ascending:false});
+    list = list.concat(future||[]);
+  }
+  // filtro de busca
+  if(histState.search){
+    const s = histState.search.toLowerCase();
+    list = list.filter(b => (b.office_name||'').toLowerCase().includes(s));
+  }
+  // ordena de novo (mais recente primeiro)
+  list.sort((a,b)=>{
+    if(a.slot_date!==b.slot_date) return b.slot_date.localeCompare(a.slot_date);
+    return a.slot_time.localeCompare(b.slot_time);
+  });
+
+  // totais agregados
+  const realized = list.filter(b=>b.status==='active');
+  const cancelled = list.filter(b=>b.status==='cancelled');
+  const seenConsult = new Set();
+  realized.forEach(b=>seenConsult.add(b.slot_date+'|'+b.office_name+'|'+(b.office_phone||'')));
+  const totalHoras = realized.length;
+  const totalFat = totalHoras * Number(currentProf.consultation_price || 0);
+  const fmtBRL = v => 'R$ '+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const totEl = document.getElementById('histTotals');
+  totEl.style.display='block';
+  totEl.innerHTML = `<div class="stats-grid">
+    <div class="stat"><div class="stat-label">Consultas realizadas</div><div class="stat-val">${seenConsult.size}</div></div>
+    <div class="stat"><div class="stat-label">Horas atendidas</div><div class="stat-val">${totalHoras}h</div></div>
+    ${currentProf.consultation_price?`<div class="stat"><div class="stat-label">Receita estimada</div><div class="stat-val">${fmtBRL(totalFat)}</div></div>`:''}
+    <div class="stat"><div class="stat-label">Canceladas</div><div class="stat-val">${cancelled.length}</div></div>
+  </div>`;
+
+  // lista
+  if(!list.length){
+    document.getElementById('histList').innerHTML = '<div class="card" style="text-align:center;color:var(--muted);padding:30px">Nada por aqui ainda.</div>';
+    return;
+  }
+  // agrupa por (data, clínica, telefone) pra mostrar multi-slot como 1 linha
+  const groups = groupBookings(list);
+  const html = groups.map(g => {
+    const first=g.bookings[0]; const last=g.bookings[g.bookings.length-1];
+    const dur=g.bookings.length;
+    const tStart=hhmm(first.slot_time);
+    const tEnd=(()=>{const [h]=last.slot_time.split(':').map(Number);return String(h+1).padStart(2,'0')+':00';})();
+    const horario = dur>1 ? `${tStart}–${tEnd}` : tStart;
+    const isCancelled = first.status==='cancelled';
+    const parts=first.slot_date.split('-');const d=+parts[2],m=+parts[1],y=parts[0];
+    const dataStr = `${d}/${String(m).padStart(2,'0')}/${y}`;
+    const badge = isCancelled
+      ? '<span class="hist-badge cancelled">Cancelada</span>'
+      : '<span class="hist-badge done">Realizada</span>';
+    return `<div class="hist-row ${isCancelled?'cancelled':''}">
+      <div class="hist-date">
+        <div class="hist-d">${dataStr}</div>
+        <div class="hist-t">${horario}${dur>1?` <span style="color:var(--muted)">(${dur}h)</span>`:''}</div>
+      </div>
+      <div class="hist-main">
+        <div class="hist-name">${esc(first.office_name)}</div>
+        <div class="hist-meta">${esc(first.procedure||'—')}${first.office_responsible?' · '+esc(first.office_responsible):''}</div>
+      </div>
+      ${badge}
+    </div>`;
+  }).join('');
+  document.getElementById('histList').innerHTML = `<div class="card" style="padding:8px">${html}</div>`;
+}
+
+/* ===== reagendamento ===== */
+let rescheduleState = { ids:[], dur:1, origDate:null, origTimes:[], pickedDate:null, calRef:new Date() };
+function showModal(html){document.getElementById('modal').innerHTML=html;document.getElementById('overlay').classList.add('show');}
+function closeModal(){document.getElementById('overlay').classList.remove('show');}
+async function openReschedule(ids){
+  // busca dados das reservas pra exibir contexto + duração
+  const { data, error } = await sb.from('bookings').select('id,slot_date,slot_time,office_name').in('id',ids).order('slot_time',{ascending:true});
+  if(error || !data || !data.length){ toast('Erro ao abrir reagendamento','err'); return; }
+  rescheduleState = {
+    ids: data.map(d=>d.id),
+    dur: data.length,
+    origDate: data[0].slot_date,
+    origTimes: data.map(d=>d.slot_time.slice(0,5)),
+    officeName: data[0].office_name,
+    pickedDate: null,
+    calRef: new Date(data[0].slot_date+'T12:00:00'),
+  };
+  rescheduleState.calRef.setDate(1);
+  renderReschedule();
+}
+function renderReschedule(){
+  const s = rescheduleState;
+  const fmt = d => d.split('-').reverse().join('/');
+  const dur = s.dur;
+  showModal(`<h3>Reagendar consulta</h3>
+    <p class="sub">${esc(s.officeName)} · ${fmt(s.origDate)} ${s.origTimes[0]}${dur>1?' às '+addHourLocal(s.origTimes[dur-1],1):''} (${dur}h)</p>
+    <div class="section-title">Escolha a nova data</div>
+    ${renderMiniCal()}
+    <div id="reSlots" style="margin-top:14px"></div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-ghost btn-block" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary btn-block" id="reConfirm" disabled onclick="confirmReschedule()">Confirmar nova data</button>
+    </div>`);
+}
+function addHourLocal(t,n){
+  const [h,m]=t.split(':').map(Number);
+  const tot=h*60+m+n*60;
+  return String(Math.floor(tot/60)).padStart(2,'0')+':'+String(tot%60).padStart(2,'0');
+}
+function renderMiniCal(){
+  const s=rescheduleState;
+  const c=s.calRef;
+  const y=c.getFullYear(),m=c.getMonth();
+  const monthName=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m];
+  const first=new Date(y,m,1),start=first.getDay(),days=new Date(y,m+1,0).getDate();
+  const dowH=['D','S','T','Q','Q','S','S'].map(d=>`<div class="mini-cal-dow">${d}</div>`).join('');
+  const today=todayISO();
+  let cells='';
+  for(let i=0;i<start;i++) cells += '<div class="mini-cal-day empty"></div>';
+  for(let d=1;d<=days;d++){
+    const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const past=ds<today;
+    const sel=ds===s.pickedDate;
+    const istoday=ds===today;
+    const cls=['mini-cal-day',past?'past':'',sel?'sel':'',istoday?'today':''].filter(Boolean).join(' ');
+    const click=past?'':`onclick="pickRescheduleDate('${ds}')"`;
+    cells += `<div class="${cls}" ${click}>${d}</div>`;
+  }
+  // padding final pra não sobrar incompleto
+  const total=start+days; const pad=(7-total%7)%7;
+  for(let i=0;i<pad;i++) cells += '<div class="mini-cal-day empty"></div>';
+  return `<div class="mini-cal-head">
+      <button onclick="reMoveMonth(-1)">‹</button>
+      <div class="mini-cal-month">${monthName} ${y}</div>
+      <button onclick="reMoveMonth(1)">›</button>
+    </div>
+    <div class="mini-cal">${dowH}</div>
+    <div class="mini-cal" style="margin-top:5px">${cells}</div>`;
+}
+function reMoveMonth(n){
+  rescheduleState.calRef.setMonth(rescheduleState.calRef.getMonth()+n);
+  renderReschedule();
+}
+async function pickRescheduleDate(ds){
+  rescheduleState.pickedDate=ds;
+  renderReschedule();
+  // carrega slots disponíveis pra essa data (excluindo as próprias reservas se for mesma data)
+  const slotsEl=document.getElementById('reSlots');
+  slotsEl.innerHTML='<div style="color:var(--muted);font-size:13px">Carregando horários…</div>';
+  const { data, error } = await sb.rpc('get_availability',{p_slug:currentProf.slug,p_from:ds,p_to:ds});
+  if(error){ slotsEl.innerHTML='<div style="color:var(--danger);font-size:13px">Erro: '+esc(error.message)+'</div>'; return; }
+  let avail=(data||[]).map(r=>r.slot_time.slice(0,5));
+  // se for a MESMA data da reserva original, adiciona os slots originais (estão "ocupados por si mesmos")
+  if(ds===rescheduleState.origDate){
+    rescheduleState.origTimes.forEach(t=>{ if(!avail.includes(t)) avail.push(t); });
+    avail.sort();
+  }
+  const dur=rescheduleState.dur;
+  if(!avail.length){
+    slotsEl.innerHTML='<div style="color:var(--muted);font-size:13.5px">Nenhum horário aberto nessa data.</div>';
+    return;
+  }
+  const set=new Set(avail);
+  const chips = avail.map(t=>{
+    // pra durar `dur` horas, precisa de t, t+1, ..., t+(dur-1) todos disponíveis
+    let fits=true;
+    for(let i=0;i<dur;i++){ if(!set.has(addHourLocal(t,i))){ fits=false; break; } }
+    if(!fits) return `<button class="chip no-fit" disabled>${t}</button>`;
+    return `<button class="chip" onclick="pickRescheduleTime('${t}')" data-t="${t}">${t}</button>`;
+  }).join('');
+  slotsEl.innerHTML = `<div class="section-title">Novo horário inicial${dur>1?` (a consulta dura ${dur}h)`:''}</div>
+    <div class="chips">${chips}</div>`;
+}
+function pickRescheduleTime(t){
+  rescheduleState.pickedTime=t;
+  document.querySelectorAll('#reSlots .chip').forEach(c=>c.classList.toggle('sel', c.dataset.t===t));
+  const b=document.getElementById('reConfirm'); if(b) b.disabled=false;
+}
+async function confirmReschedule(){
+  const s=rescheduleState;
+  if(!s.pickedDate || !s.pickedTime){ toast('Escolha a nova data e horário','err'); return; }
+  const btn=document.getElementById('reConfirm'); btn.disabled=true; btn.textContent='Reagendando…';
+  const { error } = await sb.rpc('reschedule_booking_group',{
+    p_ids: s.ids, p_new_date: s.pickedDate, p_new_start: s.pickedTime
+  });
+  if(error){ toast('Erro: '+error.message,'err'); btn.disabled=false; btn.textContent='Confirmar nova data'; return; }
+  toast('Reagendado! Clínica avisada por e-mail.','ok');
+  closeModal(); renderAgenda();
+}
+document.addEventListener('click', e=>{
+  const ov=document.getElementById('overlay');
+  if(ov && e.target===ov) closeModal();
+});
 async function downloadDoc(encPath){
   const path=decodeURIComponent(encPath);
   const {data,error}=await sb.storage.from('documentos').createSignedUrl(path,120);
