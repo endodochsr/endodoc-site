@@ -1304,9 +1304,9 @@ async function exportAnamnesePDF(){
     </tr>`;
   }).filter(Boolean).join('');
 
-  // monta um container que vai ficar visível brevemente (não offscreen, html2canvas precisa renderizar)
+  // monta um container REAL (visível) — html2canvas precisa que opacity seja 1 e o elemento esteja renderizado
   const container = document.createElement('div');
-  container.style.cssText = 'position:absolute;left:0;top:0;width:720px;background:#ffffff;color:#16302f;font-family:Helvetica,Arial,sans-serif;padding:32px;box-sizing:border-box;z-index:-1;opacity:0;pointer-events:none';
+  container.style.cssText = 'position:absolute;left:0;top:0;width:720px;background:#ffffff;color:#16302f;font-family:Helvetica,Arial,sans-serif;padding:32px;box-sizing:border-box';
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:2px solid #0a5d5c;margin-bottom:22px">
       <div style="display:flex;align-items:center;gap:10px">
@@ -1346,8 +1346,17 @@ async function exportAnamnesePDF(){
       Documento gerado em ${docGenerated} &middot; EndoDoc &middot; endodoc.com.br
     </div>
   `;
-  document.body.appendChild(container);
+  // overlay que cobre tudo durante a geração (esconde o container que tá visível pra biblioteca)
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,255,0.97);z-index:99999;display:grid;place-items:center;font-family:Inter,sans-serif';
+  overlay.innerHTML = `<div style="text-align:center">
+    <div style="font-size:42px;line-height:1;margin-bottom:14px">📥</div>
+    <div style="font-family:Fraunces,Georgia,serif;font-size:22px;color:#16302f;margin-bottom:6px">Gerando seu PDF…</div>
+    <div style="color:#5e706f;font-size:13.5px">Não feche essa janela.</div>
+  </div>`;
+  document.body.appendChild(overlay);
 
+  document.body.appendChild(container);
   // força reflow pra garantir que o layout foi calculado antes do canvas capturar
   void container.offsetHeight;
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -1356,7 +1365,6 @@ async function exportAnamnesePDF(){
   const fileDate = b.slot_date ? b.slot_date.replace(/-/g,'') : '';
   const filename = `Anamnese_${safeName}${fileDate?'_'+fileDate:''}.pdf`;
 
-  toast('Gerando PDF…','');
   try{
     await html2pdf().set({
       margin: 10,
@@ -1372,6 +1380,7 @@ async function exportAnamnesePDF(){
     toast('Erro ao gerar PDF: '+(e.message||e),'err');
   }finally{
     if(container.parentNode) container.parentNode.removeChild(container);
+    if(overlay.parentNode) overlay.parentNode.removeChild(overlay);
   }
 }
 async function resendAnamnese(bookingId){
