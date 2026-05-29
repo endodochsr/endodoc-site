@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /admin
+Disallow: /anamnese
+Disallow: /google-callback
+
+Sitemap: https://endodoc.com.br/sitemap.xml
