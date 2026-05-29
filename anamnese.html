@@ -18,7 +18,7 @@
   h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em}
   .wrap{max-width:640px;margin:0 auto;padding:24px 18px 60px}
   .top{display:flex;align-items:center;gap:10px;margin-bottom:22px}
-  .top .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:18px;font-weight:600}
+  .top .mark{width:38px;height:38px;display:block;object-fit:contain}
   .top .name{font-family:'Fraunces',serif;font-weight:600;font-size:17px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:24px}
   .card+.card{margin-top:14px}
@@ -60,7 +60,7 @@
 <body>
 
 <div class="wrap" id="root">
-  <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
+  <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">EndoDoc</div></div>
   <div class="center">Carregando…</div>
 </div>
 
@@ -128,7 +128,7 @@ async function init(){
 
 function renderError(msg){
   document.getElementById('root').innerHTML = `
-    <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
+    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">EndoDoc</div></div>
     <div class="card">
       <div class="err-state">
         <div class="icon">!</div>
@@ -140,7 +140,7 @@ function renderError(msg){
 
 function renderSuccess(){
   document.getElementById('root').innerHTML = `
-    <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
+    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">EndoDoc</div></div>
     <div class="card">
       <div class="ok-state">
         <div class="icon">✓</div>
@@ -164,7 +164,7 @@ function render(){
   const questionsHtml = QUESTIONS.map((q,i) => renderQuestion(q, i+1, prev[q.id], prev[q.id+'_detail'])).join('');
 
   document.getElementById('root').innerHTML = `
-    <div class="top"><div class="mark">E</div><div class="name">EndoDoc</div></div>
+    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">EndoDoc</div></div>
     <div class="card">
       <div class="head">
         <h1>Anamnese</h1>
