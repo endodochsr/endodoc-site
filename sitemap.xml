@@ -11,11 +11,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://endodoc.com.br/#sobre</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://endodoc.com.br/#como-funciona</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
