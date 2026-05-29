@@ -116,7 +116,39 @@
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:60}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.ok{background:var(--success)}.toast.err{background:var(--danger)}
-  @media(max-width:980px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+  /* filter chips */
+  .filter-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .filter-chip{padding:8px 14px;border-radius:99px;background:var(--surface);border:1.5px solid var(--border);font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .filter-chip:hover{border-color:var(--primary)}
+  .filter-chip.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .filter-chip .ct{background:rgba(255,255,255,.2);padding:2px 7px;border-radius:99px;font-size:11.5px;font-weight:700}
+  .filter-chip:not(.on) .ct{background:var(--surface-2);color:var(--muted)}
+  /* funnel */
+  .funnel{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .fn-step{position:relative;padding:14px 16px;border-radius:11px;background:var(--surface-2);overflow:hidden}
+  .fn-step .fn-fill{position:absolute;inset:0;background:linear-gradient(90deg,var(--primary-soft),var(--primary-soft));border-radius:11px;z-index:0;transition:width .4s}
+  .fn-step .fn-row{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center}
+  .fn-step .fn-lbl{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .fn-step .fn-num{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--primary-d)}
+  .fn-step .fn-pct{font-size:12px;color:var(--muted);margin-left:8px}
+  .fn-arrow{display:grid;place-items:center;color:var(--muted);font-size:14px}
+  /* usage */
+  .usage{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .usg{padding:14px;background:var(--surface-2);border-radius:11px}
+  .usg .v{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);line-height:1.1}
+  .usg .k{font-size:12px;color:var(--muted);margin-top:6px}
+  .usg .bar{height:4px;background:var(--border);border-radius:99px;margin-top:8px;overflow:hidden}
+  .usg .bar i{display:block;height:100%;background:var(--primary);border-radius:99px}
+  /* action buttons */
+  .row-actions{display:flex;gap:5px;flex-wrap:wrap}
+  .row-btn{padding:6px 10px;border-radius:7px;background:var(--surface-2);font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;border:none;font-family:inherit;white-space:nowrap}
+  .row-btn:hover{background:var(--border)}
+  .row-btn.danger{color:var(--danger)}
+  .row-btn.gold{color:var(--gold);background:var(--gold-soft)}
+  .row-btn.green{color:var(--success);background:var(--success-soft)}
+  /* pagto kpi cores extras */
+  .stat.purple .n{color:#7c5ec9}
+  @media(max-width:980px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.usage{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -156,6 +188,7 @@
       <nav>
         <button id="navResumo" class="active" onclick="go('resumo')">Resumo</button>
         <button id="navAssin" onclick="go('assinantes')">Assinantes</button>
+        <button id="navPagto" onclick="go('pagamentos')">Pagamentos</button>
         <button id="navPlanos" onclick="go('planos')">Planos</button>
       </nav>
       <div class="userchip">
@@ -190,12 +223,45 @@
         <div class="panel"><h3>Top profissionais</h3><div class="cap">Mais agendamentos (total)</div><div class="chartbox sm"><canvas id="chTop"></canvas></div></div>
       </div>
 
-      <div class="note">A receita é uma <b>estimativa</b> (assinantes ativos × preço do plano: Essencial R$ 49, Profissional R$ 99, Clínica R$ 199). A receita real cobrada aparecerá quando o Asaas for integrado. Para ajustar os preços, edite <b>PLAN_PRICES</b> no topo do código.</div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="panel">
+          <h3>Funil de conversão</h3>
+          <div class="cap">Onde os profissionais ficam parados no caminho</div>
+          <div id="funnel" class="funnel"></div>
+        </div>
+        <div class="panel">
+          <h3>Saúde do uso</h3>
+          <div class="cap">Indicadores que mostram quem está usando de verdade</div>
+          <div id="usage" class="usage"></div>
+        </div>
+      </div>
+
+      <div class="note">A receita é uma <b>estimativa</b> de MRR baseada nos planos ativos. Para receita REAL cobrada via Asaas, vá em <b>Pagamentos</b>.</div>
+    </div>
+
+    <!-- PAGAMENTOS -->
+    <div id="viewPagto" class="container hidden">
+      <div class="page-head"><h1>Pagamentos</h1><p>Assinaturas ativas, cortesia e cobranças pendentes.</p></div>
+      <div class="stats" id="pagKpis"></div>
+      <div class="toolbar">
+        <div class="search"><span class="ic">⌕</span><input id="pagSearch" type="search" placeholder="Buscar por nome ou e-mail…" oninput="renderPagto()"></div>
+        <span class="count" id="pagCount"></span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th>Profissional</th><th>Plano</th><th>Valor</th><th>Status</th>
+            <th>Próxima cobrança</th><th>Cliente Asaas</th><th>Assinatura</th>
+          </tr></thead>
+          <tbody id="pagBody"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ASSINANTES -->
     <div id="viewAssin" class="container hidden">
       <div class="page-head"><h1>Assinantes</h1><p>Todos os endodontistas cadastrados no EndoDoc.</p></div>
+      <div class="filter-chips" id="statusChips"></div>
       <div class="toolbar">
         <div class="search"><span class="ic">⌕</span><input id="search" type="search" placeholder="Buscar por nome, e-mail ou link…" oninput="renderTable()"></div>
         <span class="count" id="count"></span>
@@ -205,7 +271,7 @@
         <table>
           <thead><tr>
             <th>Profissional</th><th>Contato</th><th>Status</th><th>Plano</th>
-            <th>Teste</th><th>Google</th><th>Agend. (ativos/total)</th><th>Cadastro</th><th>Dono</th>
+            <th>Teste</th><th>Agend.</th><th>Cadastro</th><th>Ações</th>
           </tr></thead>
           <tbody id="tbody"></tbody>
         </table>
@@ -308,15 +374,17 @@ async function enter(){
   await loadAll(stats[0]);
 }
 
+let STATUS_FILTER = 'all';
 function go(v){
   view=v;
-  document.getElementById('navResumo').classList.toggle('active', v==='resumo');
-  document.getElementById('navAssin').classList.toggle('active', v==='assinantes');
-  document.getElementById('navPlanos').classList.toggle('active', v==='planos');
-  document.getElementById('viewResumo').classList.toggle('hidden', v!=='resumo');
-  document.getElementById('viewAssin').classList.toggle('hidden', v!=='assinantes');
-  document.getElementById('viewPlanos').classList.toggle('hidden', v!=='planos');
+  ['Resumo','Assin','Pagto','Planos'].forEach(k=>{
+    document.getElementById('nav'+k).classList.toggle('active', mapNav(k)===v);
+    document.getElementById('view'+k).classList.toggle('hidden', mapNav(k)!==v);
+  });
+  if(v==='pagamentos') renderPagto();
+  if(v==='assinantes') renderStatusChips();
 }
+function mapNav(k){ return {Resumo:'resumo',Assin:'assinantes',Pagto:'pagamentos',Planos:'planos'}[k]; }
 
 async function loadAll(stats){
   const [a,b,c] = await Promise.all([
@@ -329,9 +397,12 @@ async function loadAll(stats){
   if(!c.error && c.data){ PLANS = c.data; }
   if(PLANS.length){ PLAN_PRICES = {}; PLANS.forEach(p=>{ PLAN_PRICES[p.code]=Number(p.price)||0; }); }
   renderKpis(stats);
+  renderStatusChips();
   renderTable();
   renderPlans();
   renderCharts();
+  renderFunnel();
+  renderUsage();
 }
 
 async function reloadPlans(){
@@ -509,51 +580,184 @@ function baseOpts(showGridY, stacked, money){
 }
 function donutOpts(){ return { responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, boxHeight:12, usePointStyle:true, font:{size:11.5} } } } }; }
 
-/* ===== table ===== */
+/* ===== filtros + tabela ===== */
+function renderStatusChips(){
+  const el = document.getElementById('statusChips'); if(!el) return;
+  const counts = {all:ROWS.length, trial:0,active:0,courtesy:0,past_due:0,canceled:0};
+  ROWS.forEach(r=>{ if(r.subscription_status in counts) counts[r.subscription_status]++; });
+  const labels = {all:'Todos',trial:'Em teste',active:'Ativos',courtesy:'Cortesia',past_due:'Inadimplentes',canceled:'Cancelados'};
+  el.innerHTML = Object.keys(labels).map(k =>
+    `<button class="filter-chip ${STATUS_FILTER===k?'on':''}" onclick="setStatusFilter('${k}')">${labels[k]} <span class="ct">${counts[k]||0}</span></button>`
+  ).join('');
+}
+function setStatusFilter(s){ STATUS_FILTER=s; renderStatusChips(); renderTable(); }
+
 function renderTable(){
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
-  const rows = ROWS.filter(r => !q
-    || (r.name||'').toLowerCase().includes(q)
-    || (r.email||'').toLowerCase().includes(q)
-    || (r.slug||'').toLowerCase().includes(q));
+  const rows = ROWS.filter(r => {
+    if(STATUS_FILTER !== 'all' && r.subscription_status !== STATUS_FILTER) return false;
+    return !q
+      || (r.name||'').toLowerCase().includes(q)
+      || (r.email||'').toLowerCase().includes(q)
+      || (r.slug||'').toLowerCase().includes(q);
+  });
   document.getElementById('count').textContent = rows.length+' de '+ROWS.length;
   const tb=document.getElementById('tbody');
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="9" class="empty">Nenhum assinante encontrado.</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="8" class="empty">Nenhum assinante com esse filtro.</td></tr>'; return; }
   tb.innerHTML = rows.map(r => {
     const statusSel='<select class="sel st-'+r.subscription_status+'" onchange="changeStatus(\''+r.id+'\',this.value)">'+
       Object.keys(STATUS_LABEL).map(k=>'<option value="'+k+'"'+(k===r.subscription_status?' selected':'')+'>'+STATUS_LABEL[k]+'</option>').join('')+'</select>';
     const planSel='<select class="sel" onchange="changePlan(\''+r.id+'\',this.value)">'+planSelectHtml(r.plan)+'</select>';
+
+    // ações rápidas baseadas no status
+    const acts = [];
+    if(r.subscription_status==='trial' || r.subscription_status==='past_due' || r.subscription_status==='canceled'){
+      acts.push(`<button class="row-btn green" onclick="grantCourtesy('${r.id}')" title="Conceder cortesia (assinatura grátis)">🎁 Cortesia</button>`);
+    }
+    if(r.subscription_status==='active' || r.subscription_status==='courtesy' || r.subscription_status==='past_due'){
+      acts.push(`<button class="row-btn danger" onclick="suspendUser('${r.id}')" title="Suspender / cancelar acesso">⏸ Suspender</button>`);
+    }
+    acts.push(`<a class="row-btn" href="/${esc(r.slug)}" target="_blank" rel="noopener" title="Ver perfil público">👁</a>`);
+    if(r.is_admin && r.id===MY_ID) acts.push('<span class="badge-admin">Você</span>');
+    else if(r.is_admin) acts.push(`<span class="badge-admin">Dono</span>`);
+    else acts.push(`<button class="row-btn" onclick="setAdmin('${r.id}',true)" title="Tornar dono da plataforma">★ Dono</button>`);
+
     return '<tr>'+
       '<td><div class="nm">'+esc(r.name)+'</div><a class="lk" href="/'+esc(r.slug)+'" target="_blank" rel="noopener">/'+esc(r.slug)+'</a></td>'+
       '<td>'+esc(r.email)+(r.phone?'<div class="sub">'+esc(r.phone)+'</div>':'')+'</td>'+
       '<td>'+statusSel+'</td>'+
       '<td>'+planSel+'</td>'+
       '<td>'+trialInfo(r)+'</td>'+
-      '<td>'+(r.google_connected?'<span class="ok">Sim</span>':'<span class="muted">Não</span>')+'</td>'+
       '<td>'+r.bookings_active+' <span class="muted">/ '+r.bookings_total+'</span></td>'+
       '<td>'+fmtDate(r.created_at)+'</td>'+
-      '<td>'+adminCell(r)+'</td>'+
+      '<td><div class="row-actions">'+acts.join('')+'</div></td>'+
     '</tr>';
   }).join('');
 }
-function adminCell(r){
-  if(r.is_admin && r.id===MY_ID) return '<span class="badge-admin">Você</span>';
-  if(r.is_admin) return '<span class="badge-admin">Dono</span><button class="linkbtn" onclick="setAdmin(\''+r.id+'\',false)">remover</button>';
-  return '<button class="btn btn-ghost btn-sm" onclick="setAdmin(\''+r.id+'\',true)">Tornar dono</button>';
+
+/* ===== ações novas ===== */
+async function grantCourtesy(id){
+  const r = ROWS.find(x=>x.id===id); if(!r) return;
+  if(!confirm(`Conceder cortesia (assinatura grátis ilimitada) para ${r.name||r.email}?`)) return;
+  const { error } = await sb.rpc('admin_set_status', { p_id:id, p_status:'courtesy', p_plan:r.plan||'mensal' });
+  if(error){ toast(traduz(error),'err'); return; }
+  r.subscription_status='courtesy'; toast('Cortesia concedida','ok'); renderTable(); renderStatusChips(); renderCharts(); refreshKpis();
+}
+async function suspendUser(id){
+  const r = ROWS.find(x=>x.id===id); if(!r) return;
+  if(!confirm(`Suspender ${r.name||r.email}? O profissional perderá acesso à plataforma.`)) return;
+  const { error } = await sb.rpc('admin_set_status', { p_id:id, p_status:'canceled', p_plan:r.plan });
+  if(error){ toast(traduz(error),'err'); return; }
+  r.subscription_status='canceled'; toast('Acesso suspenso','ok'); renderTable(); renderStatusChips(); renderCharts(); refreshKpis();
 }
 
+/* ===== Pagamentos ===== */
+function renderPagto(){
+  const q=(document.getElementById('pagSearch')?.value||'').toLowerCase().trim();
+  // só profissionais com assinatura real (active, past_due, courtesy)
+  let list = ROWS.filter(r => ['active','past_due','courtesy'].includes(r.subscription_status));
+  if(q) list = list.filter(r => (r.name||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q));
+  document.getElementById('pagCount').textContent = list.length + ' assinatura' + (list.length===1?'':'s');
+
+  // KPIs de pagamento
+  const mrrAtual = mrr();
+  const activeCount = list.filter(r=>r.subscription_status==='active').length;
+  const pastDueCount = list.filter(r=>r.subscription_status==='past_due').length;
+  const courtesyCount = list.filter(r=>r.subscription_status==='courtesy').length;
+  document.getElementById('pagKpis').innerHTML = `
+    <div class="stat teal"><div class="n">${BRL(mrrAtual)}</div><div class="l">MRR pagantes</div><div class="sub">apenas planos ativos pagos</div></div>
+    <div class="stat green"><div class="n">${activeCount}</div><div class="l">Assinaturas ativas</div></div>
+    <div class="stat red"><div class="n">${pastDueCount}</div><div class="l">Inadimplentes</div><div class="sub">3 dias de tolerância</div></div>
+    <div class="stat purple"><div class="n">${courtesyCount}</div><div class="l">Cortesia</div><div class="sub">não geram receita</div></div>
+  `;
+
+  // tabela
+  const tb = document.getElementById('pagBody');
+  if(!list.length){ tb.innerHTML='<tr><td colspan="7" class="empty">Nenhuma assinatura ativa.</td></tr>'; return; }
+  tb.innerHTML = list.map(r => {
+    const plan = PLANS.find(p=>p.code===r.plan);
+    const price = plan ? BRL(Number(plan.price)) : '—';
+    const period = r.plan==='mensal'?'/mês' : r.plan==='semestral'?'/sem' : r.plan==='anual'?'/ano' : '';
+    const status = r.subscription_status==='active' ? '<span class="ok">Ativo</span>'
+                 : r.subscription_status==='courtesy' ? '<span style="color:#7c5ec9;font-weight:600">Cortesia</span>'
+                 : r.subscription_status==='past_due' ? '<span style="color:var(--danger);font-weight:600">Inadimplente</span>'
+                 : '<span class="muted">'+r.subscription_status+'</span>';
+    const proxima = r.current_period_end ? fmtDate(r.current_period_end) : '—';
+    const cust = r.asaas_customer_id || '<span class="muted">—</span>';
+    const sub  = r.asaas_subscription_id || '<span class="muted">—</span>';
+    return `<tr>
+      <td><div class="nm">${esc(r.name||'—')}</div><div class="sub">${esc(r.email||'')}</div></td>
+      <td>${esc(plan?plan.name:(r.plan||'—'))}</td>
+      <td><b>${price}</b><span class="muted">${period}</span></td>
+      <td>${status}</td>
+      <td>${proxima}</td>
+      <td style="font-family:monospace;font-size:12px">${esc(cust)}</td>
+      <td style="font-family:monospace;font-size:12px">${esc(sub)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ===== Funnel + Usage ===== */
+function renderFunnel(){
+  const el = document.getElementById('funnel'); if(!el) return;
+  const total = ROWS.length;
+  const withGoogle = ROWS.filter(r => r.google_connected).length;
+  const withBookings = ROWS.filter(r => Number(r.bookings_total) > 0).length;
+  const paid = ROWS.filter(r => r.subscription_status === 'active').length;
+  const steps = [
+    ['📝 Cadastrou-se',            total, 1],
+    ['🔗 Conectou Google Calendar', withGoogle, total ? withGoogle/total : 0],
+    ['📅 Recebeu 1ª reserva',       withBookings, total ? withBookings/total : 0],
+    ['💳 Pagou (assinatura ativa)', paid, total ? paid/total : 0],
+  ];
+  el.innerHTML = steps.map((s,i) => {
+    const pct = Math.round((s[2]||0)*100);
+    const fillW = pct + '%';
+    return `<div class="fn-step">
+      <div class="fn-fill" style="width:${fillW}"></div>
+      <div class="fn-row">
+        <div class="fn-lbl">${s[0]}</div>
+        <div><span class="fn-num">${s[1]}</span><span class="fn-pct">${pct}%</span></div>
+      </div>
+    </div>${i<steps.length-1?'<div class="fn-arrow">▼</div>':''}`;
+  }).join('');
+}
+function renderUsage(){
+  const el = document.getElementById('usage'); if(!el) return;
+  const total = ROWS.length || 1;
+  const withDispo = ROWS.filter(r => Number(r.bookings_total)>0 || r.google_connected).length; // approx
+  const withBookings = ROWS.filter(r => Number(r.bookings_total) > 0).length;
+  const totalBookings = ROWS.reduce((s,r)=>s+Number(r.bookings_total||0),0);
+  const avgBookings = ROWS.length ? (totalBookings/ROWS.length).toFixed(1) : '0';
+  const withGoogle = ROWS.filter(r => r.google_connected).length;
+  const items = [
+    ['Google Calendar conectado', withGoogle, total, '🗓️'],
+    ['Já recebeu reserva',         withBookings, total, '✉️'],
+    ['Média de consultas/dentista', avgBookings, null, '📊'],
+    ['Total de consultas',          totalBookings, null, '🎯'],
+  ];
+  el.innerHTML = items.map(it => {
+    const pct = it[2] ? Math.round((it[1]/it[2])*100) : null;
+    return `<div class="usg">
+      <div class="v">${it[0]==='Média de consultas/dentista' ? it[1] : (typeof it[1]==='number'?it[1]:it[1])}${pct!==null?` <span style="font-size:13px;color:var(--muted);font-family:Inter,sans-serif">(${pct}%)</span>`:''}</div>
+      <div class="k">${it[3]} ${it[0]}</div>
+      ${pct!==null?`<div class="bar"><i style="width:${pct}%"></i></div>`:''}
+    </div>`;
+  }).join('');
+}
 /* ===== ações ===== */
 async function changeStatus(id, status){
   const r=ROWS.find(x=>x.id===id); if(!r) return; const prev=r.subscription_status;
   const { error } = await sb.rpc('admin_set_status', { p_id:id, p_status:status, p_plan:r.plan });
   if(error){ toast(traduz(error),'err'); r.subscription_status=prev; renderTable(); return; }
-  r.subscription_status=status; toast('Status atualizado','ok'); renderTable(); renderCharts(); refreshKpis();
+  r.subscription_status=status; toast('Status atualizado','ok');
+  renderStatusChips(); renderTable(); renderCharts(); refreshKpis(); renderFunnel(); renderPagto();
 }
 async function changePlan(id, plan){
   const r=ROWS.find(x=>x.id===id); if(!r) return;
   const { error } = await sb.rpc('admin_set_status', { p_id:id, p_status:r.subscription_status, p_plan: plan||null });
   if(error){ toast(traduz(error),'err'); return; }
-  r.plan=plan; toast('Plano atualizado','ok'); renderCharts(); refreshKpis();
+  r.plan=plan; toast('Plano atualizado','ok'); renderCharts(); refreshKpis(); renderPagto();
 }
 async function setAdmin(id, value){
   const r=ROWS.find(x=>x.id===id); if(!r) return;
