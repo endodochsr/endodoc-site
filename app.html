@@ -219,6 +219,7 @@
       <div class="field"><label>E-mail</label><input type="email" id="loginEmail" required></div>
       <div class="field"><label>Senha</label><input type="password" id="loginPass" required></div>
       <button class="btn btn-primary btn-block" type="submit" id="loginBtn">Entrar</button>
+      <p style="text-align:center;margin-top:14px;font-size:13.5px"><a href="#" onclick="switchTab('forgot');return false" style="color:var(--primary-d);font-weight:600;text-decoration:none">Esqueci minha senha</a></p>
     </form>
     <form id="formReg" class="hidden" onsubmit="return doRegister(event)">
       <div class="field"><label>Seu nome</label><input id="regName" placeholder="Dra. Marina Alves" required></div>
@@ -230,6 +231,18 @@
       <div class="field"><label>Senha (mín. 6)</label><input type="password" id="regPass" required minlength="6"></div>
       <button class="btn btn-primary btn-block" type="submit" id="regBtn">Começar teste grátis</button>
       <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:12px">14 dias grátis · sem cartão</p>
+    </form>
+    <form id="formForgot" class="hidden" onsubmit="return doForgot(event)">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.5">Digite o e-mail da sua conta. Vamos enviar um link pra você criar uma nova senha.</p>
+      <div class="field"><label>E-mail da conta</label><input type="email" id="forgotEmail" required></div>
+      <button class="btn btn-primary btn-block" type="submit" id="forgotBtn">Enviar link</button>
+      <p style="text-align:center;margin-top:14px;font-size:13.5px"><a href="#" onclick="switchTab('login');return false" style="color:var(--muted);text-decoration:none">← Voltar para o login</a></p>
+    </form>
+    <form id="formReset" class="hidden" onsubmit="return doReset(event)">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.5">Defina sua nova senha de acesso.</p>
+      <div class="field"><label>Nova senha (mín. 6)</label><input type="password" id="resetPass" required minlength="6"></div>
+      <div class="field"><label>Confirme a nova senha</label><input type="password" id="resetPass2" required minlength="6"></div>
+      <button class="btn btn-primary btn-block" type="submit" id="resetBtn">Salvar nova senha</button>
     </form>
   </div>
 </div>
@@ -291,6 +304,10 @@ function switchTab(t){
   document.getElementById('tabReg').classList.toggle('active',t==='reg');
   document.getElementById('formLogin').classList.toggle('hidden',t!=='login');
   document.getElementById('formReg').classList.toggle('hidden',t!=='reg');
+  document.getElementById('formForgot').classList.toggle('hidden',t!=='forgot');
+  document.getElementById('formReset').classList.toggle('hidden',t!=='reset');
+  // esconde abas no modo forgot/reset
+  document.querySelector('#authView .tabs').classList.toggle('hidden', t==='forgot' || t==='reset');
   clearMsg();
 }
 
@@ -302,8 +319,17 @@ async function boot(){
       msg('Não consegui carregar a biblioteca do Supabase. Recarregue (Cmd+Shift+R) e abra no Google Chrome.','err'); return;
     }
     sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    // detecta retorno do link de recuperação de senha
+    const hash = (location.hash||'').replace(/^#/,'');
+    const params = new URLSearchParams(hash);
+    const isRecovery = params.get('type') === 'recovery';
     const { data:{ session } } = await sb.auth.getSession();
     hide('loading');
+    if(isRecovery){
+      show('authView'); switchTab('reset');
+      msg('Defina uma nova senha pra sua conta.','ok');
+      return;
+    }
     if(session){ await openApp(); } else { show('authView'); }
   }catch(err){ hide('loading'); show('authView'); msg('Erro ao iniciar: '+((err&&err.message)||err),'err'); }
 }
@@ -332,6 +358,38 @@ async function doLogin(e){
   return false;
 }
 async function doLogout(){ await sb.auth.signOut(); location.reload(); }
+async function doForgot(e){
+  e.preventDefault(); clearMsg();
+  const btn=document.getElementById('forgotBtn'); btn.disabled=true; btn.textContent='Enviando…';
+  try{
+    const email = val('forgotEmail').toLowerCase();
+    if(!email){ msg('Informe o e-mail','err'); btn.disabled=false; btn.textContent='Enviar link'; return false; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: location.origin + '/app'
+    });
+    if(error) throw error;
+    msg('✓ Enviamos um link pro seu e-mail. Confira (e o spam) e clique pra criar nova senha.','ok');
+    btn.disabled=false; btn.textContent='Enviar link';
+  }catch(err){ msg(traduz(err),'err'); btn.disabled=false; btn.textContent='Enviar link'; }
+  return false;
+}
+async function doReset(e){
+  e.preventDefault(); clearMsg();
+  const p1 = document.getElementById('resetPass').value;
+  const p2 = document.getElementById('resetPass2').value;
+  if(p1.length<6){ msg('A senha precisa ter ao menos 6 caracteres','err'); return false; }
+  if(p1 !== p2){ msg('As duas senhas precisam ser iguais','err'); return false; }
+  const btn=document.getElementById('resetBtn'); btn.disabled=true; btn.textContent='Salvando…';
+  try{
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if(error) throw error;
+    msg('✓ Senha atualizada! Entrando…','ok');
+    // limpa o hash do recovery e abre o app
+    history.replaceState(null,'',location.pathname);
+    setTimeout(()=>{ openApp(); }, 800);
+  }catch(err){ msg(traduz(err),'err'); btn.disabled=false; btn.textContent='Salvar nova senha'; }
+  return false;
+}
 function traduz(err){const m=(err&&err.message)||'Algo deu errado';
   if(/already registered|already exists/i.test(m))return 'Já existe uma conta com esse e-mail. Tente entrar.';
   if(/Invalid login credentials/i.test(m))return 'E-mail ou senha incorretos.';
@@ -348,6 +406,11 @@ async function openApp(){
     if(user){ await sb.from('professionals').insert({ id:user.id, slug:'prof-'+user.id.slice(0,8), name:user.user_metadata?.name||'Profissional', specialty:user.user_metadata?.specialty||'Endodontia', phone:user.user_metadata?.phone||null }); const r=await sb.from('professionals').select('*').maybeSingle(); prof=r.data; }
   }
   currentProf=prof;
+  // pega o e-mail do auth.users (a tabela professionals não tem)
+  try{
+    const { data:{ user } } = await sb.auth.getUser();
+    if(user && currentProf) currentProf.email = user.email;
+  }catch(_){}
   try{
     const { data:pl } = await sb.from('plans').select('code,name,price,sort_order').eq('active',true).order('sort_order',{ascending:true});
     PLANS_APP = pl || [];
@@ -963,7 +1026,53 @@ function viewPerfil(){
   <div class="card" style="max-width:560px">
     <div class="section-title">Link de agendamento</div>
     ${linkBlock}
+  </div>
+  <div class="card" style="max-width:560px">
+    <div class="section-title">Conta e segurança</div>
+    <div class="field"><label>E-mail de acesso</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="pfCurrentEmail" value="${esc((p.email)||'')}" disabled style="flex:1">
+        <button class="btn btn-ghost btn-sm" onclick="openChangeEmail()">Trocar</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px">Esse é o e-mail que você usa pra entrar.</p>
+    </div>
+    <div id="changeEmailBox" class="hidden" style="background:var(--surface-2);padding:14px;border-radius:11px;margin-top:6px">
+      <div class="field"><label>Novo e-mail</label><input id="pfNewEmail" type="email" placeholder="novo@email.com"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="changeEmail()">Enviar confirmação</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeChangeEmail()">Cancelar</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5">📧 Enviamos um link de confirmação pro novo e-mail. A troca só acontece quando você clicar nele.</p>
+    </div>
+    <div class="field" style="margin-top:14px"><label>Senha</label>
+      <button class="btn btn-ghost btn-sm" onclick="changePassword()">Trocar minha senha</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px">Enviamos um link no seu e-mail pra você criar uma nova senha.</p>
+    </div>
   </div>`;
+}
+function openChangeEmail(){ document.getElementById('changeEmailBox').classList.remove('hidden'); }
+function closeChangeEmail(){
+  document.getElementById('changeEmailBox').classList.add('hidden');
+  document.getElementById('pfNewEmail').value='';
+}
+async function changeEmail(){
+  const email = (document.getElementById('pfNewEmail').value||'').trim().toLowerCase();
+  if(!email || !email.includes('@')){ toast('Informe um e-mail válido','err'); return; }
+  if(email === currentProf.email){ toast('Esse já é seu e-mail atual','err'); return; }
+  toast('Enviando…','');
+  const { error } = await sb.auth.updateUser({ email });
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast('✓ Link enviado pro novo e-mail. Confirme por lá.','ok');
+  closeChangeEmail();
+}
+async function changePassword(){
+  if(!currentProf.email){ toast('E-mail não encontrado','err'); return; }
+  if(!confirm('Enviar um link pro seu e-mail pra trocar a senha?')) return;
+  const { error } = await sb.auth.resetPasswordForEmail(currentProf.email, {
+    redirectTo: location.origin + '/app'
+  });
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast('✓ Link enviado pro seu e-mail!','ok');
 }
 function toggleProc(btn){ btn.classList.toggle('on'); }
 async function uploadAvatar(file){
