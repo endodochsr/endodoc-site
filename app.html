@@ -1039,10 +1039,12 @@ function viewPerfil(){
     <div id="changeEmailBox" class="hidden" style="background:var(--surface-2);padding:14px;border-radius:11px;margin-top:6px">
       <div class="field"><label>Novo e-mail</label><input id="pfNewEmail" type="email" placeholder="novo@email.com"></div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" onclick="changeEmail()">Enviar confirmação</button>
+        <button class="btn btn-primary btn-sm" onclick="changeEmail()">Enviar confirmações</button>
         <button class="btn btn-ghost btn-sm" onclick="closeChangeEmail()">Cancelar</button>
       </div>
-      <p style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5">📧 Enviamos um link de confirmação pro novo e-mail. A troca só acontece quando você clicar nele.</p>
+      <div style="background:#fffbf2;border:1px solid #ecdfbf;border-left:4px solid #c2a063;border-radius:0 10px 10px 0;padding:10px 14px;margin-top:10px;font-size:12.5px;color:#7a5a14;line-height:1.55">
+        <b>⚠️ Importante:</b> por segurança, enviamos <b>2 links</b> — um pro e-mail atual e outro pro e-mail novo. Você precisa clicar nos <b>dois</b> pra a troca acontecer. Só clicar em um não troca!
+      </div>
     </div>
     <div class="field" style="margin-top:14px"><label>Senha</label>
       <button class="btn btn-ghost btn-sm" onclick="changePassword()">Trocar minha senha</button>
@@ -1062,8 +1064,11 @@ async function changeEmail(){
   toast('Enviando…','');
   const { error } = await sb.auth.updateUser({ email });
   if(error){ toast('Erro: '+error.message,'err'); return; }
-  toast('✓ Link enviado pro novo e-mail. Confirme por lá.','ok');
+  toast('✓ Confirmações enviadas. Clique nos 2 links (antigo + novo).','ok');
   closeChangeEmail();
+  setTimeout(()=>{
+    alert('IMPORTANTE: Por segurança, enviamos 2 e-mails de confirmação:\n\n• Pro seu e-mail ATUAL ('+currentProf.email+')\n• Pro NOVO e-mail ('+email+')\n\nVocê precisa clicar nos DOIS links pra a troca acontecer. Só clicar em um não troca!\n\nCheque a caixa de entrada e o spam dos dois e-mails.');
+  }, 600);
 }
 async function changePassword(){
   if(!currentProf.email){ toast('E-mail não encontrado','err'); return; }
