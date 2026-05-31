@@ -189,6 +189,47 @@
   .pill.accept:hover{background:#246245}
   .bk-card-pending{border-color:#e8c87a;background:linear-gradient(180deg,#fffbf2 0%,#ffffff 100%)}
   .bk-ribbon{margin:-16px -16px 14px;padding:8px 16px;background:#f7eed9;color:#8a6d27;font-size:12.5px;font-weight:700;letter-spacing:.02em;border-bottom:1px solid #ecdfbf;border-radius:13px 13px 0 0}
+  /* ===== Calendário da Agenda ===== */
+  .cal-wrap{border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--surface);box-shadow:var(--shadow);margin-top:14px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .cal-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;text-transform:capitalize;letter-spacing:-0.3px}
+  .cal-nav{display:flex;align-items:center;gap:6px}
+  .cal-nav-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:16px;cursor:pointer;display:grid;place-items:center;color:var(--ink);transition:.15s}
+  .cal-nav-btn:hover{background:var(--surface-2);border-color:var(--primary)}
+  .cal-today-btn{font-size:13px;font-weight:600;padding:0 14px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--ink)}
+  .cal-today-btn:hover{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-d)}
+  .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
+  .cal-dow div{text-align:center;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:4px 0}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal-cell{aspect-ratio:1/1;border-radius:11px;border:1px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:.15s;background:transparent;font-size:15px;color:var(--ink);min-height:48px}
+  .cal-cell:hover{background:var(--surface-2)}
+  .cal-cell.muted{color:#c5cdcc;cursor:default}
+  .cal-cell.muted:hover{background:transparent}
+  .cal-cell.weekend{color:#7a8281}
+  .cal-cell.today{border-color:var(--primary);font-weight:700;color:var(--primary-d)}
+  .cal-cell.has-active{background:var(--primary-soft);color:var(--primary-d);font-weight:600}
+  .cal-cell.has-active:hover{background:#cce8e6}
+  .cal-cell.has-pending{background:#fdf3d8;color:#8a6d27;font-weight:700}
+  .cal-cell.has-pending:hover{background:#f7eed9}
+  .cal-cell.selected{background:var(--primary)!important;color:#fff!important;border-color:var(--primary);box-shadow:0 4px 12px rgba(14,124,123,.32)}
+  .cal-cell.selected .cal-count,.cal-cell.selected .cal-dot{color:#fff!important;background:rgba(255,255,255,.25)!important}
+  .cal-count{position:absolute;top:4px;right:6px;font-size:10px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;min-width:16px;height:16px;display:grid;place-items:center;padding:0 4px;line-height:1}
+  .cal-cell.has-pending .cal-count{background:#c79520}
+  .cal-dot{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--primary)}
+  .cal-cell.has-pending .cal-dot{background:#c79520}
+  .cal-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+  .cal-legend span{display:inline-flex;align-items:center;gap:5px}
+  .cal-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .cal-day-head{display:flex;align-items:baseline;gap:10px;margin:24px 0 4px;padding:0 2px}
+  .cal-day-head h2{font-family:'Fraunces',serif;font-size:22px;font-weight:600;letter-spacing:-0.4px;margin:0;text-transform:capitalize}
+  .cal-day-head .meta{font-size:13px;color:var(--muted)}
+  .cal-empty-day{padding:32px 20px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface-2);border-radius:12px;margin-top:10px}
+  @media(max-width:640px){
+    .cal-wrap{padding:14px 12px}
+    .cal-cell{min-height:42px;font-size:14px}
+    .cal-cell .cal-count{font-size:9px;height:14px;min-width:14px;top:2px;right:3px}
+    .cal-title{font-size:18px}
+  }
   .slugrow{display:flex;align-items:center;gap:2px;border:1.5px solid var(--border);border-radius:12px;padding:0 12px;background:var(--surface)}
   .slugrow:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
   .slugpre{color:var(--muted);font-size:14px;white-space:nowrap}
@@ -1223,29 +1264,31 @@ async function renderAgenda(){
   }
   const pending=list.filter(b=>b.status==='pending');
   const active=list.filter(b=>b.status==='active');
-  const gPending=groupBookings(pending);
-  const gActive=groupBookings(active);
 
-  let html=`<div class="page-head"><h1>Agenda</h1><p>${active.length} confirmada(s)${pending.length?` · ${pending.length} aguardando sua confirmação`:''}.</p></div>`;
-  if(gPending.length){
-    html += `<div class="section-title" style="margin-top:18px;color:#8a6d27">🔔 Solicitações pendentes</div>`;
-    html += gPending.map(g=>bookingCard(g,{pending:true})).join('');
+  // estado da agenda (preserva entre re-renders nas mesmas sessão)
+  const today = todayISO();
+  if(!window._agenda || !window._agenda.month){
+    let selected = today;
+    const hasToday = list.some(b => b.slot_date === today);
+    if(!hasToday && list[0]) selected = list[0].slot_date;
+    window._agenda = { month: today.slice(0,7), selected };
   }
-  if(gActive.length){
-    html += `<div class="section-title" style="margin-top:24px">📅 Próximos atendimentos</div>`;
-    html += gActive.map((g,i)=>{
-      const card = bookingCard(g,{pending:false});
-      // trajeto entre grupos consecutivos do mesmo dia
-      const next=gActive[i+1];
-      const sameDay = next && next.bookings[0].slot_date===g.bookings[g.bookings.length-1].slot_date;
-      if(sameDay){
-        const fromId=g.bookings[g.bookings.length-1].id, toId=next.bookings[0].id;
-        return card + `<div class="bk-trajeto" data-from="${fromId}" data-to="${toId}"><span class="bk-trajeto-spinner">🚗 calculando trajeto…</span></div>`;
-      }
-      return card;
-    }).join('');
-  }
-  if(!gPending.length && !gActive.length){
+  window._agenda.pending = pending;
+  window._agenda.active = active;
+  window._agenda.totalEmpty = (pending.length===0 && active.length===0);
+
+  renderAgendaView();
+  refreshPendingBadge();
+}
+
+function renderAgendaView(){
+  const body = document.getElementById('appBody');
+  const { month, selected, pending, active, totalEmpty } = window._agenda;
+
+  let html = `<div class="page-head"><h1>Agenda</h1><p>${active.length} confirmada(s)${pending.length?` · ${pending.length} aguardando sua confirmação`:''}.</p></div>`;
+
+  // estado vazio total: sem calendário, só CTA
+  if(totalEmpty){
     html += `<div class="card empty-state">
       <div class="empty-ico">📅</div>
       <h3>Sua agenda está limpa</h3>
@@ -1255,10 +1298,154 @@ async function renderAgenda(){
         <button class="btn btn-ghost btn-sm" onclick="go('dispo')">Definir horários →</button>
       </div>
     </div>`;
+    body.innerHTML = html;
+    return;
   }
-  body.innerHTML=html;
-  enrichTravelTimesGrouped(gActive);
-  refreshPendingBadge();
+
+  // pendentes sempre no topo (alta prioridade)
+  if(pending.length){
+    const gPending = groupBookings(pending);
+    html += `<div class="section-title" style="margin-top:18px;color:#8a6d27">🔔 Solicitações pendentes</div>`;
+    html += gPending.map(g => bookingCard(g, {pending:true})).join('');
+  }
+
+  // mapa data → contagem de bookings por status
+  const counts = {};
+  for(const b of [...active, ...pending]){
+    if(!counts[b.slot_date]) counts[b.slot_date] = { active:0, pending:0 };
+    counts[b.slot_date][b.status]++;
+  }
+
+  const [y, m] = month.split('-').map(Number);
+  html += renderCalendar(y, m, selected, counts);
+  html += renderSelectedDay(selected, active, pending);
+
+  body.innerHTML = html;
+
+  // trajeto entre atendimentos consecutivos do dia
+  const dayActive = active.filter(b => b.slot_date === selected);
+  const gDayActive = groupBookings(dayActive);
+  enrichTravelTimesGrouped(gDayActive);
+}
+
+function renderCalendar(y, m, selectedISO, counts){
+  const mesNames=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const dowNames=['dom','seg','ter','qua','qui','sex','sáb'];
+  const first = new Date(y, m-1, 1);
+  const firstDow = first.getDay();
+  const lastDay = new Date(y, m, 0).getDate();
+  const prevLastDay = new Date(y, m-1, 0).getDate();
+  const todayStr = todayISO();
+
+  let cells = '';
+  // dias do mês anterior (preenchimento)
+  for(let i = firstDow-1; i >= 0; i--){
+    cells += `<div class="cal-cell muted">${prevLastDay - i}</div>`;
+  }
+  // dias do mês
+  for(let d = 1; d <= lastDay; d++){
+    const iso = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(y, m-1, d).getDay();
+    const c = counts[iso];
+    let cls = 'cal-cell';
+    if(dow === 0 || dow === 6) cls += ' weekend';
+    if(iso === todayStr) cls += ' today';
+    if(c){
+      if(c.pending > 0) cls += ' has-pending';
+      else if(c.active > 0) cls += ' has-active';
+    }
+    if(iso === selectedISO) cls += ' selected';
+    const total = c ? (c.active + c.pending) : 0;
+    const badge = total > 0 ? `<span class="cal-count">${total}</span>` : '';
+    cells += `<div class="${cls}" onclick="selectAgendaDay('${iso}')">${badge}${d}</div>`;
+  }
+  // dias do próximo mês (preenchimento até completar a grade)
+  const used = firstDow + lastDay;
+  const trailing = (7 - (used % 7)) % 7;
+  for(let d = 1; d <= trailing; d++){
+    cells += `<div class="cal-cell muted">${d}</div>`;
+  }
+
+  return `<div class="cal-wrap">
+    <div class="cal-head">
+      <div class="cal-title">${mesNames[m-1]} ${y}</div>
+      <div class="cal-nav">
+        <button class="cal-today-btn" onclick="agendaToday()">Hoje</button>
+        <button class="cal-nav-btn" onclick="agendaShiftMonth(-1)" title="Mês anterior">‹</button>
+        <button class="cal-nav-btn" onclick="agendaShiftMonth(1)" title="Próximo mês">›</button>
+      </div>
+    </div>
+    <div class="cal-dow">${dowNames.map(d=>`<div>${d}</div>`).join('')}</div>
+    <div class="cal-grid">${cells}</div>
+    <div class="cal-legend">
+      <span><i style="background:var(--primary-soft)"></i>Confirmadas</span>
+      <span><i style="background:#fdf3d8"></i>Aguardando confirmação</span>
+      <span><i style="background:transparent;border:1.5px solid var(--primary)"></i>Hoje</span>
+    </div>
+  </div>`;
+}
+
+function renderSelectedDay(iso, active, pending){
+  const dayActive = active.filter(b => b.slot_date === iso);
+  const dayPending = pending.filter(b => b.slot_date === iso);
+  const gActive = groupBookings(dayActive);
+  const gPending = groupBookings(dayPending);
+  const total = gActive.length + gPending.length;
+
+  const [y, mo, d] = iso.split('-').map(Number);
+  const dt = new Date(y, mo-1, d);
+  const dowNames=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const mesNames=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const isToday = iso === todayISO();
+  const label = `${dowNames[dt.getDay()]}, ${d} de ${mesNames[mo-1]}`;
+
+  let html = `<div class="cal-day-head">
+    <h2>${isToday ? 'Hoje · ' : ''}${label}</h2>
+    <span class="meta">${total ? total+' atendimento'+(total>1?'s':'') : 'sem atendimentos'}</span>
+  </div>`;
+
+  if(!total){
+    html += `<div class="cal-empty-day">Nenhum atendimento marcado nesse dia.</div>`;
+    return html;
+  }
+
+  // primeiro mostra pendentes desse dia (se houver), depois os ativos com trajetos
+  if(gPending.length){
+    html += gPending.map(g => bookingCard(g, {pending:true})).join('');
+  }
+  if(gActive.length){
+    html += gActive.map((g, i) => {
+      const card = bookingCard(g, {pending:false});
+      const next = gActive[i+1];
+      if(next){
+        const fromId = g.bookings[g.bookings.length-1].id;
+        const toId = next.bookings[0].id;
+        return card + `<div class="bk-trajeto" data-from="${fromId}" data-to="${toId}"><span class="bk-trajeto-spinner">🚗 calculando trajeto…</span></div>`;
+      }
+      return card;
+    }).join('');
+  }
+  return html;
+}
+
+function selectAgendaDay(iso){
+  if(!window._agenda) return;
+  window._agenda.selected = iso;
+  renderAgendaView();
+}
+function agendaShiftMonth(delta){
+  if(!window._agenda) return;
+  const [y, m] = window._agenda.month.split('-').map(Number);
+  const dt = new Date(y, m-1+delta, 1);
+  window._agenda.month = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+  renderAgendaView();
+}
+function agendaToday(){
+  if(!window._agenda) return;
+  const t = todayISO();
+  window._agenda.month = t.slice(0,7);
+  window._agenda.selected = t;
+  renderAgendaView();
 }
 async function enrichTravelTimesGrouped(groups){
   const pairs=[]; const nodes=[];
