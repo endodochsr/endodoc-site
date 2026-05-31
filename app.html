@@ -1776,28 +1776,43 @@ async function previewReportPDF(){
 }
 
 /* ===== Upload de fotos do relatório ===== */
+const REPORT_PHOTO_MAX = 10;
 function renderPhotoGrid(type, paths){
+  const count = (paths||[]).length;
+  const atLimit = count >= REPORT_PHOTO_MAX;
+  const counter = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-align:right;font-weight:600">${count} / ${REPORT_PHOTO_MAX} fotos</div>`;
   const items = (paths||[]).map((p,i)=>{
     const url = sb.storage.from('consultation-reports').getPublicUrl(p).data.publicUrl;
     return `<div class="photo-thumb"><img src="${esc(url)}" alt=""><button type="button" class="ph-rm" onclick="removeReportPhoto('${type}',${i})" title="Remover">✕</button></div>`;
   }).join('');
-  const addBtn = `<label class="photo-add" title="Adicionar foto">+
+  const addBtn = atLimit ? '' : `<label class="photo-add" title="Adicionar foto">+
     <input type="file" accept="image/*" multiple style="display:none" onchange="handleReportPhotos('${type}',this.files)">
   </label>`;
-  if(!paths.length){
-    return `<label class="photo-area-empty">
+  if(!count){
+    return `${counter}<label class="photo-area-empty">
       <input type="file" accept="image/*" multiple style="display:none" onchange="handleReportPhotos('${type}',this.files)">
       📎 <b>Clique pra adicionar fotos</b> ou arraste aqui<br>
-      <span style="font-size:11.5px">JPG, PNG · várias de uma vez</span>
+      <span style="font-size:11.5px">JPG, PNG · até ${REPORT_PHOTO_MAX} fotos · várias de uma vez</span>
     </label>`;
   }
-  return `<div class="photo-grid">${items}${addBtn}</div>`;
+  return `${counter}<div class="photo-grid">${items}${addBtn}</div>`;
 }
 async function handleReportPhotos(type, files){
   if(!files || !files.length) return;
   const r = window._report; if(!r) return;
   const area = type==='radiografias' ? document.getElementById('phAreaRx') : document.getElementById('phAreaGal');
-  for(const file of files){
+  const current = (r[type]||[]).length;
+  const remaining = REPORT_PHOTO_MAX - current;
+  if(remaining <= 0){
+    toast(`Máximo de ${REPORT_PHOTO_MAX} fotos já atingido`,'err');
+    return;
+  }
+  // pega só até o limite restante
+  const toProcess = Array.from(files).slice(0, remaining);
+  if(files.length > remaining){
+    toast(`Você selecionou ${files.length} fotos, mas só restam ${remaining} vagas — usando as primeiras`,'err');
+  }
+  for(const file of toProcess){
     if(!file.type.startsWith('image/')){ toast('Arquivo "'+file.name+'" não é imagem','err'); continue; }
     if(file.size > 8*1024*1024){ toast('"'+file.name+'" passa de 8MB, comprima antes','err'); continue; }
     try{
