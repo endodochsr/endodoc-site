@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Confirmando · EndoDoc</title>
+<link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
+<meta name="robots" content="noindex">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,sans-serif}
+  :root{
+    --primary:#0e7c7b;--primary-d:#0a5d5c;--primary-soft:#dceeed;
+    --bg:#f5efe6;--surface:#ffffff;--ink:#16302f;--muted:#5e706f;
+    --accent:#f2683c;--danger:#c2553a;--danger-soft:#fce5dd;--success:#1f5d4b;--border:#eee4d0;
+    --shadow:0 4px 14px rgba(16,48,47,.06);
+  }
+  html,body{height:100%;background:var(--bg);color:var(--ink)}
+  body{display:grid;place-items:center;padding:24px}
+  .box{background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:36px 32px;max-width:440px;width:100%;text-align:center}
+  .logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px}
+  .logo svg{width:36px;height:36px}
+  .logo .name{font-family:Georgia,'Fraunces',serif;font-size:20px;font-weight:600;color:var(--primary-d)}
+  h1{font-family:Georgia,'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:10px;letter-spacing:-0.3px}
+  p{font-size:14.5px;color:var(--muted);line-height:1.55;margin-bottom:16px}
+  .spinner{width:38px;height:38px;border:3px solid var(--primary-soft);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:14px auto 18px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ico{font-size:42px;margin-bottom:10px;line-height:1}
+  .btn{display:inline-block;padding:11px 22px;border-radius:10px;background:var(--primary);color:#fff;text-decoration:none;font-weight:600;font-size:14.5px;margin-top:6px;border:none;cursor:pointer}
+  .btn:hover{background:var(--primary-d)}
+  .err{background:var(--danger-soft);color:var(--danger);padding:14px;border-radius:10px;font-size:13.5px;text-align:left;line-height:1.55;margin-top:6px}
+  .ok-color{color:var(--success)}
+  .err-color{color:var(--danger)}
+</style>
+</head>
+<body>
+<div class="box" id="box">
+  <div class="logo">
+    <svg viewBox="0 0 1080 1080" width="36" height="36">
+      <ellipse fill="#DFE0E2" cx="540.7" cy="827.2" rx="238.4" ry="45.7"/>
+      <path fill="#0E7C7B" d="M779.7,446.8c0-132.4-107.3-239.7-239.7-239.7S300.3,314.5,300.3,446.8c0,49.4,15,95.3,40.6,133.5c22,38.3,46.8,78.3,74.6,119.4c36.9,54.5,74,103.3,109.9,146.8c7.6,9.1,21.6,9.1,29.1,0c35.9-43.5,73-92.3,109.9-146.8c27.8-41.1,52.6-81.1,74.6-119.4C764.7,542.2,779.7,496.3,779.7,446.8z"/>
+      <path fill="#F2F2F2" d="M651,541.1c-5,12-8.3,24.7-9.7,37.7c-4.7,42.7-13.7,79.4-40.5,91.2c-47.6,0-15-100.9-60.8-100.6C494.2,569,526.8,670,479.2,670c-26.8-11.8-35.8-48.5-40.5-91.2c-1.4-13-4.7-25.7-9.7-37.7c-25.5-60.6-32.1-110.2,0.7-136.8c16-13,37.7-16.8,57.5-11.1c2.1,0.6,4.2,1.3,6.3,2c6.1,2.1,11.9,4.6,17.6,7.1c2.3,1,4.6,1.9,6.9,2.7c0,0,0,0,0.1,0c18.7,8.1,36.9,15.4,59.7,8.7c-10.5-0.8-20.1-2.6-28.4-5.9c6.6-0.9,13.2-2.8,19.4-5.6c7.6-3.5,15.6-6.7,23.9-9.1c19.9-5.7,41.5-1.9,57.5,11.1C683.1,430.8,676.5,480.4,651,541.1z"/>
+    </svg>
+    <span class="name">endodoc</span>
+  </div>
+  <div id="content">
+    <h1>Confirmando…</h1>
+    <div class="spinner"></div>
+    <p>Validando seu link de confirmação.</p>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1b2x3ZG5pdWdqd2JlcHVqcW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NzQzNzMsImV4cCI6MjA3NTQ1MDM3M30.OY3M9bdpojzu0PIqLnQAQqDXIYjOI9CXuQOcwR6CkP4';
+  const sb = createClient(SUPA_URL, SUPA_KEY);
+
+  const content = document.getElementById('content');
+
+  function show(ico, title, msg, btnText, btnHref){
+    content.innerHTML = `
+      <div class="ico">${ico}</div>
+      <h1>${title}</h1>
+      <p>${msg}</p>
+      ${btnText ? `<a class="btn" href="${btnHref || '/app'}">${btnText}</a>` : ''}
+    `;
+  }
+
+  function showError(msg, retry){
+    content.innerHTML = `
+      <div class="ico err-color">⚠️</div>
+      <h1 class="err-color">Não foi possível confirmar</h1>
+      <div class="err">${msg}</div>
+      <p style="margin-top:14px">Se o link expirou (vale 1h), peça um novo no app.</p>
+      <a class="btn" href="/app">Ir pro app</a>
+    `;
+  }
+
+  async function run(){
+    const params = new URLSearchParams(location.search);
+    const hashParams = new URLSearchParams(location.hash.slice(1));
+    const tokenHash = params.get('token_hash') || hashParams.get('token_hash');
+    const type = params.get('type') || hashParams.get('type') || 'email';
+
+    // Suporta também o formato antigo (#access_token=...&refresh_token=...) caso Supabase mande direto
+    if(hashParams.get('access_token')){
+      const at = hashParams.get('access_token');
+      const rt = hashParams.get('refresh_token');
+      try{
+        const { error } = await sb.auth.setSession({ access_token: at, refresh_token: rt });
+        if(error) throw error;
+        const t = hashParams.get('type');
+        if(t === 'recovery') return location.replace('/app?type=recovery');
+        return location.replace('/app');
+      }catch(e){ return showError(e.message || 'Erro ao validar a sessão.'); }
+    }
+
+    if(!tokenHash){
+      return showError('Link inválido — código de confirmação ausente.');
+    }
+
+    try{
+      const { error } = await sb.auth.verifyOtp({ token_hash: tokenHash, type });
+      if(error) throw error;
+
+      // sucesso! redireciona conforme o tipo
+      if(type === 'recovery'){
+        show('🔐','Tudo certo!','Agora defina sua nova senha.','Definir nova senha','/app?type=recovery');
+        setTimeout(()=>location.replace('/app?type=recovery'), 1200);
+      } else if(type === 'email_change' || type === 'email_change_current' || type === 'email_change_new'){
+        show('✉️','E-mail confirmado!','Se você precisou confirmar nos dois e-mails (atual e novo), agora basta entrar com o novo.','Entrar','/app');
+        setTimeout(()=>location.replace('/app'), 2000);
+      } else if(type === 'signup' || type === 'invite'){
+        show('✓','Conta confirmada!','Bem-vindo ao EndoDoc.','Ir pro app','/app');
+        setTimeout(()=>location.replace('/app'), 1500);
+      } else {
+        show('✓','Tudo certo!','Você está logado.','Ir pro app','/app');
+        setTimeout(()=>location.replace('/app'), 1200);
+      }
+    }catch(e){
+      console.error(e);
+      const msg = e.message || 'Erro desconhecido';
+      if(msg.toLowerCase().includes('expired')) {
+        showError('Esse link já expirou. Solicite um novo no app.');
+      } else if(msg.toLowerCase().includes('invalid')) {
+        showError('Esse link já foi usado ou é inválido.');
+      } else {
+        showError('Erro: ' + msg);
+      }
+    }
+  }
+  run();
+</script>
+<script src="/js/meta-pixel-cookies.js" defer></script>
+</body>
+</html>

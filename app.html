@@ -457,7 +457,11 @@ async function doRegister(e){
     const email=val('regEmail').toLowerCase(), pass=document.getElementById('regPass').value;
     const { data, error } = await sb.auth.signUp({ email, password:pass, options:{ data:{ name:val('regName'), specialty:val('regSpec')||'Endodontia', phone:val('regPhone') } } });
     if(error) throw error;
+    // Meta Pixel: signup completo (lead qualificado)
+    try{ window.fbqTrack && window.fbqTrack('CompleteRegistration', { content_name: 'Trial signup', status: 'pending_confirmation' }); }catch(_){}
     if(!data.session){ msg('Conta criada! Confirme pelo link no seu e-mail e depois faça login.','ok'); btn.disabled=false; btn.textContent='Começar teste grátis'; return false; }
+    // Meta Pixel: trial iniciado (sessão criada direto sem confirm)
+    try{ window.fbqTrack && window.fbqTrack('StartTrial', { predicted_ltv: 59, currency: 'BRL' }); }catch(_){}
     await openApp();
   }catch(err){ msg(traduz(err),'err'); btn.disabled=false; btn.textContent='Começar teste grátis'; }
   return false;
@@ -884,6 +888,9 @@ async function startSubscribe(){
   const doc=((inp&&inp.value)||'').replace(/\D/g,'');
   if(doc.length<11){ toast('Informe um CPF ou CNPJ válido','err'); return; }
   toast('Gerando pagamento…','');
+  // Meta Pixel: InitiateCheckout (intenção real de pagamento)
+  const priceMap = { MONTHLY: 59, SEMIANNUAL: 319, ANNUAL: 566 };
+  try{ window.fbqTrack && window.fbqTrack('InitiateCheckout', { value: priceMap[selectedSubPeriod]||59, currency: 'BRL', content_name: selectedSubPeriod }); }catch(_){}
   try{
     const { data:{ session } } = await sb.auth.getSession();
     const r = await fetch(SUPA_URL+'/functions/v1/asaas-subscribe', {
@@ -2887,5 +2894,6 @@ async function downloadDoc(encPath){
 
 boot();
 </script>
+<script src="/js/meta-pixel-cookies.js" defer></script>
 </body>
 </html>
