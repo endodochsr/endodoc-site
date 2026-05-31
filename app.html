@@ -278,6 +278,32 @@
     .modal-lg{max-width:100%!important}
     .modal-lg .rep-head h3{font-size:18px}
   }
+  /* ===== Prontuário (notas clínicas) ===== */
+  .pill.prontuario-empty{background:#fff;border:1.5px dashed var(--primary);color:var(--primary-d)}
+  .pill.prontuario-empty:hover{background:var(--primary-soft)}
+  .pill.prontuario-filled{background:var(--primary-soft);color:var(--primary-d);font-weight:700}
+  .pront-modal-area textarea{min-height:200px;width:100%;padding:14px;border:1.5px solid var(--border);border-radius:11px;font:inherit;font-size:14.5px;line-height:1.55;color:var(--ink);background:var(--surface);resize:vertical}
+  .pront-modal-area textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+  .pront-meta{font-size:12px;color:var(--muted);margin-top:8px}
+  /* ===== Detalhe do atendimento (modal big do histórico) ===== */
+  .hist-row{cursor:pointer;transition:background .15s}
+  .hist-row:hover{background:var(--surface-2)}
+  .hd-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+  .hd-head h3{font-family:'Fraunces',serif;font-size:22px;margin:0;letter-spacing:-0.3px}
+  .hd-head .sub{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .hd-section{margin-top:18px;padding-top:14px;border-top:1px dashed var(--border)}
+  .hd-section:first-of-type{border-top:none;padding-top:0;margin-top:0}
+  .hd-section h4{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-d);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .hd-section h4 .h4-meta{font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;font-size:11.5px;margin-left:auto}
+  .hd-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;font-size:13.5px}
+  .hd-info-grid .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:2px}
+  .hd-info-grid .val{color:var(--ink);font-size:14px}
+  .hd-prontuario{background:var(--surface-2);border-radius:11px;padding:12px 14px;font-size:13.5px;line-height:1.6;color:var(--ink);white-space:pre-wrap}
+  .hd-prontuario.empty{color:var(--muted);font-style:italic;text-align:center;padding:18px}
+  .hd-actions-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  @media(max-width:640px){
+    .hd-info-grid{grid-template-columns:1fr}
+  }
   .slugrow{display:flex;align-items:center;gap:2px;border:1.5px solid var(--border);border-radius:12px;padding:0 12px;background:var(--surface)}
   .slugrow:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
   .slugpre{color:var(--muted);font-size:14px;white-space:nowrap}
@@ -1249,6 +1275,7 @@ function bookingCard(g, opts){
   const todayStr = todayISO();
   const canMarkDone = !opts.pending && !completed && first.slot_date <= todayStr;
   const reportPill = !opts.pending && completed ? renderReportPill(first.id) : '';
+  const prontuarioPill = !opts.pending && completed ? renderProntuarioPill(first.id, !!first.clinical_notes) : '';
 
   const headerActions = opts.pending
     ? `<div style="display:flex;gap:6px;flex-shrink:0">
@@ -1295,6 +1322,7 @@ function bookingCard(g, opts){
     <div class="bk-notes">📝 ${esc(first.notes||'—')}</div>
     <div class="bk-actions">
       ${!opts.pending && first.patient_phone ? renderAnamnesePill(first.id) : ''}
+      ${prontuarioPill}
       ${reportPill}
       ${canMarkDone ? `<button class="pill done" onclick='markCompleted("${first.id}", ${idsAttr})'>✓ Marcar realizado</button>` : ''}
       ${first.office_address && !completed ?`<a class="pill" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️ Como chegar</a>`:''}
@@ -1307,6 +1335,173 @@ function renderReportPill(bookingId){
   if(!r) return `<button class="pill report-create" onclick="openReport('${bookingId}')">📋 Criar relatório</button>`;
   if(r.sent_to_office_at) return `<button class="pill report-sent" onclick="openReport('${bookingId}')">📋 Relatório enviado ✓</button>`;
   return `<button class="pill report-ready" onclick="openReport('${bookingId}')">📋 Relatório (rascunho)</button>`;
+}
+function renderProntuarioPill(bookingId, hasNotes){
+  if(hasNotes) return `<button class="pill prontuario-filled" onclick="openProntuario('${bookingId}')">📝 Prontuário ✓</button>`;
+  return `<button class="pill prontuario-empty" onclick="openProntuario('${bookingId}')">📝 Prontuário</button>`;
+}
+
+/* ===== Prontuário (notas clínicas) ===== */
+async function openProntuario(bookingId){
+  toast('Carregando…','');
+  const { data:bk, error } = await sb.from('bookings').select('id,slot_date,slot_time,office_name,patient_name,clinical_notes,clinical_notes_updated_at').eq('id',bookingId).maybeSingle();
+  if(error || !bk){ toast('Erro ao carregar','err'); return; }
+  window._prontBk = bk;
+  const dt = new Date(bk.slot_date+'T12:00:00');
+  const dtStr = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const updated = bk.clinical_notes_updated_at ? `Salvo em ${new Date(bk.clinical_notes_updated_at).toLocaleString('pt-BR')}` : 'Sem prontuário ainda';
+  const html = `
+    <div class="rep-head">
+      <div>
+        <h3>📝 Prontuário</h3>
+        <div class="sub">${esc(bk.patient_name||'Paciente')} · ${dtStr}${bk.office_name?' · '+esc(bk.office_name):''}</div>
+      </div>
+      <button class="rep-close" onclick="closeProntuario()" title="Fechar">✕</button>
+    </div>
+    <div class="pront-modal-area">
+      <textarea id="prontText" placeholder="Anote o que foi feito na consulta. Ex:
+- Sessão 1: acesso + descontaminação + medicação intracanal (hidróxido de cálcio)
+- Localizados 4 condutos no dente 36 (MV, ML, DV, DL)
+- Paciente tolerou bem
+- Retorno em 30 dias pra obturação">${esc(bk.clinical_notes||'')}</textarea>
+      <div class="pront-meta">${updated} · Salvo apenas pra você (não vai pro consultório)</div>
+    </div>
+    <div class="rep-actions">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeProntuario()">Fechar</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="saveProntuario()">💾 Salvar prontuário</button>
+    </div>`;
+  document.getElementById('modal').classList.add('modal-lg');
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('prontText')?.focus(), 100);
+}
+function closeProntuario(){
+  document.getElementById('modal').classList.remove('modal-lg');
+  closeModal();
+  window._prontBk = null;
+}
+async function saveProntuario(){
+  const bk = window._prontBk; if(!bk) return;
+  const txt = (document.getElementById('prontText')?.value||'').trim();
+  toast('Salvando…','');
+  const { error } = await sb.rpc('save_clinical_notes',{ p_booking_id: bk.id, p_notes: txt || null });
+  if(error){ toast('Erro: '+(error.message||'falha'),'err'); return; }
+  toast('✓ Prontuário salvo','ok');
+  closeProntuario();
+  // re-render a view atual pra refletir a mudança
+  if(window._agenda) renderAgenda();
+  if(document.getElementById('histList')) loadHistorico();
+}
+
+/* ===== Detalhes completos do atendimento (modal grande do histórico) ===== */
+async function openHistoryDetail(bookingId){
+  toast('Carregando…','');
+  const { data:bk, error } = await sb.from('bookings').select('*').eq('id',bookingId).maybeSingle();
+  if(error || !bk){ toast('Erro ao carregar','err'); return; }
+  // anamnese e relatório em paralelo
+  const [anamRes, repRes] = await Promise.all([
+    sb.from('anamneses').select('id,sent_at,filled_at,answers,filled_at').eq('booking_id',bookingId).maybeSingle(),
+    sb.from('consultation_reports').select('*').eq('booking_id',bookingId).maybeSingle(),
+  ]);
+  const anam = anamRes.data;
+  const rep = repRes.data;
+  window._hdBk = bk;
+
+  const dt = new Date(bk.slot_date+'T12:00:00');
+  const dtStr = dt.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const tStr = (bk.slot_time||'').slice(0,5);
+  const isCompleted = !!bk.completed_at;
+  const isCancelled = bk.status==='cancelled';
+  let statusBadge;
+  if(isCancelled) statusBadge = '<span class="hist-badge cancelled" style="margin-left:6px">Cancelada</span>';
+  else if(isCompleted) statusBadge = '<span class="hist-badge done" style="margin-left:6px;background:#dff1ec;color:#0f5d5b">Realizada ✓</span>';
+  else statusBadge = '<span class="hist-badge done" style="margin-left:6px">Realizada</span>';
+
+  // seção anamnese
+  let anamBlock;
+  if(anam && anam.filled_at){
+    anamBlock = `<div class="hd-actions-row"><button class="pill anam-done" onclick="viewAnamnese('${anam.id}')">📋 Ver anamnese preenchida</button><span style="font-size:12px;color:var(--muted);align-self:center">Respondida em ${new Date(anam.filled_at).toLocaleString('pt-BR')}</span></div>`;
+  } else if(anam && anam.sent_at){
+    anamBlock = `<div class="hd-prontuario empty">📤 Anamnese enviada em ${new Date(anam.sent_at).toLocaleString('pt-BR')}, mas o paciente ainda não preencheu.</div>`;
+  } else if(bk.patient_phone){
+    anamBlock = `<div class="hd-prontuario empty">⏳ Anamnese não foi enviada pra esse atendimento.</div>`;
+  } else {
+    anamBlock = `<div class="hd-prontuario empty">Sem dados de paciente — anamnese não se aplica.</div>`;
+  }
+
+  // seção relatório
+  let repBlock;
+  if(rep && rep.sent_to_office_at){
+    repBlock = `<div class="hd-actions-row"><button class="pill report-sent" onclick="openReport('${bk.id}')">📋 Ver relatório enviado</button><span style="font-size:12px;color:var(--muted);align-self:center">Enviado em ${new Date(rep.sent_to_office_at).toLocaleString('pt-BR')}</span></div>`;
+  } else if(rep){
+    repBlock = `<div class="hd-actions-row"><button class="pill report-ready" onclick="openReport('${bk.id}')">📋 Abrir rascunho</button><span style="font-size:12px;color:var(--muted);align-self:center">Salvo em ${new Date(rep.updated_at||rep.created_at).toLocaleString('pt-BR')} · ainda não enviado</span></div>`;
+  } else if(isCompleted){
+    repBlock = `<div class="hd-actions-row"><button class="pill report-create" onclick="openReport('${bk.id}')">📋 Criar relatório</button></div>`;
+  } else {
+    repBlock = `<div class="hd-prontuario empty">Marque o atendimento como realizado pra criar um relatório.</div>`;
+  }
+
+  // seção prontuário
+  let prontBlock;
+  if(bk.clinical_notes){
+    prontBlock = `
+      <div class="hd-prontuario">${esc(bk.clinical_notes)}</div>
+      <div class="hd-actions-row" style="margin-top:10px">
+        <button class="pill prontuario-filled" onclick="closeHistoryDetail();openProntuario('${bk.id}')">📝 Editar prontuário</button>
+        <span style="font-size:12px;color:var(--muted);align-self:center">Atualizado em ${new Date(bk.clinical_notes_updated_at).toLocaleString('pt-BR')}</span>
+      </div>`;
+  } else if(isCompleted){
+    prontBlock = `<div class="hd-actions-row"><button class="pill prontuario-empty" onclick="closeHistoryDetail();openProntuario('${bk.id}')">📝 Adicionar prontuário</button></div>`;
+  } else {
+    prontBlock = `<div class="hd-prontuario empty">Marque o atendimento como realizado pra escrever o prontuário.</div>`;
+  }
+
+  const html = `
+    <div class="hd-head">
+      <div>
+        <h3>Detalhes do atendimento ${statusBadge}</h3>
+        <div class="sub">${dtStr}${tStr?' às '+tStr:''}<br>${esc(bk.office_name||'')}${bk.office_responsible?' · '+esc(bk.office_responsible):''}</div>
+      </div>
+      <button class="rep-close" onclick="closeHistoryDetail()" title="Fechar">✕</button>
+    </div>
+
+    <div class="hd-section">
+      <h4>ℹ️ Informações</h4>
+      <div class="hd-info-grid">
+        ${bk.patient_name?`<div><div class="lbl">Paciente</div><div class="val">${esc(bk.patient_name)}${bk.patient_phone?' · '+esc(formatPhone(bk.patient_phone)):''}</div></div>`:''}
+        ${bk.procedure?`<div><div class="lbl">Procedimento</div><div class="val">${esc(bk.procedure)}</div></div>`:''}
+        ${bk.office_address?`<div><div class="lbl">Endereço</div><div class="val">${esc(bk.office_address)}</div></div>`:''}
+        ${bk.office_phone?`<div><div class="lbl">Telefone do consultório</div><div class="val">${esc(formatPhone(bk.office_phone))}</div></div>`:''}
+        ${bk.notes?`<div style="grid-column:1/-1"><div class="lbl">Observações do agendamento</div><div class="val">${esc(bk.notes)}</div></div>`:''}
+      </div>
+    </div>
+
+    <div class="hd-section">
+      <h4>📝 Prontuário <span class="h4-meta">${bk.clinical_notes?'preenchido':'sem registro'}</span></h4>
+      ${prontBlock}
+    </div>
+
+    <div class="hd-section">
+      <h4>🩺 Anamnese pré-consulta <span class="h4-meta">${anam&&anam.filled_at?'preenchida':(anam&&anam.sent_at?'enviada':'não enviada')}</span></h4>
+      ${anamBlock}
+    </div>
+
+    <div class="hd-section">
+      <h4>📤 Relatório pro consultório <span class="h4-meta">${rep&&rep.sent_to_office_at?'enviado':(rep?'rascunho':'não criado')}</span></h4>
+      ${repBlock}
+    </div>
+
+    <div class="rep-actions">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeHistoryDetail()">Fechar</button>
+    </div>`;
+  document.getElementById('modal').classList.add('modal-lg');
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeHistoryDetail(){
+  document.getElementById('modal').classList.remove('modal-lg');
+  closeModal();
+  window._hdBk = null;
 }
 function formatPhone(d){
   d=(d||'').replace(/\D/g,'');
@@ -2505,16 +2700,6 @@ async function loadHistorico(){
     </div>`;
     return;
   }
-  // carrega relatórios das realizadas pra mostrar link "Ver/Criar relatório"
-  window._reportMap = window._reportMap || {};
-  const realizadasIds = list.filter(b=>b.status==='active' && b.completed_at).map(b=>b.id);
-  if(realizadasIds.length){
-    try{
-      const {data:reps} = await sb.from('consultation_reports').select('id,booking_id,sent_to_office_at').in('booking_id', realizadasIds);
-      (reps||[]).forEach(r => { window._reportMap[r.booking_id] = r; });
-    }catch(_){}
-  }
-
   // agrupa por (data, clínica, telefone) pra mostrar multi-slot como 1 linha
   const groups = groupBookings(list);
   const html = groups.map(g => {
@@ -2530,24 +2715,19 @@ async function loadHistorico(){
     const badge = isCancelled
       ? '<span class="hist-badge cancelled">Cancelada</span>'
       : (isCompleted ? '<span class="hist-badge done">Realizada ✓</span>' : '<span class="hist-badge done">Realizada</span>');
-    // botão de relatório (só pra realizadas marcadas como completed)
-    let reportBtn = '';
-    if(isCompleted){
-      const rep = (window._reportMap||{})[first.id];
-      if(rep && rep.sent_to_office_at) reportBtn = `<button class="pill report-sent" style="margin-left:8px;font-size:11.5px;padding:4px 8px" onclick="openReport('${first.id}')">📋 Enviado</button>`;
-      else if(rep) reportBtn = `<button class="pill report-ready" style="margin-left:8px;font-size:11.5px;padding:4px 8px" onclick="openReport('${first.id}')">📋 Rascunho</button>`;
-      else reportBtn = `<button class="pill report-create" style="margin-left:8px;font-size:11.5px;padding:4px 8px" onclick="openReport('${first.id}')">📋 Criar</button>`;
-    }
-    return `<div class="hist-row ${isCancelled?'cancelled':''}">
+    // ícone discreto pra indicar que tem conteúdo extra (prontuário, anamnese, relatório)
+    const hasNotes = !!first.clinical_notes;
+    const extraIcon = isCancelled ? '' : `<span style="font-size:11px;color:var(--muted);margin-left:6px;opacity:.8" title="Ver detalhes completos">▸</span>`;
+    return `<div class="hist-row ${isCancelled?'cancelled':''}" onclick="openHistoryDetail('${first.id}')" title="Clique pra ver detalhes completos">
       <div class="hist-date">
         <div class="hist-d">${dataStr}</div>
         <div class="hist-t">${horario}${dur>1?` <span style="color:var(--muted)">(${dur}h)</span>`:''}</div>
       </div>
       <div class="hist-main">
-        <div class="hist-name">${esc(first.office_name)}</div>
+        <div class="hist-name">${esc(first.office_name)}${hasNotes?' <span style="font-size:11px;color:var(--primary);font-weight:600" title="Tem prontuário">📝</span>':''}</div>
         <div class="hist-meta">${esc(first.procedure||'—')}${first.office_responsible?' · '+esc(first.office_responsible):''}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px">${badge}${reportBtn}</div>
+      <div style="display:flex;align-items:center;gap:4px">${badge}${extraIcon}</div>
     </div>`;
   }).join('');
   document.getElementById('histList').innerHTML = `<div class="card" style="padding:8px">${html}</div>`;
