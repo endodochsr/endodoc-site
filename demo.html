@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EndoDoc · Agenda inteligente para endodontistas delivery — Teste 14 dias grátis</title>
+<meta name="description" content="Sua agenda de endodontia organizada sozinha. Um link único, os consultórios marcam nos seus horários livres, sincronizado com Google Calendar. 14 dias grátis, sem cartão." />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://endodoc.com.br/demo" />
+<link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="EndoDoc · A agenda que pensa pelo endodontista delivery" />
+<meta property="og:description" content="Um link único, e os consultórios marcam sozinhos. Anamnese automática por WhatsApp, trajeto entre consultas e relatório pós-atendimento. Teste 14 dias grátis." />
+<meta property="og:url" content="https://endodoc.com.br/demo" />
+<meta property="og:image" content="https://endodoc.com.br/brand/og.png" />
+<meta property="og:locale" content="pt_BR" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --primary:#0e7c7b;--primary-d:#0a5d5c;--primary-soft:#dceeed;
+    --accent:#f2683c;--accent-d:#d85829;--accent-soft:#fce5dd;
+    --bg:#f5efe6;--cream:#faf6ed;--surface:#ffffff;
+    --ink:#16302f;--muted:#5e706f;--border:#eee4d0;
+    --shadow:0 4px 14px rgba(16,48,47,.06);
+    --shadow-lg:0 20px 50px rgba(16,48,47,.12);
+    --danger:#c2553a;
+  }
+  html,body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+  body{overflow-x:hidden}
+  img,svg{display:block;max-width:100%}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+  /* ========= Header sticky minimal ========= */
+  .hdr{position:sticky;top:0;z-index:50;background:rgba(245,239,230,.92);backdrop-filter:blur(10px);border-bottom:1px solid rgba(16,48,47,.06)}
+  .hdr-in{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;max-width:1180px;margin:0 auto}
+  .hdr .logo{display:flex;align-items:center;gap:10px;font-family:Georgia,'Fraunces',serif;font-size:20px;font-weight:600;color:var(--primary-d)}
+  .hdr .logo svg{width:36px;height:36px}
+  .hdr .lnk-entrar{font-size:14px;color:var(--muted);margin-right:14px;font-weight:500}
+  .hdr .lnk-entrar:hover{color:var(--primary)}
+  .hdr-cta{display:flex;align-items:center;gap:6px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 24px;border-radius:11px;font-weight:600;font-size:15px;cursor:pointer;border:none;text-decoration:none;transition:.18s;font-family:inherit}
+  .btn-primary{background:var(--accent);color:#fff;box-shadow:0 8px 18px rgba(242,104,60,.28)}
+  .btn-primary:hover{background:var(--accent-d);transform:translateY(-1px);box-shadow:0 10px 22px rgba(242,104,60,.36)}
+  .btn-sm{padding:9px 16px;font-size:14px}
+  .btn-lg{padding:17px 34px;font-size:17px}
+  .btn-block{width:100%}
+  .btn-ghost{background:transparent;color:var(--primary-d);border:1.5px solid rgba(14,124,123,.25)}
+  .btn-ghost:hover{border-color:var(--primary);background:var(--primary-soft)}
+
+  /* ========= Hero ========= */
+  .hero{padding:60px 0 50px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:60px;align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:99px;background:rgba(14,124,123,.08);color:var(--primary-d);margin-bottom:24px}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  h1{font-family:Georgia,'Fraunces',serif;font-size:clamp(36px,5vw,56px);line-height:1.07;letter-spacing:-0.025em;margin-bottom:22px;font-weight:600}
+  h1 .hl{color:var(--accent);font-style:italic}
+  .lead{font-size:clamp(17px,1.6vw,19px);color:var(--muted);margin-bottom:30px;max-width:520px;line-height:1.6}
+  .hero-cta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .hero-trust{margin-top:20px;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .hero-trust .ck{color:#1f5d4b;font-weight:700;font-size:15px}
+
+  /* Hero mockup — calendário */
+  .hero-mock{background:var(--surface);border-radius:22px;padding:24px;box-shadow:var(--shadow-lg);border:1px solid var(--border);position:relative}
+  .hero-mock::before{content:"";position:absolute;inset:-40px;background:radial-gradient(circle at 30% 20%,rgba(242,104,60,.10),transparent 60%);border-radius:32px;z-index:-1}
+  .mock-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+  .mock-head .url{font-size:13px;color:var(--muted);font-family:'Courier New',monospace}
+  .mock-head .mes{font-family:Georgia,serif;font-size:15px;font-weight:600;color:var(--primary-d)}
+  .mock-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .mock-cal .dow{text-align:center;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:4px 0}
+  .mock-cal .d{aspect-ratio:1/1;border-radius:8px;display:grid;place-items:center;font-size:13px;color:var(--ink);background:transparent;position:relative}
+  .mock-cal .d.muted{color:#c5cdcc}
+  .mock-cal .d.weekend{color:#7a8281}
+  .mock-cal .d.has{background:var(--primary-soft);color:var(--primary-d);font-weight:700}
+  .mock-cal .d.has::after{content:"";position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--primary)}
+  .mock-cal .d.today{border:1.5px solid var(--primary);font-weight:700}
+  .mock-cal .d.sel{background:var(--primary);color:#fff;font-weight:700}
+  .mock-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .mock-foot .ico{width:18px;height:18px;border-radius:50%;background:#dff1ec;color:#1f5d4b;display:grid;place-items:center;font-size:11px}
+
+  /* Faixa de credibilidade abaixo do hero */
+  .trust-bar{padding:22px 0;background:linear-gradient(180deg,transparent,rgba(14,124,123,.04));border-top:1px solid rgba(14,124,123,.08)}
+  .trust-bar .row{display:flex;justify-content:center;flex-wrap:wrap;gap:14px 36px;font-size:13px;color:var(--muted)}
+  .trust-bar .item{display:inline-flex;align-items:center;gap:8px}
+  .trust-bar .item .ck{color:var(--primary);font-weight:800}
+  .trust-bar b{color:var(--ink);font-weight:600}
+
+  /* ========= Problem section ========= */
+  .problem{padding:80px 0 70px;background:var(--cream)}
+  .sec-head{text-align:center;max-width:680px;margin:0 auto 50px}
+  .sec-kicker{font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .sec-head h2{font-family:Georgia,'Fraunces',serif;font-size:clamp(28px,3.6vw,40px);line-height:1.15;letter-spacing:-0.02em;margin-bottom:14px;font-weight:600}
+  .sec-head p{font-size:16.5px;color:var(--muted)}
+  .pains{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1000px;margin:0 auto}
+  .pain{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 24px;text-align:center;position:relative;overflow:hidden}
+  .pain::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+  .pain-ico{font-size:38px;margin-bottom:14px;line-height:1}
+  .pain h3{font-family:Georgia,'Fraunces',serif;font-size:19px;font-weight:600;margin-bottom:10px;color:var(--ink)}
+  .pain p{font-size:14.5px;color:var(--muted);line-height:1.55}
+
+  /* ========= Solution showcase (alternating layout) ========= */
+  .solution{padding:90px 0 80px}
+  .feat-row{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-bottom:90px}
+  .feat-row:last-child{margin-bottom:0}
+  .feat-row.reverse .feat-text{order:2}
+  .feat-row.reverse .feat-visual{order:1}
+  .feat-num{font-family:Georgia,'Fraunces',serif;font-size:60px;color:var(--accent);opacity:.3;line-height:1;margin-bottom:14px;font-weight:600;letter-spacing:-0.04em}
+  .feat-row h3{font-family:Georgia,'Fraunces',serif;font-size:clamp(24px,2.8vw,32px);font-weight:600;letter-spacing:-0.015em;margin-bottom:14px;line-height:1.2}
+  .feat-row .ftxt{font-size:16px;color:var(--muted);line-height:1.65;margin-bottom:20px}
+  .feat-bullets{display:grid;gap:11px}
+  .feat-bullets li{list-style:none;display:flex;gap:11px;align-items:flex-start;font-size:14.5px}
+  .feat-bullets .ck{flex:0 0 22px;width:22px;height:22px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);display:grid;place-items:center;margin-top:1px;font-weight:800;font-size:12px}
+  .feat-bullets b{color:var(--ink);font-weight:600}
+
+  /* Visual cards */
+  .feat-visual{position:relative}
+  .visual-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;box-shadow:var(--shadow-lg);position:relative}
+  .visual-card::before{content:"";position:absolute;inset:-30px;background:radial-gradient(circle at 50% 50%,rgba(14,124,123,.07),transparent 65%);border-radius:32px;z-index:-1}
+
+  /* Mockup: Link público (browser) */
+  .mk-browser{background:var(--surface);border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+  .mk-browser-top{background:#f0e6cf;padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+  .mk-browser-top .dot{width:10px;height:10px;border-radius:50%}
+  .mk-browser-top .dot.r{background:#ff5f57}
+  .mk-browser-top .dot.y{background:#febc2e}
+  .mk-browser-top .dot.g{background:#28c840}
+  .mk-browser-url{flex:1;background:#fff;border-radius:6px;padding:5px 11px;font-size:11px;color:var(--ink);font-family:'Courier New',monospace;margin-left:8px}
+  .mk-browser-body{padding:20px}
+  .mk-prof{display:flex;gap:14px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+  .mk-prof .av{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#dceeed,#0e7c7b);display:grid;place-items:center;color:#fff;font-family:Georgia,serif;font-size:22px;font-weight:700;flex-shrink:0}
+  .mk-prof .info b{display:block;font-size:14px;color:var(--ink);font-family:Georgia,serif}
+  .mk-prof .info span{font-size:12px;color:var(--muted)}
+  .mk-days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+  .mk-days .day{text-align:center;padding:8px 0;border-radius:8px;font-size:11px;color:var(--muted);background:var(--cream)}
+  .mk-days .day.sel{background:var(--primary);color:#fff;font-weight:700}
+  .mk-days .day b{display:block;font-size:14px;font-family:Georgia,serif}
+  .mk-slots{display:flex;flex-wrap:wrap;gap:6px}
+  .mk-slots .slot{font-size:11.5px;padding:7px 11px;border-radius:7px;background:var(--primary-soft);color:var(--primary-d);font-weight:600}
+  .mk-slots .slot.off{background:#f0eee5;color:#b9c6c5;text-decoration:line-through}
+  .mk-slots .slot.on{background:var(--accent);color:#fff}
+
+  /* Mockup: WhatsApp anamnese */
+  .mk-phone{background:#dad7d0;border-radius:24px;padding:8px;max-width:280px;margin:0 auto;box-shadow:0 12px 30px rgba(0,0,0,.18)}
+  .mk-phone-screen{background:#ece5dd;border-radius:18px;padding:14px 10px;min-height:380px;position:relative}
+  .mk-wa-top{background:#075e54;color:#fff;padding:10px 12px;border-radius:12px 12px 0 0;margin:-14px -10px 14px;display:flex;align-items:center;gap:10px;font-size:13px}
+  .mk-wa-top .av{width:30px;height:30px;border-radius:50%;background:#fff;color:#0e7c7b;display:grid;place-items:center;font-weight:700;font-size:13px}
+  .mk-wa-top b{font-size:14px}
+  .mk-wa-top span{font-size:11px;opacity:.85}
+  .mk-bubble{background:#dcf8c6;border-radius:11px;padding:10px 12px;font-size:12px;margin-bottom:8px;max-width:85%;color:#222;line-height:1.5;box-shadow:0 1px 1px rgba(0,0,0,.05)}
+  .mk-bubble.in{background:#fff;margin-left:0;margin-right:auto}
+  .mk-bubble.out{margin-left:auto;margin-right:0}
+  .mk-bubble .link{color:#0e7c7b;text-decoration:underline;font-size:11px;word-break:break-all}
+  .mk-bubble .time{font-size:10px;color:#7a8378;display:block;margin-top:4px;text-align:right}
+
+  /* Mockup: Trajeto entre consultas */
+  .mk-route{background:linear-gradient(180deg,#f0f7f6 0%,#fff 100%);border-radius:16px;padding:18px;border:1px solid var(--border)}
+  .mk-route-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:13px;display:flex;gap:12px;margin-bottom:8px}
+  .mk-route-card .when{width:50px;text-align:center;background:var(--primary-soft);border-radius:9px;padding:7px 0;flex-shrink:0}
+  .mk-route-card .when b{display:block;font-family:Georgia,serif;font-size:17px;color:var(--primary-d);line-height:1}
+  .mk-route-card .when span{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600}
+  .mk-route-card .info b{display:block;font-size:13px;color:var(--ink);margin-bottom:2px}
+  .mk-route-card .info span{font-size:11.5px;color:var(--muted)}
+  .mk-route-link{margin:8px 0;padding:9px 14px;background:linear-gradient(90deg,rgba(14,124,123,.15),transparent);border-left:3px solid var(--primary);border-radius:0 9px 9px 0;font-size:12.5px;color:var(--primary-d);display:flex;align-items:center;gap:6px}
+  .mk-route-link b{color:var(--ink)}
+
+  /* Mockup: Relatório */
+  .mk-report{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;font-size:11px;position:relative}
+  .mk-report-head{display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:12px}
+  .mk-report-head svg{width:24px;height:24px}
+  .mk-report-head .ws{font-family:Georgia,serif;font-size:14px;color:var(--primary-d);font-weight:700}
+  .mk-report-head .sub{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .mk-report h4{font-family:Georgia,serif;font-size:17px;color:var(--ink);margin-bottom:10px;font-weight:700}
+  .mk-report .field{margin-bottom:6px;font-size:11px}
+  .mk-report .field b{color:var(--accent-d);font-weight:700}
+  .mk-report .pics{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:10px}
+  .mk-report .pic{aspect-ratio:1/1;background:linear-gradient(135deg,#e8e8e8,#bdbdbd);border-radius:5px}
+  .mk-report .send-badge{position:absolute;top:-10px;right:14px;background:#25d366;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:99px;display:flex;align-items:center;gap:5px}
+
+  /* ========= How it works ========= */
+  .how-it{padding:80px 0;background:var(--cream)}
+  .how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px 22px;position:relative}
+  .step .n{width:38px;height:38px;border-radius:11px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-family:Georgia,serif;font-size:19px;margin-bottom:14px}
+  .step h4{font-family:Georgia,'Fraunces',serif;font-size:18px;font-weight:600;margin-bottom:7px;color:var(--ink)}
+  .step p{font-size:13.5px;color:var(--muted);line-height:1.55}
+
+  /* ========= Pricing ========= */
+  .pricing{padding:80px 0 70px}
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1000px;margin:0 auto}
+  .plan{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:30px 26px;display:flex;flex-direction:column;position:relative;transition:.18s}
+  .plan:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+  .plan.pop{border:2px solid var(--accent);box-shadow:0 18px 40px rgba(242,104,60,.16)}
+  .plan-tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11.5px;font-weight:700;padding:5px 13px;border-radius:99px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+  .plan-name{font-family:Georgia,'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:5px}
+  .plan-desc{font-size:13px;color:var(--muted);margin-bottom:16px;min-height:36px}
+  .plan-price{display:flex;align-items:baseline;gap:4px;margin-bottom:4px}
+  .plan-price .v{font-family:Georgia,'Fraunces',serif;font-size:40px;font-weight:600;color:var(--ink)}
+  .plan-price .per{font-size:14px;color:var(--muted)}
+  .plan-eq{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  .plan-save{display:inline-block;background:var(--accent-soft);color:var(--accent-d);font-weight:700;font-size:11.5px;padding:3px 9px;border-radius:99px;margin-bottom:14px}
+  .plan ul{list-style:none;display:grid;gap:9px;margin-bottom:22px;flex:1}
+  .plan li{display:flex;gap:9px;align-items:flex-start;font-size:13.5px}
+  .plan li .ck{flex:0 0 16px;width:16px;height:16px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);display:grid;place-items:center;font-size:10px;font-weight:800;margin-top:2px}
+  .plan-note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:8px}
+  .price-foot{text-align:center;color:var(--muted);font-size:13.5px;margin-top:26px}
+
+  /* ========= FAQ ========= */
+  .faq{padding:70px 0;background:var(--cream)}
+  .faq-list{max-width:760px;margin:0 auto;display:grid;gap:10px}
+  details{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:2px 20px;box-shadow:var(--shadow)}
+  details summary{list-style:none;cursor:pointer;padding:16px 0;font-weight:600;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+  details summary::-webkit-details-marker{display:none}
+  details summary .plus{flex:0 0 auto;color:var(--accent);font-size:22px;line-height:1;transition:.2s}
+  details[open] summary .plus{transform:rotate(45deg)}
+  details .ans{padding:0 0 18px;color:var(--muted);font-size:14.5px;line-height:1.65}
+
+  /* ========= CTA final ========= */
+  .cta-final{padding:80px 24px;background:radial-gradient(900px 400px at 80% -40px,#0f6360,var(--primary-d));color:#fff;text-align:center}
+  .cta-final-in{max-width:760px;margin:0 auto;position:relative;z-index:1}
+  .cta-final h2{font-family:Georgia,'Fraunces',serif;font-size:clamp(30px,4vw,42px);margin-bottom:14px;letter-spacing:-0.02em;font-weight:600}
+  .cta-final p{font-size:17px;color:rgba(255,255,255,.85);margin-bottom:28px}
+  .cta-final .btn-primary{font-size:18px;padding:18px 38px}
+  .cta-final .trust-fin{margin-top:18px;font-size:13px;color:rgba(255,255,255,.7)}
+
+  /* ========= Footer ========= */
+  footer{padding:38px 24px;background:var(--bg);border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted)}
+  footer .links{margin-bottom:14px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+  footer a{color:var(--muted)}
+  footer a:hover{color:var(--primary)}
+  footer .legal{font-size:12px;line-height:1.6;color:#8a8378}
+
+  /* ========= Responsive ========= */
+  @media(max-width:920px){
+    .hero-grid,.feat-row{grid-template-columns:1fr;gap:40px}
+    .feat-row.reverse .feat-text{order:1}
+    .feat-row.reverse .feat-visual{order:2}
+    .pains,.how-steps,.plans{grid-template-columns:1fr}
+    .pains{gap:12px}
+    .how-steps{gap:12px}
+  }
+  @media(max-width:640px){
+    .hdr-cta .lnk-entrar{display:none}
+    .wrap{padding:0 18px}
+    .hero{padding:38px 0 30px}
+    .hero-cta{flex-direction:column;align-items:stretch}
+    .hero-cta .btn{width:100%}
+    .feat-num{font-size:42px}
+    .trust-bar .row{gap:10px 24px;font-size:12px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== HEADER ============== -->
+<header class="hdr">
+  <div class="hdr-in">
+    <a href="/" class="logo" aria-label="EndoDoc">
+      <svg viewBox="0 0 1080 1080">
+        <ellipse fill="#DFE0E2" cx="540.7" cy="827.2" rx="238.4" ry="45.7"/>
+        <path fill="#0E7C7B" d="M779.7,446.8c0-132.4-107.3-239.7-239.7-239.7S300.3,314.5,300.3,446.8c0,49.4,15,95.3,40.6,133.5c22,38.3,46.8,78.3,74.6,119.4c36.9,54.5,74,103.3,109.9,146.8c7.6,9.1,21.6,9.1,29.1,0c35.9-43.5,73-92.3,109.9-146.8c27.8-41.1,52.6-81.1,74.6-119.4C764.7,542.2,779.7,496.3,779.7,446.8z"/>
+        <path fill="#F2F2F2" d="M651,541.1c-5,12-8.3,24.7-9.7,37.7c-4.7,42.7-13.7,79.4-40.5,91.2c-47.6,0-15-100.9-60.8-100.6C494.2,569,526.8,670,479.2,670c-26.8-11.8-35.8-48.5-40.5-91.2c-1.4-13-4.7-25.7-9.7-37.7c-25.5-60.6-32.1-110.2,0.7-136.8c16-13,37.7-16.8,57.5-11.1c2.1,0.6,4.2,1.3,6.3,2c6.1,2.1,11.9,4.6,17.6,7.1c2.3,1,4.6,1.9,6.9,2.7c0,0,0,0,0.1,0c18.7,8.1,36.9,15.4,59.7,8.7c-10.5-0.8-20.1-2.6-28.4-5.9c6.6-0.9,13.2-2.8,19.4-5.6c7.6-3.5,15.6-6.7,23.9-9.1c19.9-5.7,41.5-1.9,57.5,11.1C683.1,430.8,676.5,480.4,651,541.1z"/>
+      </svg>
+      <span>endodoc</span>
+    </a>
+    <div class="hdr-cta">
+      <a href="/app" class="lnk-entrar">Entrar</a>
+      <a href="/app" class="btn btn-primary btn-sm" onclick="trackCTA('header')">Criar conta grátis</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> Agenda inteligente · 100% online</div>
+        <h1>Sua agenda cheia, sem você viver no <span class="hl">WhatsApp</span>.</h1>
+        <p class="lead">Crie um link único, deixa os consultórios marcarem nos seus horários livres, e veja sua semana se organizar sozinha — sincronizado com Google Calendar, zero choque de horário.</p>
+        <div class="hero-cta">
+          <a href="/app" class="btn btn-primary btn-lg" onclick="trackCTA('hero')">Criar conta grátis · 14 dias →</a>
+          <a href="#planos" class="btn btn-ghost btn-lg">Ver planos</a>
+        </div>
+        <div class="hero-trust"><span class="ck">✓</span> Sem cartão de crédito · Cancele quando quiser</div>
+      </div>
+      <div class="hero-mock">
+        <div class="mock-head">
+          <span class="url">endodoc.com.br/dra-marina</span>
+          <span class="mes">maio 2026</span>
+        </div>
+        <div class="mock-cal">
+          <div class="dow">D</div><div class="dow">S</div><div class="dow">T</div><div class="dow">Q</div><div class="dow">Q</div><div class="dow">S</div><div class="dow">S</div>
+          <div class="d muted">27</div><div class="d muted">28</div><div class="d muted">29</div><div class="d muted">30</div><div class="d weekend">1</div><div class="d">2</div><div class="d weekend">3</div>
+          <div class="d weekend">4</div><div class="d has">5</div><div class="d">6</div><div class="d has">7</div><div class="d">8</div><div class="d has">9</div><div class="d weekend">10</div>
+          <div class="d weekend">11</div><div class="d has">12</div><div class="d today">13</div><div class="d has">14</div><div class="d">15</div><div class="d has">16</div><div class="d weekend">17</div>
+          <div class="d weekend">18</div><div class="d">19</div><div class="d has">20</div><div class="d sel">21</div><div class="d has">22</div><div class="d">23</div><div class="d weekend">24</div>
+          <div class="d weekend">25</div><div class="d has">26</div><div class="d">27</div><div class="d has">28</div><div class="d has">29</div><div class="d">30</div><div class="d weekend">31</div>
+        </div>
+        <div class="mock-foot">
+          <span class="ico">✓</span>
+          <span>11 atendimentos confirmados · 3 aguardando você</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Faixa de credibilidade -->
+<div class="trust-bar">
+  <div class="row">
+    <span class="item"><span class="ck">✓</span> Operado por <b>KYVERA TECH LTDA</b></span>
+    <span class="item"><span class="ck">✓</span> Em conformidade com a <b>LGPD</b></span>
+    <span class="item"><span class="ck">✓</span> Integração oficial <b>Google Calendar</b></span>
+  </div>
+</div>
+
+<!-- ============== PROBLEMA ============== -->
+<section class="problem">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Reconhece essa rotina?</div>
+      <h2>O dia do endodontista delivery hoje</h2>
+      <p>Atender em 3 consultórios diferentes não é o problema. O problema é a parte que vem antes — e não acabou.</p>
+    </div>
+    <div class="pains">
+      <div class="pain">
+        <div class="pain-ico">📱</div>
+        <h3>WhatsApp infinito</h3>
+        <p>Toda solicitação vira mensagem. Você responde correndo, copia/cola informação, e ainda assim alguma escapa.</p>
+      </div>
+      <div class="pain">
+        <div class="pain-ico">⚠️</div>
+        <h3>Choques de horário</h3>
+        <p>Duas clínicas marcam no mesmo horário e você só descobre na véspera. Alguém precisa ser desmarcado de última hora.</p>
+      </div>
+      <div class="pain">
+        <div class="pain-ico">🚗</div>
+        <h3>Trajetos mal planejados</h3>
+        <p>Manhã em Pinheiros, tarde em Santo Amaro, noite na Penha. Mais tempo no trânsito do que na cadeira do paciente.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== SOLUÇÃO ============== -->
+<section class="solution">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">A solução</div>
+      <h2>Tudo trabalhando por você</h2>
+      <p>O EndoDoc cobre o atendimento inteiro — do primeiro clique do consultório até o relatório enviado depois.</p>
+    </div>
+
+    <!-- Feature 1: Link próprio -->
+    <div class="feat-row">
+      <div class="feat-text">
+        <div class="feat-num">01</div>
+        <h3>Um link só, e os consultórios marcam sozinhos</h3>
+        <p class="ftxt">Você ganha um endereço próprio (endodoc.com.br/seu-nome) pra mandar pros consultórios. Eles entram, escolhem o horário disponível, preenchem o caso e confirmam. Sem você no meio.</p>
+        <ul class="feat-bullets">
+          <li><span class="ck">✓</span><div><b>Trava anti-conflito</b> — duas clínicas não conseguem marcar o mesmo horário</div></li>
+          <li><span class="ck">✓</span><div><b>Sem cadastro pra clínica</b> — eles marcam em segundos, sem instalar nada</div></li>
+          <li><span class="ck">✓</span><div><b>Você confirma cada reserva</b> — aceita ou recusa direto no painel</div></li>
+        </ul>
+      </div>
+      <div class="feat-visual">
+        <div class="visual-card">
+          <div class="mk-browser">
+            <div class="mk-browser-top">
+              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              <span class="mk-browser-url">endodoc.com.br/dra-marina</span>
+            </div>
+            <div class="mk-browser-body">
+              <div class="mk-prof">
+                <div class="av">M</div>
+                <div class="info"><b>Dra. Marina Venancio</b><span>Endodontia · CRO-SP 12345</span></div>
+              </div>
+              <div class="mk-days">
+                <div class="day">seg<b>12</b></div>
+                <div class="day sel">ter<b>13</b></div>
+                <div class="day">qua<b>14</b></div>
+                <div class="day">qui<b>15</b></div>
+                <div class="day">sex<b>16</b></div>
+              </div>
+              <div class="mk-slots">
+                <span class="slot">08:00</span>
+                <span class="slot">09:00</span>
+                <span class="slot off">10:00</span>
+                <span class="slot on">11:00</span>
+                <span class="slot">14:00</span>
+                <span class="slot">15:00</span>
+                <span class="slot">16:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 2: WhatsApp anamnese -->
+    <div class="feat-row reverse">
+      <div class="feat-text">
+        <div class="feat-num">02</div>
+        <h3>Anamnese pré-consulta enviada automaticamente por WhatsApp</h3>
+        <p class="ftxt">Assim que você confirma o agendamento, o paciente recebe um WhatsApp da nossa central com um link único pra preencher a anamnese antes do dia. Você chega já sabendo alergias, medicações e histórico.</p>
+        <ul class="feat-bullets">
+          <li><span class="ck">✓</span><div><b>Envio automático</b> — você não precisa pedir manualmente</div></li>
+          <li><span class="ck">✓</span><div><b>PDF profissional gerado</b> — pronto pra arquivar ou enviar pra clínica</div></li>
+          <li><span class="ck">✓</span><div><b>Notificação quando preencher</b> — você sabe quem respondeu</div></li>
+        </ul>
+      </div>
+      <div class="feat-visual">
+        <div class="visual-card">
+          <div class="mk-phone">
+            <div class="mk-phone-screen">
+              <div class="mk-wa-top">
+                <div class="av">E</div>
+                <div><b>EndoDoc</b><br><span>online</span></div>
+              </div>
+              <div class="mk-bubble in">
+                Olá, Maria! 🦷<br><br>Sua consulta de endodontia com a Dra. Marina foi confirmada pra terça (13/05) às 11h.
+                <span class="time">10:42</span>
+              </div>
+              <div class="mk-bubble in">
+                Pra agilizar o atendimento, preencha sua anamnese (leva 1 min):<br><br><span class="link">endodoc.com.br/anamnese/abc...</span><br><br>Vai direto pra dentista. 💚
+                <span class="time">10:42</span>
+              </div>
+              <div class="mk-bubble out" style="background:#dcf8c6">
+                Obrigada, vou preencher! 😊
+                <span class="time">10:45 ✓✓</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 3: Trajeto + encaixe inteligente -->
+    <div class="feat-row">
+      <div class="feat-text">
+        <div class="feat-num">03</div>
+        <h3>Trajeto entre consultas calculado pelo Google Maps</h3>
+        <p class="ftxt">Entre cada atendimento do seu dia, o EndoDoc mostra quanto tempo você vai gastar no trânsito. E quando o consultório marca uma nova consulta, o sistema sugere horários perto dos que você já tem — menos viagem, mais consultas.</p>
+        <ul class="feat-bullets">
+          <li><span class="ck">✓</span><div><b>Distance Matrix com cache</b> — sem inflar a conta do Google</div></li>
+          <li><span class="ck">✓</span><div><b>Encaixe inteligente</b> — horários perto de outros atendimentos em destaque</div></li>
+          <li><span class="ck">✓</span><div><b>Tudo no mesmo lugar</b> — agenda, mapa, endereço, telefone</div></li>
+        </ul>
+      </div>
+      <div class="feat-visual">
+        <div class="visual-card">
+          <div class="mk-route">
+            <div class="mk-route-card">
+              <div class="when"><b>13</b><span>mai</span></div>
+              <div class="info"><b>09:00 · Sorria Pinheiros</b><span>📍 Rua dos Pinheiros, 320</span></div>
+            </div>
+            <div class="mk-route-link">🚗 <b>22 min</b> · 7,4 km até o próximo</div>
+            <div class="mk-route-card">
+              <div class="when"><b>13</b><span>mai</span></div>
+              <div class="info"><b>11:00 · Odonto Vila</b><span>📍 Av. Brigadeiro, 1900</span></div>
+            </div>
+            <div class="mk-route-link">🚗 <b>14 min</b> · 4,1 km até o próximo</div>
+            <div class="mk-route-card">
+              <div class="when"><b>13</b><span>mai</span></div>
+              <div class="info"><b>14:00 · Clínica Real</b><span>📍 Av. Paulista, 1500</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 4: Relatório pós-consulta WhatsApp -->
+    <div class="feat-row reverse">
+      <div class="feat-text">
+        <div class="feat-num">04</div>
+        <h3>Relatório pós-consulta enviado direto pro WhatsApp do consultório</h3>
+        <p class="ftxt">Termina o atendimento, marca como realizado, preenche o relatório (diagnóstico, procedimento, intercorrências, radiografias, fotos). O EndoDoc gera um PDF profissional e envia direto pro WhatsApp da clínica — sem você trocar de app.</p>
+        <ul class="feat-bullets">
+          <li><span class="ck">✓</span><div><b>PDF formatado</b> — paciente, datas, diagnóstico, procedimento, retorno</div></li>
+          <li><span class="ck">✓</span><div><b>Até 10 fotos</b> — radiografias e galeria do procedimento</div></li>
+          <li><span class="ck">✓</span><div><b>Histórico organizado</b> — todos os relatórios ficam acessíveis depois</div></li>
+        </ul>
+      </div>
+      <div class="feat-visual">
+        <div class="visual-card">
+          <div class="mk-report">
+            <div class="mk-report-head">
+              <svg viewBox="0 0 1080 1080">
+                <path fill="#0E7C7B" d="M779.7,446.8c0-132.4-107.3-239.7-239.7-239.7S300.3,314.5,300.3,446.8c0,49.4,15,95.3,40.6,133.5c22,38.3,46.8,78.3,74.6,119.4c36.9,54.5,74,103.3,109.9,146.8c7.6,9.1,21.6,9.1,29.1,0c35.9-43.5,73-92.3,109.9-146.8c27.8-41.1,52.6-81.1,74.6-119.4C764.7,542.2,779.7,496.3,779.7,446.8z"/>
+              </svg>
+              <div><div class="ws">endodoc</div><div class="sub">Relatório de consulta</div></div>
+            </div>
+            <h4>Allan Rodrigues Nunes</h4>
+            <div class="field"><b>Diagnóstico:</b> Pulpite Irreversível - 47</div>
+            <div class="field"><b>Procedimento:</b> Tratamento Endodôntico</div>
+            <div class="field"><b>Dente:</b> 46 e 47</div>
+            <div class="field"><b>Retorno:</b> 12 meses</div>
+            <div class="pics">
+              <div class="pic"></div>
+              <div class="pic"></div>
+              <div class="pic"></div>
+            </div>
+            <div class="send-badge">✓ Enviado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== COMO FUNCIONA ============== -->
+<section class="how-it">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Como funciona</div>
+      <h2>Pronto em 4 passos</h2>
+      <p>Setup em menos de 5 minutos. Depois disso, o sistema cuida sozinho.</p>
+    </div>
+    <div class="how-steps">
+      <div class="step"><div class="n">1</div><h4>Crie sua conta</h4><p>Cadastro rápido, sem cartão. 14 dias grátis pra testar tudo.</p></div>
+      <div class="step"><div class="n">2</div><h4>Conecte o Google</h4><p>Sua agenda do Google Calendar vira a base, nos 2 sentidos.</p></div>
+      <div class="step"><div class="n">3</div><h4>Defina horários</h4><p>Marque os dias e horários que você abre pra atendimento.</p></div>
+      <div class="step"><div class="n">4</div><h4>Compartilhe o link</h4><p>Mande pros consultórios e veja sua agenda se organizar.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== PRICING ============== -->
+<section class="pricing" id="planos">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Planos</div>
+      <h2>Comece grátis. Pague só quando valer a pena.</h2>
+      <p>Todos os recursos do EndoDoc em qualquer plano. Quanto maior o período, mais você economiza.</p>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <div class="plan-name">Mensal</div>
+        <div class="plan-desc">Sem compromisso. Cancele quando quiser.</div>
+        <div class="plan-price"><span class="v">R$ 59</span><span class="per">/mês</span></div>
+        <div class="plan-eq">cobrado todo mês</div>
+        <ul>
+          <li><span class="ck">✓</span>Agenda + link próprio</li>
+          <li><span class="ck">✓</span>Google Calendar 2 vias</li>
+          <li><span class="ck">✓</span>Anamnese WhatsApp</li>
+          <li><span class="ck">✓</span>Trajeto + encaixe inteligente</li>
+          <li><span class="ck">✓</span>Relatório pós-consulta</li>
+          <li><span class="ck">✓</span>Lembrete 24h antes</li>
+        </ul>
+        <a href="/app" class="btn btn-ghost btn-block" onclick="trackCTA('plan_mensal')">Começar grátis</a>
+        <div class="plan-note">14 dias grátis · sem cartão</div>
+      </div>
+      <div class="plan pop">
+        <span class="plan-tag">Mais escolhido</span>
+        <div class="plan-name">Anual</div>
+        <div class="plan-desc">2 meses grátis. Pague uma vez.</div>
+        <div class="plan-price"><span class="v">R$ 47</span><span class="per">/mês</span></div>
+        <div class="plan-eq">cobrado R$ 566 / ano</div>
+        <div class="plan-save">economize R$ 142 / ano</div>
+        <ul>
+          <li><span class="ck">✓</span>Tudo do Mensal</li>
+          <li><span class="ck">✓</span>Pagamento único anual</li>
+          <li><span class="ck">✓</span>Prioridade no suporte</li>
+          <li><span class="ck">✓</span>Acesso antecipado a novidades</li>
+        </ul>
+        <a href="/app" class="btn btn-primary btn-block" onclick="trackCTA('plan_anual')">Começar grátis</a>
+        <div class="plan-note">14 dias grátis · sem cartão</div>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Semestral</div>
+        <div class="plan-desc">Pague 6 meses. Cancele depois.</div>
+        <div class="plan-price"><span class="v">R$ 53</span><span class="per">/mês</span></div>
+        <div class="plan-eq">cobrado R$ 319 / semestre</div>
+        <ul>
+          <li><span class="ck">✓</span>Tudo do Mensal</li>
+          <li><span class="ck">✓</span>Pagamento único semestral</li>
+          <li><span class="ck">✓</span>Economia em relação ao mensal</li>
+        </ul>
+        <a href="/app" class="btn btn-ghost btn-block" onclick="trackCTA('plan_semestral')">Começar grátis</a>
+        <div class="plan-note">14 dias grátis · sem cartão</div>
+      </div>
+    </div>
+    <p class="price-foot">Pagamento via Pix, cartão ou boleto, pelo Asaas. Você só é cobrado depois do teste — e se não quiser continuar, não faz nada.</p>
+  </div>
+</section>
+
+<!-- ============== FAQ ============== -->
+<section class="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Perguntas frequentes</div>
+      <h2>Tirando as dúvidas mais comuns</h2>
+    </div>
+    <div class="faq-list">
+      <details>
+        <summary>Como funciona o teste grátis? <span class="plus">+</span></summary>
+        <div class="ans">14 dias com acesso completo a todas as funcionalidades, sem precisar cadastrar cartão de crédito. Ao final, você escolhe um plano pra continuar — ou simplesmente não continua. Sem cobrança automática surpresa.</div>
+      </details>
+      <details>
+        <summary>Os consultórios precisam fazer cadastro? <span class="plus">+</span></summary>
+        <div class="ans">Não. O consultório recebe seu link, escolhe um horário livre, preenche os dados do caso (paciente, procedimento, anexos) e confirma. Em 1 minuto a reserva está no seu painel. Sem instalar app, sem criar conta.</div>
+      </details>
+      <details>
+        <summary>O Google Calendar é obrigatório? <span class="plus">+</span></summary>
+        <div class="ans">Não, mas é altamente recomendado. Com a sincronização ativa, qualquer compromisso pessoal seu no Google bloqueia automaticamente o horário na sua agenda pública. Sem ela, você precisa marcar bloqueios manualmente.</div>
+      </details>
+      <details>
+        <summary>Posso cancelar a qualquer momento? <span class="plus">+</span></summary>
+        <div class="ans">Sim, sem multa nem fidelidade. Cancela pelo próprio painel a qualquer momento. No plano mensal você usa até o fim do mês pago; no anual/semestral você recebe os dias proporcionais que sobraram (se solicitar).</div>
+      </details>
+      <details>
+        <summary>Meus dados estão seguros? <span class="plus">+</span></summary>
+        <div class="ans">Sim. O EndoDoc segue a LGPD, armazena dados em servidores criptografados (Supabase + Vercel) e nunca compartilha informação de paciente. Apenas você acessa o histórico dos seus atendimentos. Confira nossa <a href="/privacidade">Política de Privacidade</a>.</div>
+      </details>
+      <details>
+        <summary>Preciso ser endodontista pra usar? <span class="plus">+</span></summary>
+        <div class="ans">O EndoDoc foi desenhado pra endodontistas delivery (que atendem em vários consultórios), mas funciona pra qualquer especialidade odontológica que atua na mesma modalidade — implantodontia, periodontia, ortodontia.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============== CTA FINAL ============== -->
+<section class="cta-final">
+  <div class="cta-final-in">
+    <h2>Sua próxima semana planejada em minutos.</h2>
+    <p>Crie a conta agora, conecte seu Google Calendar e mande o link pra primeira clínica. Em 1 hora você já está recebendo agendamento automático.</p>
+    <a href="/app" class="btn btn-primary" onclick="trackCTA('final')">Criar conta grátis · 14 dias →</a>
+    <div class="trust-fin">Sem cartão · Cancele quando quiser · Suporte direto com a fundadora</div>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer>
+  <div class="links">
+    <a href="/privacidade">Política de Privacidade</a>
+    <a href="/termos">Termos de Uso</a>
+    <a href="mailto:contato@endodoc.com.br">Contato</a>
+    <a href="/">Voltar pra home</a>
+  </div>
+  <div class="legal">
+    EndoDoc · operado por <b>KYVERA TECH LTDA</b> · CNPJ 67.042.683/0001-10<br>
+    © 2026 · endodoc.com.br
+  </div>
+</footer>
+
+<script>
+  // Tracking de cliques em CTA pra otimizar campanha
+  function trackCTA(local){
+    try{
+      window.fbqTrack && window.fbqTrack('Lead', {
+        content_name: 'Landing /demo CTA',
+        content_category: local
+      });
+    }catch(e){}
+  }
+</script>
+<script src="/js/meta-pixel-cookies.js" defer></script>
+</body>
+</html>
