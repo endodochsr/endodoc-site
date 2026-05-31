@@ -2649,7 +2649,7 @@ async function loadHistorico(){
   const sinceISO=since.getFullYear()+'-'+String(since.getMonth()+1).padStart(2,'0')+'-'+String(since.getDate()).padStart(2,'0');
 
   let q = sb.from('bookings').select('*').gte('slot_date',sinceISO).order('slot_date',{ascending:false}).order('slot_time',{ascending:true});
-  // realizadas = active E slot_date < hoje. canceladas = qualquer canceladas
+  // realizadas = active E (slot_date < hoje OU completed_at marcado). canceladas = qualquer canceladas
   if(histState.status==='cancelled') q = q.eq('status','cancelled');
   else if(histState.status==='active') q = q.eq('status','active').lt('slot_date',today);
   else q = q.in('status',['active','cancelled']).lt('slot_date',today);
@@ -2657,9 +2657,16 @@ async function loadHistorico(){
   const { data, error } = await q;
   if(error){ document.getElementById('histList').innerHTML='<div class="card" style="color:var(--danger)">Erro: '+esc(error.message)+'</div>'; return; }
   let list = data || [];
-  // adiciona cancelados futuros se status==all ou cancelled (já que filtramos lt today acima só pra active)
+
+  // adiciona atendimentos de HOJE/FUTUROS que o dentista marcou como realizado
+  // (active + completed_at) — não vêm na query acima por causa do .lt('slot_date', today)
+  if(histState.status !== 'cancelled'){
+    const { data:completed } = await sb.from('bookings').select('*').eq('status','active').not('completed_at','is',null).gte('slot_date',today);
+    list = list.concat(completed||[]);
+  }
+
+  // adiciona cancelados futuros se status==all
   if(histState.status!=='active' && histState.status!=='cancelled'){
-    // active < today já incluído; agora pega cancelled futuro também
     const { data:future } = await sb.from('bookings').select('*').gte('slot_date',today).eq('status','cancelled').gte('slot_date',sinceISO).order('slot_date',{ascending:false});
     list = list.concat(future||[]);
   }
