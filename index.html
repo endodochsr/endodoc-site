@@ -228,6 +228,34 @@
   .foot .col a:hover{color:var(--accent)}
   .foot .about{max-width:300px;color:var(--muted);font-size:14px}.foot .about .logo{margin-bottom:12px}
   .legal{max-width:1100px;margin:30px auto 0;padding-top:22px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;text-align:center;line-height:1.7}
+  /* ===== Jornada (phases) — substitui Features + Inteligência + Deep dives + Diferenciais ===== */
+  .phases{display:grid;gap:54px;max-width:1080px;margin:0 auto}
+  .phase{position:relative}
+  .phase-head{display:flex;align-items:center;gap:20px;margin-bottom:24px;padding-bottom:18px;border-bottom:2px dashed var(--border)}
+  .phase-num{font-family:'Fraunces',serif;font-size:56px;font-weight:600;line-height:1;letter-spacing:-0.04em;color:var(--accent);opacity:.85;flex-shrink:0}
+  .phase-kicker{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);margin-bottom:5px}
+  .phase-head h3{font-family:'Fraunces',serif;font-size:25px;font-weight:600;letter-spacing:-0.012em;color:var(--ink);line-height:1.2}
+  .phase-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .pcard{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 20px;box-shadow:var(--shadow);transition:.18s;display:flex;flex-direction:column}
+  .pcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--primary-soft)}
+  .pcard .pico{font-size:30px;margin-bottom:14px;line-height:1}
+  .pcard h4{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin-bottom:8px;letter-spacing:-0.01em;line-height:1.25}
+  .pcard p{font-size:13.5px;color:var(--muted);line-height:1.55}
+  .pcard.pcard-new{border:2px solid var(--accent);box-shadow:0 10px 28px rgba(242,104,60,.16);background:linear-gradient(180deg,#fff7f0 0%,#ffffff 28%)}
+  .pcard-badge{position:absolute;top:-10px;left:16px;background:var(--accent);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.08em;padding:4px 11px;border-radius:99px;box-shadow:0 4px 10px rgba(242,104,60,.32)}
+  .micro-diffs{display:flex;justify-content:center;flex-wrap:wrap;gap:14px 30px;margin:54px auto 0;max-width:980px;padding:22px 24px;border-top:1px solid var(--border);font-size:14px;color:var(--muted);text-align:center}
+  .micro-diffs span{font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+  .micro-diffs .ck{color:var(--accent);font-weight:800}
+  @media(max-width:960px){
+    .phase-cards{grid-template-columns:repeat(2,1fr)}
+    .phase-num{font-size:42px}
+    .phase-head h3{font-size:20px}
+  }
+  @media(max-width:560px){
+    .phase-cards{grid-template-columns:1fr}
+    .phase-head{gap:14px}
+    .phase-num{font-size:36px}
+  }
   /* reveal */
   .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
   .reveal.in{opacity:1;transform:none}
@@ -305,167 +333,156 @@
     </div>
   </div>
 
-  <!-- FEATURES -->
+  <!-- TUDO QUE O ENDODOC FAZ — organizado por etapa -->
   <section class="block" id="funcionalidades">
     <div class="wrap">
       <div class="section-head reveal">
         <div class="kicker">Funcionalidades</div>
-        <h2>Tudo trabalhando por você</h2>
-        <p>Enquanto você atende, o EndoDoc cuida da agenda — do primeiro clique do consultório até o lembrete do atendimento.</p>
+        <h2>Do agendamento ao relatório, sem você sair do app</h2>
+        <p>Organizado pela etapa do atendimento — antes, no dia e depois — pra você ver exatamente onde o EndoDoc entra no seu fluxo.</p>
       </div>
-      <div class="features">
-        <div class="feature reveal">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div>
-          <h3>Seu link de agendamento</h3>
-          <p>Um endereço só seu (endodoc.com.br/seu-nome) para enviar aos consultórios. Eles marcam sozinhos, no horário que estiver livre.</p>
-        </div>
-        <div class="feature reveal">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></svg></div>
-          <h3>Sincroniza com o Google</h3>
-          <p>Nos dois sentidos: o que entra no EndoDoc aparece no seu Google, e seus compromissos do Google bloqueiam os horários.</p>
-        </div>
-        <div class="feature reveal">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-          <h3>Sem choque de horário</h3>
-          <p>Trava anti-conflito de verdade: se dois consultórios tentarem o mesmo horário ao mesmo tempo, só um confirma.</p>
-        </div>
-        <div class="feature reveal">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
-          <h3>Confirmações e lembretes</h3>
-          <p>Confirmação na hora e lembretes automáticos por e-mail e WhatsApp, reduzindo faltas e remarcações.</p>
-        </div>
-        <div class="feature reveal">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
-          <h3>Endereço, caso e documentos</h3>
-          <p>Cada agendamento traz o endereço com mapa, as observações do caso e o anexo de exames — tudo na própria marcação.</p>
-        </div>
-        <div class="feature reveal">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
-          <h3>Cadastro leve para o consultório</h3>
-          <p>O consultório agenda em segundos, sem criar conta nem instalar nada. Menos atrito, mais agendamentos.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- INTELIGÊNCIA OPERACIONAL -->
-  <section class="block intel-sec">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <div class="kicker accent">Inteligência operacional</div>
-        <h2>Diferenciais que ninguém mais tem</h2>
-        <p>Você não está só recebendo agendamentos — o EndoDoc pensa pelo dentista delivery, do trânsito ao perfil profissional.</p>
-      </div>
-      <div class="intel-grid">
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">🚗</div>
-          <h3>Tempo de deslocamento entre consultas</h3>
-          <p>Entre cada atendimento da sua agenda aparece quanto tempo você vai gastar no trânsito — calculado pelo Google Maps, com cache pra não pesar na conta.</p>
-        </div>
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">🌟</div>
-          <h3>Sugestão de encaixe inteligente</h3>
-          <p>Quando o consultório escolhe o dia, os horários que ficam perto de outros atendimentos seus já marcados aparecem em destaque. Menos viagem, mais consultas no dia.</p>
-        </div>
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">⏱️</div>
-          <h3>Atendimentos longos</h3>
-          <p>Tratamento de canal demora 2h, retratamento 3h. O consultório escolhe a duração e o sistema reserva tudo de uma vez — sem precisar marcar três vezes seguidas.</p>
-        </div>
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">👤</div>
-          <h3>Sua página pública profissional</h3>
-          <p>Foto, bio, especialidade e procedimentos que você atende aparecem na hora do consultório agendar. Vira sua carta de apresentação — sem precisar de site separado.</p>
-        </div>
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">📱</div>
-          <h3>Anamnese pré-consulta automática</h3>
-          <p>Assim que você confirma a consulta, o paciente recebe um WhatsApp da nossa central com um link único pra preencher a anamnese. Você chega já sabendo alergias, medicações e histórico.</p>
-        </div>
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">✓</div>
-          <h3>Você confirma cada reserva</h3>
-          <p>Toda solicitação entra como pendente. Você revisa, aceita ou recusa direto pelo painel. Sem agenda fechando por algo que você não pode atender.</p>
-        </div>
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">🔄</div>
-          <h3>Reagendamento em 2 cliques</h3>
-          <p>Precisa mover uma consulta? Clica em <i>Reagendar</i>, escolhe a nova data e o sistema avisa a clínica por e-mail automaticamente. Sem ligações, sem cancelar e marcar de novo.</p>
-        </div>
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">📥</div>
-          <h3>Prontuário em PDF na hora</h3>
-          <p>Cada anamnese vira um PDF profissional com cabeçalho EndoDoc, dados do paciente e respostas formatadas — pronto pra arquivar, enviar pra clínica ou guardar no seu sistema.</p>
-        </div>
-        <div class="intel-card reveal">
-          <div class="intel-badge">novidade</div>
-          <div class="intel-ico">⏰</div>
-          <h3>Lembrete automático 24h antes</h3>
-          <p>Véspera do atendimento, você e a clínica recebem um e-mail bonito com os detalhes da consulta. Reduz faltas e te lembra do trajeto.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- DEEP DIVES -->
-  <section class="block" style="background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-    <div class="wrap">
-      <div class="deep reveal">
-        <div>
-          <div class="kicker">Sua agenda, sempre certa</div>
-          <h2 style="margin-top:12px">Sincronizada com o Google Calendar</h2>
-          <p class="lead">O EndoDoc conversa com o seu Google nos dois sentidos, então você nunca tem dois sistemas brigando pela mesma agenda.</p>
-          <div class="ticklist">
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Agendou no EndoDoc, entrou no Google</b><span>Cada atendimento vira um evento no seu calendário.</span></div></div>
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Ocupou no Google, bloqueou no EndoDoc</b><span>Seus compromissos pessoais somem dos horários.</span></div></div>
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Uma agenda só</b><span>Sem planilha paralela, sem dupla digitação.</span></div></div>
-          </div>
-        </div>
-        <div class="visual">
-          <div class="sync">
-            <div class="node"><div class="ic t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><b>EndoDoc</b><span>Agendamentos</span></div>
-            <div class="arrows">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      <div class="phases">
+        <!-- 01 ANTES -->
+        <div class="phase reveal">
+          <div class="phase-head">
+            <span class="phase-num">01</span>
+            <div>
+              <div class="phase-kicker">Antes da consulta</div>
+              <h3>O agendamento se cuida sozinho</h3>
             </div>
-            <div class="node"><div class="ic g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><b>Google</b><span>Calendar</span></div>
           </div>
-          <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:16px">Sincronização em duas vias, em tempo real.</p>
-        </div>
-      </div>
-
-      <div class="deep reveal">
-        <div class="visual">
-          <div class="ag">
-            <div class="agh">
-              <div class="agd"><div class="d">13</div><div class="mo">mai</div></div>
-              <div class="agt"><b>11:00 · Consultório Sorria</b><span>Responsável: Dra. Marina · 11 99785-0926</span></div>
+          <div class="phase-cards">
+            <div class="pcard">
+              <div class="pico">🔗</div>
+              <h4>Seu link de agendamento</h4>
+              <p>Um endereço só seu (endodoc.com.br/seu-nome). Os consultórios marcam sozinhos nos horários livres, sem criar conta nem instalar nada.</p>
             </div>
-            <div class="agmap"><span class="pin"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg></span></div>
-            <div class="agrow">
-              <span class="tagp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Documento anexado</span>
-              <span class="tagp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H5.17L4 17.17z"/></svg> Observações do caso</span>
+            <div class="pcard">
+              <div class="pico">📱</div>
+              <h4>Anamnese automática via WhatsApp</h4>
+              <p>Quando você confirma, o paciente recebe um WhatsApp da nossa central com o link da anamnese. Você chega já sabendo alergias, medicações e histórico.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">✓</div>
+              <h4>Você confirma cada reserva</h4>
+              <p>Toda solicitação entra como pendente. Você revisa, aceita ou recusa pelo painel — sem agenda fechando por algo fora do seu controle.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">⏰</div>
+              <h4>Lembrete 24h antes</h4>
+              <p>Véspera do atendimento, você e a clínica recebem um e-mail bonito com os detalhes da consulta. Reduz faltas e te lembra do trajeto.</p>
             </div>
           </div>
         </div>
-        <div>
-          <div class="kicker">Chegou pronto para atender</div>
-          <h2 style="margin-top:12px">Cada agendamento, completo</h2>
-          <p class="lead">O consultório informa tudo o que você precisa na hora de marcar — então você abre a agenda e já sabe para onde ir e o que vai fazer.</p>
-          <div class="ticklist">
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Endereço com mapa e rota</b><span>Toque e o trajeto abre direto no mapa.</span></div></div>
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Observações do caso</b><span>Nome do paciente e o procedimento à mão.</span></div></div>
-            <div class="tick"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div><b>Exames e documentos anexados</b><span>O consultório anexa o que precisar, com segurança.</span></div></div>
+
+        <!-- 02 NO DIA -->
+        <div class="phase reveal">
+          <div class="phase-head">
+            <span class="phase-num">02</span>
+            <div>
+              <div class="phase-kicker">No dia do atendimento</div>
+              <h3>Tudo na palma da mão, na hora certa</h3>
+            </div>
+          </div>
+          <div class="phase-cards">
+            <div class="pcard">
+              <div class="pico">🚗</div>
+              <h4>Trajeto entre consultas</h4>
+              <p>Entre cada atendimento aparece quanto tempo você vai gastar no trânsito — calculado pelo Google Maps com cache pra não pesar na conta.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">🌟</div>
+              <h4>Encaixe inteligente</h4>
+              <p>Quando o consultório escolhe o dia, os horários perto de atendimentos seus já marcados aparecem em destaque. Menos viagem, mais consultas.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">📍</div>
+              <h4>Endereço, mapa e caso</h4>
+              <p>Cada agendamento traz endereço com mapa, observações do procedimento e documentos anexados. Você abre a agenda e já sabe pra onde ir.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">📋</div>
+              <h4>Anamnese já preenchida</h4>
+              <p>As respostas do paciente ficam disponíveis no card do atendimento. Sem precisar interrogar de novo na cadeira — entra direto na conduta.</p>
+            </div>
           </div>
         </div>
+
+        <!-- 03 DEPOIS -->
+        <div class="phase reveal">
+          <div class="phase-head">
+            <span class="phase-num">03</span>
+            <div>
+              <div class="phase-kicker">Depois da consulta</div>
+              <h3>Fechamento profissional em 1 clique</h3>
+            </div>
+          </div>
+          <div class="phase-cards">
+            <div class="pcard">
+              <div class="pico">✅</div>
+              <h4>Marcar como realizado</h4>
+              <p>Terminou o atendimento? 1 clique no card e a consulta é registrada como concluída. Histórico organizado, sem trabalho extra.</p>
+            </div>
+            <div class="pcard pcard-new">
+              <span class="pcard-badge">NOVIDADE</span>
+              <div class="pico">📤</div>
+              <h4>Relatório enviado pelo WhatsApp</h4>
+              <p>Preencha diagnóstico, procedimento, intercorrências, radiografias e galeria. O EndoDoc gera um PDF profissional e envia direto pro WhatsApp do consultório. Sem trocar de app.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">📥</div>
+              <h4>Anamnese em PDF</h4>
+              <p>Cada anamnese vira um PDF com cabeçalho EndoDoc, dados do paciente e respostas formatadas — pronto pra arquivar ou guardar no seu sistema.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">📊</div>
+              <h4>Histórico + receita estimada</h4>
+              <p>Todas as consultas realizadas com filtros por período e busca por clínica. Receita estimada calculada automaticamente com base no seu valor de consulta.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 04 SEMPRE -->
+        <div class="phase reveal">
+          <div class="phase-head">
+            <span class="phase-num">04</span>
+            <div>
+              <div class="phase-kicker">Trabalhando por você</div>
+              <h3>Integrações e atalhos que poupam tempo</h3>
+            </div>
+          </div>
+          <div class="phase-cards">
+            <div class="pcard">
+              <div class="pico">🗓️</div>
+              <h4>Sincroniza com Google Calendar</h4>
+              <p>Nos dois sentidos: o que entra no EndoDoc aparece no seu Google, e seus compromissos do Google bloqueiam horários automaticamente.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">⏱️</div>
+              <h4>Atendimentos longos</h4>
+              <p>Canal demora 2h, retratamento 3h. O consultório escolhe a duração e o sistema reserva tudo de uma vez — sem marcar três vezes seguidas.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">🔄</div>
+              <h4>Reagendamento em 2 cliques</h4>
+              <p>Precisa mover uma consulta? Clica em Reagendar, escolhe a nova data e o sistema avisa a clínica por e-mail automaticamente. Sem ligações.</p>
+            </div>
+            <div class="pcard">
+              <div class="pico">👤</div>
+              <h4>Sua página pública profissional</h4>
+              <p>Foto, bio, especialidade e procedimentos aparecem quando o consultório agenda. Vira sua carta de apresentação — sem precisar de site separado.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- microdiferenciais como tira final -->
+      <div class="micro-diffs reveal">
+        <span><span class="ck">✓</span> Sem instalar nada · 100% online</span>
+        <span><span class="ck">✓</span> Consultório agenda sem cadastro</span>
+        <span><span class="ck">✓</span> Trava anti-conflito de horário</span>
+        <span><span class="ck">✓</span> Sem fidelidade · Cancele quando quiser</span>
       </div>
     </div>
   </section>
@@ -482,26 +499,7 @@
         <div class="step"><div class="n">1</div><h3>Conecte o Google</h3><p>Sua agenda do Google Calendar vira a base, nos dois sentidos.</p></div>
         <div class="step"><div class="n">2</div><h3>Defina horários</h3><p>Escolha os dias e horários que você abre para atendimento.</p></div>
         <div class="step"><div class="n">3</div><h3>Compartilhe o link</h3><p>Os consultórios agendam sozinhos, só nos horários livres.</p></div>
-        <div class="step"><div class="n">4</div><h3>Atenda tranquilo</h3><p>Confirmações e lembretes automáticos por e-mail e WhatsApp.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- DIFERENCIAIS -->
-  <section class="block">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <div class="kicker">Por que o EndoDoc</div>
-        <h2>Feito sob medida para o endodelivery</h2>
-        <p>Detalhes que fazem diferença para quem vive na estrada entre consultórios.</p>
-      </div>
-      <div class="diffs reveal">
-        <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg></div><div><b>Sem instalar nada</b><p>100% online, no computador ou no celular.</p></div></div>
-        <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><b>Consultório sem cadastro</b><p>Eles marcam em segundos, sem criar conta.</p></div></div>
-        <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div><div><b>Link próprio personalizável</b><p>Escolha um endereço fácil de divulgar.</p></div></div>
-        <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div><b>Documentos no agendamento</b><p>Exames e arquivos anexados com segurança.</p></div></div>
-        <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div><b>Mapa e rota</b><p>O endereço do consultório direto no mapa.</p></div></div>
-        <div class="diff"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><b>Sem fidelidade</b><p>Cancele quando quiser, sem multa.</p></div></div>
+        <div class="step"><div class="n">4</div><h3>Atenda tranquilo</h3><p>Confirmações, lembretes e relatórios automáticos no fim do dia.</p></div>
       </div>
     </div>
   </section>
