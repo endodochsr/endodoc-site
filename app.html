@@ -230,6 +230,54 @@
     .cal-cell .cal-count{font-size:9px;height:14px;min-width:14px;top:2px;right:3px}
     .cal-title{font-size:18px}
   }
+  /* ===== Realizado + Relatório ===== */
+  .bk-card.completed{opacity:.82;background:linear-gradient(180deg,#f4fbfa 0%,#ffffff 100%)}
+  .bk-card.completed .bk-date{background:var(--primary-soft)}
+  .bk-card.completed .bk-date .d,.bk-card.completed .bk-date .m{color:var(--primary-d)}
+  .bk-ribbon.done{background:linear-gradient(90deg,#dff1ec,#c6e8e2);color:#0f5d5b;border-bottom-color:#a5d6cf}
+  .pill.done{background:var(--primary);color:#fff}
+  .pill.done:hover{background:var(--primary-d)}
+  .pill.report-ready{background:#fff;border:1.5px solid var(--primary);color:var(--primary-d)}
+  .pill.report-sent{background:#e6f4f3;color:#0f5d5b}
+  .pill.report-create{background:var(--primary);color:#fff}
+  /* modal grande pra relatório */
+  .modal-lg{max-width:760px!important}
+  .modal-lg .rep-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .modal-lg .rep-head h3{font-family:'Fraunces',serif;font-size:22px;margin:0;letter-spacing:-0.3px}
+  .modal-lg .rep-head .sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .modal-lg .rep-close{width:34px;height:34px;border-radius:9px;border:none;background:var(--surface-2);font-size:18px;cursor:pointer;flex-shrink:0}
+  .rep-section{margin-top:16px}
+  .rep-section h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--primary-d);margin-bottom:10px;padding-bottom:6px;border-bottom:1px dashed var(--border)}
+  .rep-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rep-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .rep-field{display:flex;flex-direction:column;gap:5px}
+  .rep-field label{font-size:12.5px;font-weight:600;color:var(--ink)}
+  .rep-field label .req{color:#c2553a;margin-left:3px}
+  .rep-field input,.rep-field textarea,.rep-field select{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font:inherit;background:var(--surface);color:var(--ink);font-size:14px}
+  .rep-field textarea{min-height:80px;resize:vertical;line-height:1.5}
+  .rep-field input:focus,.rep-field textarea:focus,.rep-field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+  .rep-field .hint{font-size:11.5px;color:var(--muted)}
+  .rep-toggle{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface-2);border-radius:10px;cursor:pointer;user-select:none;font-size:14px;font-weight:600}
+  .rep-toggle input{margin:0;width:18px;height:18px;accent-color:var(--primary)}
+  .photo-area{border:2px dashed var(--border);border-radius:12px;padding:14px;background:var(--surface-2)}
+  .photo-area.dragover{border-color:var(--primary);background:var(--primary-soft)}
+  .photo-area-empty{text-align:center;color:var(--muted);font-size:13px;padding:18px 10px;cursor:pointer}
+  .photo-area-empty b{color:var(--primary-d)}
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:10px}
+  .photo-thumb{position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:#000}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .photo-thumb.uploading{opacity:.5}
+  .photo-thumb .ph-rm{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;border:none;cursor:pointer;font-size:12px;display:grid;place-items:center;line-height:1}
+  .photo-thumb .ph-rm:hover{background:#c2553a}
+  .photo-add{aspect-ratio:1/1;border-radius:8px;border:2px dashed var(--border);background:var(--surface);display:grid;place-items:center;cursor:pointer;font-size:24px;color:var(--muted);transition:.15s}
+  .photo-add:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+  .rep-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:22px;padding-top:16px;border-top:1px solid var(--border);background:var(--surface)}
+  .rep-status-bar{padding:10px 14px;background:#e6f4f3;color:#0f5d5b;border-radius:10px;margin-top:14px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+  @media(max-width:640px){
+    .rep-grid-2,.rep-grid-3{grid-template-columns:1fr}
+    .modal-lg{max-width:100%!important}
+    .modal-lg .rep-head h3{font-size:18px}
+  }
   .slugrow{display:flex;align-items:center;gap:2px;border:1.5px solid var(--border);border-radius:12px;padding:0 12px;background:var(--surface)}
   .slugrow:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
   .slugpre{color:var(--muted);font-size:14px;white-space:nowrap}
@@ -1196,10 +1244,24 @@ function bookingCard(g, opts){
   const horario = dur>1 ? `${tStart} às ${tEnd} <span style="font-weight:400;color:var(--muted)">(${dur}h)</span>` : tStart;
   const q=encodeURIComponent(first.office_address||'');
   const idsAttr = JSON.stringify(ids);
+
+  const completed = !!first.completed_at;
+  const todayStr = todayISO();
+  const canMarkDone = !opts.pending && !completed && first.slot_date <= todayStr;
+  const reportPill = !opts.pending && completed ? renderReportPill(first.id) : '';
+
   const headerActions = opts.pending
     ? `<div style="display:flex;gap:6px;flex-shrink:0">
          <button class="pill accept" onclick='confirmBks(${idsAttr})'>✓ Confirmar</button>
          <button class="pill cancel" onclick='rejectBks(${idsAttr})'>Recusar</button>
+       </div>`
+    : completed
+    ? `<div class="bk-menu" style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+         <button class="pill-icon" title="Mais" onclick='toggleBkMenu(this)'>⋯</button>
+         <div class="bk-menu-pop hidden">
+           <button class="bk-menu-item" onclick='unmarkCompleted("${first.id}")'>↩️ Desfazer realizado</button>
+           <button class="bk-menu-item danger" onclick='cancelBks(${idsAttr})'>❌ Cancelar consulta</button>
+         </div>
        </div>`
     : `<div class="bk-menu" style="display:flex;gap:6px;flex-shrink:0;align-items:center">
          <button class="pill" onclick='openReschedule(${idsAttr})'>📅 Reagendar</button>
@@ -1208,8 +1270,16 @@ function bookingCard(g, opts){
            <button class="bk-menu-item danger" onclick='cancelBks(${idsAttr})'>❌ Cancelar consulta</button>
          </div>
        </div>`;
-  const ribbon = opts.pending ? `<div class="bk-ribbon">⏳ Aguardando sua confirmação</div>` : '';
-  return `<div class="bk-card ${opts.pending?'bk-card-pending':''}">
+
+  let ribbon = '';
+  if(opts.pending) ribbon = `<div class="bk-ribbon">⏳ Aguardando sua confirmação</div>`;
+  else if(completed) {
+    const dt = new Date(first.completed_at);
+    const fmt = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')} às ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    ribbon = `<div class="bk-ribbon done">✓ Atendimento realizado em ${fmt}</div>`;
+  }
+
+  return `<div class="bk-card ${opts.pending?'bk-card-pending':''} ${completed?'completed':''}">
     ${ribbon}
     <div class="bk-head">
       <div class="bk-date"><div class="d">${d}</div><div class="m">${MES[m-1]}</div></div>
@@ -1221,14 +1291,22 @@ function bookingCard(g, opts){
     </div>
     <div class="bk-line">📍 ${esc(first.office_address||'—')}</div>
     ${first.patient_name?`<div class="bk-line">👤 <b>${esc(first.patient_name)}</b>${first.patient_phone?' · '+esc(formatPhone(first.patient_phone)):''}</div>`:''}
-    ${first.office_address?`<iframe class="bk-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${q}&z=16&output=embed"></iframe>`:''}
+    ${first.office_address && !completed ?`<iframe class="bk-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${q}&z=16&output=embed"></iframe>`:''}
     <div class="bk-notes">📝 ${esc(first.notes||'—')}</div>
     <div class="bk-actions">
       ${!opts.pending && first.patient_phone ? renderAnamnesePill(first.id) : ''}
-      ${first.office_address?`<a class="pill" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️ Como chegar</a>`:''}
+      ${reportPill}
+      ${canMarkDone ? `<button class="pill done" onclick='markCompleted("${first.id}", ${idsAttr})'>✓ Marcar realizado</button>` : ''}
+      ${first.office_address && !completed ?`<a class="pill" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️ Como chegar</a>`:''}
       ${first.document_path?`<button class="pill dl" onclick="downloadDoc('${encodeURIComponent(first.document_path)}')">📎 Baixar documento</button>`:''}
     </div>
   </div>`;
+}
+function renderReportPill(bookingId){
+  const r = (window._reportMap||{})[bookingId];
+  if(!r) return `<button class="pill report-create" onclick="openReport('${bookingId}')">📋 Criar relatório</button>`;
+  if(r.sent_to_office_at) return `<button class="pill report-sent" onclick="openReport('${bookingId}')">📋 Relatório enviado ✓</button>`;
+  return `<button class="pill report-ready" onclick="openReport('${bookingId}')">📋 Relatório (rascunho)</button>`;
 }
 function formatPhone(d){
   d=(d||'').replace(/\D/g,'');
@@ -1248,19 +1326,574 @@ function renderAnamnesePill(bookingId){
   }
   return '<span class="pill anam-wait">⏳ Anamnese: aguardando envio</span>';
 }
+
+/* ===== Marcar como realizado ===== */
+async function markCompleted(firstId, ids){
+  if(!confirm('Confirmar que essa consulta foi realizada?\n\nIsso vai marcá-la como concluída e habilitar a criação do relatório pós-consulta.')) return;
+  toast('Marcando…','');
+  // marca todos os slots do grupo (multi-slot)
+  for(const id of (ids||[firstId])){
+    const { error } = await sb.rpc('mark_booking_completed',{ p_booking_id: id });
+    if(error){ toast('Erro: '+(error.message||'falha ao marcar'),'err'); return; }
+  }
+  toast('✓ Atendimento marcado como realizado','ok');
+  await renderAgenda();
+  setTimeout(()=>{
+    if(confirm('Deseja criar o relatório pós-consulta agora?\n\nVocê pode enviá-lo automaticamente pro WhatsApp do consultório quando terminar.')){
+      openReport(firstId);
+    }
+  }, 350);
+}
+async function unmarkCompleted(bookingId){
+  if(!confirm('Desfazer marcação de realizado?\n\nO atendimento volta pra status normal. Se já existir um relatório, ele permanece salvo.')) return;
+  toast('Desfazendo…','');
+  const { error } = await sb.rpc('unmark_booking_completed',{ p_booking_id: bookingId });
+  if(error){ toast('Erro: '+(error.message||'falha'),'err'); return; }
+  toast('Marcação desfeita','ok');
+  await renderAgenda();
+}
+
+/* ===== Relatório pós-consulta ===== */
+async function openReport(bookingId){
+  toast('Carregando…','');
+  // busca booking + relatório existente
+  const { data:bk, error:eBk } = await sb.from('bookings').select('*').eq('id',bookingId).maybeSingle();
+  if(eBk || !bk){ toast('Erro ao carregar atendimento','err'); return; }
+  const { data:existing } = await sb.from('consultation_reports').select('*').eq('booking_id',bookingId).maybeSingle();
+
+  // estado em memória
+  window._report = existing ? {...existing, booking:bk} : {
+    id: null,
+    booking_id: bookingId,
+    booking: bk,
+    professional_id: currentProf.id,
+    indicador: bk.office_responsible || '',
+    data_inicio: bk.slot_date,
+    data_finalizacao: bk.slot_date,
+    diagnostico: '',
+    sugestao_reabilitacao: '',
+    procedimento_realizado: bk.procedure || 'Tratamento Endodôntico',
+    irrigacao: '',
+    sistema: '',
+    cimento: '',
+    intercorrencia: false,
+    intercorrencia_descricao: '',
+    dente: '',
+    procedimento_detalhado: '',
+    relato_caso: '',
+    retorno: '',
+    radiografias: [],
+    galeria: [],
+    sent_to_office_at: null,
+  };
+  showReportModal();
+}
+function showReportModal(){
+  const r = window._report; const b = r.booking;
+  const dt = new Date(b.slot_date+'T12:00:00');
+  const dtStr = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const sentBadge = r.sent_to_office_at
+    ? `<div class="rep-status-bar">✓ Já enviado pro WhatsApp do consultório em ${new Date(r.sent_to_office_at).toLocaleString('pt-BR')}</div>`
+    : '';
+  const html = `
+    <div class="rep-head">
+      <div>
+        <h3>Relatório pós-consulta</h3>
+        <div class="sub">${esc(b.patient_name||'Paciente')} · ${dtStr}${b.office_name?' · '+esc(b.office_name):''}</div>
+      </div>
+      <button class="rep-close" onclick="closeReport()" title="Fechar">✕</button>
+    </div>
+    ${sentBadge}
+    <form id="repForm" onsubmit="event.preventDefault();sendReportToOffice()">
+      <div class="rep-section">
+        <h4>Identificação do caso</h4>
+        <div class="rep-grid-3">
+          <div class="rep-field"><label>Indicador <span class="hint">(quem indicou)</span></label><input name="indicador" value="${esc(r.indicador||'')}" placeholder="Ex: Dra. Ramille Sousa"></div>
+          <div class="rep-field"><label>Data de início</label><input name="data_inicio" type="date" value="${r.data_inicio||''}"></div>
+          <div class="rep-field"><label>Data de finalização</label><input name="data_finalizacao" type="date" value="${r.data_finalizacao||''}"></div>
+        </div>
+      </div>
+
+      <div class="rep-section">
+        <h4>Diagnóstico e plano</h4>
+        <div class="rep-grid-2">
+          <div class="rep-field"><label>Diagnóstico</label><input name="diagnostico" value="${esc(r.diagnostico||'')}" placeholder="Ex: Pulpite Irreversível - 47 / Necrose Pulpar - 46"></div>
+          <div class="rep-field"><label>Sugestão de reabilitação</label><input name="sugestao_reabilitacao" value="${esc(r.sugestao_reabilitacao||'')}" placeholder="Ex: Restauração em Resina"></div>
+        </div>
+      </div>
+
+      <div class="rep-section">
+        <h4>Procedimento</h4>
+        <div class="rep-grid-2">
+          <div class="rep-field"><label>Procedimento realizado</label><input name="procedimento_realizado" value="${esc(r.procedimento_realizado||'')}" placeholder="Ex: Tratamento Endodôntico"></div>
+          <div class="rep-field"><label>Dente(s) <span class="req">*</span></label><input name="dente" value="${esc(r.dente||'')}" placeholder="Ex: 46 e 47" required></div>
+        </div>
+        <div class="rep-grid-3" style="margin-top:10px">
+          <div class="rep-field"><label>Irrigação</label><input name="irrigacao" value="${esc(r.irrigacao||'')}" placeholder="Ex: NaOCl + Endo Rinse"></div>
+          <div class="rep-field"><label>Sistema</label><input name="sistema" value="${esc(r.sistema||'')}" placeholder="Ex: Univy Sense"></div>
+          <div class="rep-field"><label>Cimento</label><input name="cimento" value="${esc(r.cimento||'')}" placeholder="Ex: Sealer Plus"></div>
+        </div>
+        <label class="rep-toggle" style="margin-top:12px">
+          <input type="checkbox" name="intercorrencia" ${r.intercorrencia?'checked':''} onchange="document.getElementById('intercDesc').style.display=this.checked?'block':'none'">
+          <span>Houve intercorrência durante o atendimento?</span>
+        </label>
+        <div id="intercDesc" class="rep-field" style="margin-top:10px;display:${r.intercorrencia?'block':'none'}">
+          <label>Descrição da intercorrência</label>
+          <textarea name="intercorrencia_descricao" placeholder="Descreva o que ocorreu...">${esc(r.intercorrencia_descricao||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="rep-section">
+        <h4>Procedimento detalhado</h4>
+        <div class="rep-field"><label>Etapas realizadas <span class="hint">(uma por linha)</span></label>
+          <textarea name="procedimento_detalhado" placeholder="Ex:&#10;Rx + Acesso + Penet. Desinf + ODT + PQM + MIC + Selam. Provisório&#10;Rx + Acesso + Odontometria + Prep.Quim. Mecan + PUI + Obturação + Selam. Provisório + Rx Final" style="min-height:90px">${esc(r.procedimento_detalhado||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="rep-section">
+        <h4>Relato do caso <span class="req">*</span></h4>
+        <div class="rep-field">
+          <textarea name="relato_caso" placeholder="Descreva o caso clínico, sessões realizadas, achados, condutas..." style="min-height:140px" required>${esc(r.relato_caso||'')}</textarea>
+        </div>
+        <div class="rep-grid-2" style="margin-top:10px">
+          <div class="rep-field"><label>Retorno sugerido</label><input name="retorno" value="${esc(r.retorno||'')}" placeholder="Ex: 12 meses"></div>
+        </div>
+      </div>
+
+      <div class="rep-section">
+        <h4>📷 Radiografias</h4>
+        <div class="photo-area" id="phAreaRx">
+          ${renderPhotoGrid('radiografias', r.radiografias||[])}
+        </div>
+      </div>
+
+      <div class="rep-section">
+        <h4>🦷 Galeria (fotos do procedimento)</h4>
+        <div class="photo-area" id="phAreaGal">
+          ${renderPhotoGrid('galeria', r.galeria||[])}
+        </div>
+      </div>
+
+      <div class="rep-actions">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeReport()">Fechar</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="saveReportDraft()">💾 Salvar rascunho</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="previewReportPDF()">👁️ Pré-visualizar PDF</button>
+        <button type="submit" class="btn btn-primary btn-sm">📤 Enviar pro WhatsApp do consultório</button>
+      </div>
+    </form>`;
+  document.getElementById('modal').classList.add('modal-lg');
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeReport(){
+  document.getElementById('modal').classList.remove('modal-lg');
+  closeModal();
+  window._report = null;
+}
+function readReportForm(){
+  const f = document.getElementById('repForm');
+  if(!f) return null;
+  const r = window._report;
+  const get = n => (f.elements[n]?.value||'').trim();
+  return {
+    ...r,
+    indicador: get('indicador') || null,
+    data_inicio: get('data_inicio') || null,
+    data_finalizacao: get('data_finalizacao') || null,
+    diagnostico: get('diagnostico') || null,
+    sugestao_reabilitacao: get('sugestao_reabilitacao') || null,
+    procedimento_realizado: get('procedimento_realizado') || null,
+    irrigacao: get('irrigacao') || null,
+    sistema: get('sistema') || null,
+    cimento: get('cimento') || null,
+    intercorrencia: !!f.elements['intercorrencia']?.checked,
+    intercorrencia_descricao: get('intercorrencia_descricao') || null,
+    dente: get('dente'),
+    procedimento_detalhado: get('procedimento_detalhado') || null,
+    relato_caso: get('relato_caso'),
+    retorno: get('retorno') || null,
+  };
+}
+async function saveReportDraft(silent){
+  const data = readReportForm(); if(!data) return null;
+  if(!data.dente){ if(!silent) toast('Informe o dente','err'); return null; }
+  if(!data.relato_caso){ if(!silent) toast('Preencha o relato do caso','err'); return null; }
+  const payload = {
+    booking_id: data.booking_id,
+    professional_id: data.professional_id,
+    indicador: data.indicador, data_inicio: data.data_inicio, data_finalizacao: data.data_finalizacao,
+    diagnostico: data.diagnostico, sugestao_reabilitacao: data.sugestao_reabilitacao,
+    procedimento_realizado: data.procedimento_realizado, irrigacao: data.irrigacao,
+    sistema: data.sistema, cimento: data.cimento, intercorrencia: data.intercorrencia,
+    intercorrencia_descricao: data.intercorrencia_descricao, dente: data.dente,
+    procedimento_detalhado: data.procedimento_detalhado, relato_caso: data.relato_caso,
+    retorno: data.retorno, radiografias: data.radiografias||[], galeria: data.galeria||[],
+  };
+  let result;
+  if(data.id){
+    result = await sb.from('consultation_reports').update(payload).eq('id',data.id).select().maybeSingle();
+  } else {
+    result = await sb.from('consultation_reports').insert(payload).select().maybeSingle();
+  }
+  if(result.error){ if(!silent) toast('Erro ao salvar: '+result.error.message,'err'); return null; }
+  window._report = {...window._report, ...result.data};
+  if(!silent) toast('✓ Rascunho salvo','ok');
+  return result.data;
+}
+async function sendReportToOffice(){
+  const data = readReportForm(); if(!data) return;
+  if(!data.dente){ toast('Informe o dente','err'); return; }
+  if(!data.relato_caso){ toast('Preencha o relato do caso','err'); return; }
+  const bk = window._report.booking;
+  if(!bk.office_phone){ toast('Esse atendimento não tem telefone do consultório cadastrado','err'); return; }
+  if(!confirm('Enviar o relatório pelo WhatsApp pra '+formatPhone(bk.office_phone)+'?')) return;
+  toast('Salvando…','');
+  const saved = await saveReportDraft(true);
+  if(!saved){ toast('Erro ao salvar antes do envio','err'); return; }
+  toast('Gerando PDF…','');
+  const pdfB64 = await generateReportPDFBase64();
+  if(!pdfB64){ toast('Erro ao gerar PDF','err'); return; }
+  toast('Enviando WhatsApp…','');
+  try{
+    const sess = await sb.auth.getSession();
+    const tok = sess?.data?.session?.access_token;
+    const res = await fetch(SUPA_URL+'/functions/v1/send-whatsapp-report',{
+      method:'POST',
+      headers:{'Content-Type':'application/json', Authorization:'Bearer '+tok},
+      body: JSON.stringify({ report_id: saved.id, pdf_base64: pdfB64 })
+    });
+    if(!res.ok){ const t=await res.text(); throw new Error(t||'http '+res.status); }
+    toast('✓ Relatório enviado pro consultório!','ok');
+    setTimeout(()=>{ closeReport(); renderAgenda(); }, 800);
+  }catch(e){
+    toast('Erro ao enviar: '+(e.message||e),'err');
+  }
+}
+async function previewReportPDF(){
+  const data = readReportForm(); if(!data) return;
+  if(!data.dente){ toast('Informe o dente','err'); return; }
+  if(!data.relato_caso){ toast('Preencha o relato do caso','err'); return; }
+  toast('Gerando PDF…','');
+  const blob = await generateReportPDFBlob();
+  if(!blob){ toast('Erro ao gerar PDF','err'); return; }
+  const url = URL.createObjectURL(blob);
+  window.open(url,'_blank');
+}
+
+/* ===== Upload de fotos do relatório ===== */
+function renderPhotoGrid(type, paths){
+  const items = (paths||[]).map((p,i)=>{
+    const url = sb.storage.from('consultation-reports').getPublicUrl(p).data.publicUrl;
+    return `<div class="photo-thumb"><img src="${esc(url)}" alt=""><button type="button" class="ph-rm" onclick="removeReportPhoto('${type}',${i})" title="Remover">✕</button></div>`;
+  }).join('');
+  const addBtn = `<label class="photo-add" title="Adicionar foto">+
+    <input type="file" accept="image/*" multiple style="display:none" onchange="handleReportPhotos('${type}',this.files)">
+  </label>`;
+  if(!paths.length){
+    return `<label class="photo-area-empty">
+      <input type="file" accept="image/*" multiple style="display:none" onchange="handleReportPhotos('${type}',this.files)">
+      📎 <b>Clique pra adicionar fotos</b> ou arraste aqui<br>
+      <span style="font-size:11.5px">JPG, PNG · várias de uma vez</span>
+    </label>`;
+  }
+  return `<div class="photo-grid">${items}${addBtn}</div>`;
+}
+async function handleReportPhotos(type, files){
+  if(!files || !files.length) return;
+  const r = window._report; if(!r) return;
+  const area = type==='radiografias' ? document.getElementById('phAreaRx') : document.getElementById('phAreaGal');
+  for(const file of files){
+    if(!file.type.startsWith('image/')){ toast('Arquivo "'+file.name+'" não é imagem','err'); continue; }
+    if(file.size > 8*1024*1024){ toast('"'+file.name+'" passa de 8MB, comprima antes','err'); continue; }
+    try{
+      const compressed = await compressImage(file, 1400, 0.82);
+      const ext = (compressed.type.split('/')[1]||'jpg').replace('jpeg','jpg');
+      const ts = Date.now()+'-'+Math.random().toString(36).slice(2,8);
+      const path = `${currentProf.id}/${r.booking_id}/${type}/${ts}.${ext}`;
+      const { error } = await sb.storage.from('consultation-reports').upload(path, compressed, { contentType: compressed.type });
+      if(error){ toast('Erro no upload: '+error.message,'err'); continue; }
+      r[type] = [...(r[type]||[]), path];
+    }catch(e){ toast('Falha: '+(e.message||e),'err'); }
+  }
+  // re-render só essa área
+  if(area) area.innerHTML = renderPhotoGrid(type, r[type]||[]);
+}
+async function removeReportPhoto(type, idx){
+  const r = window._report; if(!r) return;
+  const path = (r[type]||[])[idx]; if(!path) return;
+  if(!confirm('Remover essa foto do relatório?')) return;
+  try{ await sb.storage.from('consultation-reports').remove([path]); }catch(_){}
+  r[type] = r[type].filter((_,i)=>i!==idx);
+  const area = type==='radiografias' ? document.getElementById('phAreaRx') : document.getElementById('phAreaGal');
+  if(area) area.innerHTML = renderPhotoGrid(type, r[type]||[]);
+}
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let {width, height} = img;
+      const scale = Math.min(1, maxDim/Math.max(width,height));
+      width = Math.round(width*scale); height = Math.round(height*scale);
+      const c = document.createElement('canvas'); c.width=width; c.height=height;
+      c.getContext('2d').drawImage(img,0,0,width,height);
+      c.toBlob(b => b ? resolve(new File([b],'photo.jpg',{type:'image/jpeg'})) : reject(new Error('blob fail')), 'image/jpeg', quality);
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ===== PDF do relatório (jsPDF) ===== */
+async function generateReportPDFBlob(){
+  const doc = await buildReportPDF();
+  return doc ? doc.output('blob') : null;
+}
+async function generateReportPDFBase64(){
+  const doc = await buildReportPDF();
+  if(!doc) return null;
+  const b64 = doc.output('datauristring').split(',')[1];
+  return b64;
+}
+async function buildReportPDF(){
+  const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  if(!jsPDFCtor){ return null; }
+  const data = readReportForm() || window._report;
+  const bk = window._report.booking;
+  const prof = currentProf || {};
+
+  const doc = new jsPDFCtor({ unit:'mm', format:'a4', orientation:'portrait' });
+  const pageW = 210, pageH = 297;
+  const mL = 15, mR = 15, mB = 18;
+  const contentW = pageW - mL - mR;
+  let y = 15;
+
+  // ===== Cabeçalho =====
+  doc.setFillColor(10,93,92);
+  doc.roundedRect(mL, y, 12, 12, 2, 2, 'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('E', mL+6, y+8.6, {align:'center'});
+  doc.setTextColor(10,93,92); doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('endodoc', mL+16, y+6.5);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(94,112,111);
+  doc.text('RELATÓRIO DE CONSULTA ENDODÔNTICA', mL+16, y+10);
+  doc.setTextColor(22,48,47); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text(prof.name||'', pageW-mR, y+5, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(94,112,111);
+  doc.text(prof.specialty||'Endodontia', pageW-mR, y+10, {align:'right'});
+  y += 14;
+  doc.setDrawColor(10,93,92); doc.setLineWidth(0.5); doc.line(mL, y, pageW-mR, y); y += 7;
+
+  // ===== Nome do paciente — destaque =====
+  doc.setTextColor(22,48,47); doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  doc.text(bk.patient_name || 'Paciente', mL, y);
+  y += 7;
+  if(data.indicador){
+    doc.setFont('helvetica','italic'); doc.setFontSize(10); doc.setTextColor(94,112,111);
+    doc.text('Indicador: '+data.indicador, mL, y); y += 6;
+  }
+
+  // ===== Datas =====
+  const fmtBR = iso => { if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
+  function dateBox(label, val, x, yPos){
+    doc.setFillColor(248,232,232);
+    doc.roundedRect(x, yPos, (contentW-6)/2, 9, 2, 2, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(120,40,60);
+    doc.text(label+':', x+3, yPos+6);
+    doc.setFont('helvetica','italic'); doc.setTextColor(22,48,47);
+    doc.text(val, x+3+doc.getTextWidth(label+':')+2, yPos+6);
+  }
+  dateBox('Data de Início', fmtBR(data.data_inicio), mL, y);
+  dateBox('Data de Finalização', fmtBR(data.data_finalizacao), mL+(contentW-6)/2+6, y);
+  y += 13;
+
+  // ===== Bloco clínico (texto) =====
+  function bulletLine(lbl, val, yPos){
+    if(!val) return yPos;
+    doc.setFillColor(248,232,232); doc.rect(mL, yPos-0.5, 2, 5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(120,40,60);
+    doc.text(lbl+':', mL+4, yPos+3.2);
+    const labelW = doc.getTextWidth(lbl+':')+2;
+    doc.setFont('helvetica','italic'); doc.setTextColor(22,48,47);
+    const lines = doc.splitTextToSize(val, contentW - 4 - labelW - 2);
+    doc.text(lines, mL+4+labelW, yPos+3.2);
+    return yPos + 5 + (lines.length-1)*4.5;
+  }
+  y = bulletLine('Diagnóstico', data.diagnostico, y) + 2;
+  y = bulletLine('Sugestão Reabilitação', data.sugestao_reabilitacao, y) + 2;
+  y = bulletLine('Procedimento Realizado', data.procedimento_realizado, y) + 4;
+
+  // ===== Linha de tags (dente, irrigação etc) =====
+  function tagBox(lbl, val, x, yPos, w){
+    if(!val) return;
+    doc.setFillColor(248,232,232);
+    doc.roundedRect(x, yPos, w, 7.5, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(120,40,60);
+    doc.text(lbl+':', x+2.5, yPos+5);
+    doc.setFont('helvetica','normal'); doc.setTextColor(22,48,47);
+    const labelW = doc.getTextWidth(lbl+':')+2;
+    const valStr = String(val);
+    const truncated = doc.splitTextToSize(valStr, w-labelW-4)[0] || valStr;
+    doc.text(truncated, x+2.5+labelW, yPos+5);
+  }
+  const tagW = (contentW-8)/3;
+  tagBox('Irrigação', data.irrigacao||'', mL, y, tagW);
+  tagBox('Cimento', data.cimento||'', mL+tagW+4, y, tagW);
+  tagBox('Dente', data.dente||'', mL+(tagW+4)*2, y, tagW);
+  y += 10;
+  tagBox('Sistema', data.sistema||'', mL, y, tagW);
+  const intercorVal = data.intercorrencia ? (data.intercorrencia_descricao || 'Sim') : 'Não';
+  doc.setFillColor(248,232,232);
+  doc.roundedRect(mL+tagW+4, y, tagW, 7.5, 1.5, 1.5, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(120,40,60);
+  doc.text('Intercorrência:', mL+tagW+4+2.5, y+5);
+  const ilbl = doc.getTextWidth('Intercorrência:')+2;
+  doc.setFont('helvetica','bold');
+  doc.setTextColor(data.intercorrencia ? 165 : 30, data.intercorrencia ? 60 : 110, data.intercorrencia ? 45 : 70);
+  const itrunc = doc.splitTextToSize(intercorVal, tagW-ilbl-4)[0] || intercorVal;
+  doc.text(itrunc, mL+tagW+4+2.5+ilbl, y+5);
+  y += 12;
+
+  // ===== Radiografias =====
+  if((data.radiografias||[]).length){
+    y = await ensureSpace(doc, y, 50, mB);
+    doc.setFillColor(248,232,232); doc.rect(mL, y-0.5, 3, 5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(22,48,47);
+    doc.text('Radiografias:', mL+5, y+3);
+    y += 7;
+    doc.setDrawColor(220,224,226); doc.setLineWidth(0.2); doc.line(mL, y, pageW-mR, y); y += 3;
+    y = await drawPhotoRow(doc, data.radiografias, y, mL, contentW, 3, 45, mB);
+    y += 5;
+  }
+
+  // ===== Procedimento detalhado =====
+  if(data.procedimento_detalhado){
+    y = await ensureSpace(doc, y, 18, mB);
+    doc.setFillColor(248,232,232); doc.rect(mL, y-0.5, 3, 5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(22,48,47);
+    doc.text('🦷 Procedimento Realizado:', mL+5, y+3);
+    y += 7;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120,40,60);
+    const procLines = String(data.procedimento_detalhado).split(/\n+/).filter(Boolean);
+    for(const line of procLines){
+      y = await ensureSpace(doc, y, 6, mB);
+      const w = doc.splitTextToSize(line, contentW);
+      doc.text(w, mL, y+3);
+      y += 5 + (w.length-1)*4.5;
+    }
+    y += 4;
+  }
+
+  // ===== Relato do caso =====
+  if(data.relato_caso){
+    y = await ensureSpace(doc, y, 18, mB);
+    doc.setDrawColor(220,224,226); doc.setLineWidth(0.2); doc.line(mL, y, pageW-mR, y); y += 4;
+    doc.setFillColor(248,232,232); doc.rect(mL, y-0.5, 3, 5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(22,48,47);
+    doc.text('Relato do Caso:', mL+5, y+3);
+    y += 7;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,52,52);
+    const paragraphs = String(data.relato_caso).split(/\n+/);
+    for(const p of paragraphs){
+      if(!p.trim()) continue;
+      y = await ensureSpace(doc, y, 6, mB);
+      const lines = doc.splitTextToSize(p, contentW);
+      doc.text(lines, mL, y+3);
+      y += 5 + (lines.length-1)*4.5 + 1.5;
+    }
+    if(data.retorno){
+      y += 2;
+      y = await ensureSpace(doc, y, 7, mB);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(22,48,47);
+      doc.text('Retorno:', mL, y+3);
+      doc.setFont('helvetica','italic'); doc.setTextColor(165,60,45);
+      doc.text(data.retorno, mL+18, y+3);
+      y += 6;
+    }
+    y += 4;
+  }
+
+  // ===== Galeria =====
+  if((data.galeria||[]).length){
+    y = await ensureSpace(doc, y, 50, mB);
+    doc.setDrawColor(220,224,226); doc.setLineWidth(0.2); doc.line(mL, y, pageW-mR, y); y += 4;
+    doc.setFillColor(248,232,232); doc.rect(mL, y-0.5, 3, 5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(22,48,47);
+    doc.text('Galeria:', mL+5, y+3);
+    y += 7;
+    y = await drawPhotoRow(doc, data.galeria, y, mL, contentW, 3, 50, mB);
+    y += 5;
+  }
+
+  // ===== Rodapé em cada página =====
+  const pageCount = doc.internal.getNumberOfPages();
+  for(let p=1; p<=pageCount; p++){
+    doc.setPage(p);
+    doc.setFontSize(8); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
+    doc.text((bk.patient_name||'Paciente'), mL, pageH-8);
+    doc.text(String(p)+' / '+pageCount, pageW-mR, pageH-8, {align:'right'});
+    doc.text('EndoDoc · endodoc.com.br', pageW/2, pageH-8, {align:'center'});
+  }
+
+  return doc;
+}
+async function ensureSpace(doc, y, needed, mB){
+  if(y + needed > 297 - mB){ doc.addPage(); return 15; }
+  return y;
+}
+async function drawPhotoRow(doc, paths, y, mL, contentW, perRow, sizeMM, mB){
+  const gap = 3;
+  const cellW = (contentW - gap*(perRow-1)) / perRow;
+  const cellH = sizeMM;
+  let row = 0, col = 0;
+  for(const path of paths){
+    const url = sb.storage.from('consultation-reports').getPublicUrl(path).data.publicUrl;
+    let dataUrl;
+    try{ dataUrl = await fetchImageAsDataURL(url); }catch(_){ continue; }
+    if(col === 0){ y = await ensureSpace(doc, y, cellH + 4, mB); }
+    const x = mL + col*(cellW+gap);
+    try{
+      doc.addImage(dataUrl, 'JPEG', x, y, cellW, cellH, undefined, 'FAST');
+    }catch(_){}
+    col++;
+    if(col >= perRow){ col = 0; y += cellH + gap; }
+  }
+  if(col > 0) y += cellH + gap;
+  return y;
+}
+function fetchImageAsDataURL(url){
+  return new Promise((resolve,reject)=>{
+    fetch(url).then(r=>r.blob()).then(blob=>{
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    }).catch(reject);
+  });
+}
 async function renderAgenda(){
   const body=document.getElementById('appBody');
   const {data,error}=await sb.from('bookings').select('*').in('status',['active','pending']).gte('slot_date',todayISO()).order('slot_date',{ascending:true}).order('slot_time',{ascending:true});
   if(error){body.innerHTML='<div class="page-head"><h1>Agenda</h1></div><div class="card">Erro: '+esc(error.message)+'</div>';return;}
   const list=data||[];
-  // anamneses pros bookings ativos
+  // anamneses + relatórios pros bookings ativos
   window._anamMap = {};
+  window._reportMap = {};
   const activeIds = list.filter(b=>b.status==='active').map(b=>b.id);
   if(activeIds.length){
     try{
       const {data:anams} = await sb.from('anamneses').select('id,booking_id,sent_at,filled_at').in('booking_id', activeIds);
       (anams||[]).forEach(a => { window._anamMap[a.booking_id] = a; });
     }catch(_){}
+    const completedIds = list.filter(b=>b.status==='active' && b.completed_at).map(b=>b.id);
+    if(completedIds.length){
+      try{
+        const {data:reps} = await sb.from('consultation_reports').select('id,booking_id,sent_to_office_at,updated_at').in('booking_id', completedIds);
+        (reps||[]).forEach(r => { window._reportMap[r.booking_id] = r; });
+      }catch(_){}
+    }
   }
   const pending=list.filter(b=>b.status==='pending');
   const active=list.filter(b=>b.status==='active');
@@ -1843,6 +2476,16 @@ async function loadHistorico(){
     </div>`;
     return;
   }
+  // carrega relatórios das realizadas pra mostrar link "Ver/Criar relatório"
+  window._reportMap = window._reportMap || {};
+  const realizadasIds = list.filter(b=>b.status==='active' && b.completed_at).map(b=>b.id);
+  if(realizadasIds.length){
+    try{
+      const {data:reps} = await sb.from('consultation_reports').select('id,booking_id,sent_to_office_at').in('booking_id', realizadasIds);
+      (reps||[]).forEach(r => { window._reportMap[r.booking_id] = r; });
+    }catch(_){}
+  }
+
   // agrupa por (data, clínica, telefone) pra mostrar multi-slot como 1 linha
   const groups = groupBookings(list);
   const html = groups.map(g => {
@@ -1852,11 +2495,20 @@ async function loadHistorico(){
     const tEnd=(()=>{const [h]=last.slot_time.split(':').map(Number);return String(h+1).padStart(2,'0')+':00';})();
     const horario = dur>1 ? `${tStart}–${tEnd}` : tStart;
     const isCancelled = first.status==='cancelled';
+    const isCompleted = !isCancelled && !!first.completed_at;
     const parts=first.slot_date.split('-');const d=+parts[2],m=+parts[1],y=parts[0];
     const dataStr = `${d}/${String(m).padStart(2,'0')}/${y}`;
     const badge = isCancelled
       ? '<span class="hist-badge cancelled">Cancelada</span>'
-      : '<span class="hist-badge done">Realizada</span>';
+      : (isCompleted ? '<span class="hist-badge done">Realizada ✓</span>' : '<span class="hist-badge done">Realizada</span>');
+    // botão de relatório (só pra realizadas marcadas como completed)
+    let reportBtn = '';
+    if(isCompleted){
+      const rep = (window._reportMap||{})[first.id];
+      if(rep && rep.sent_to_office_at) reportBtn = `<button class="pill report-sent" style="margin-left:8px;font-size:11.5px;padding:4px 8px" onclick="openReport('${first.id}')">📋 Enviado</button>`;
+      else if(rep) reportBtn = `<button class="pill report-ready" style="margin-left:8px;font-size:11.5px;padding:4px 8px" onclick="openReport('${first.id}')">📋 Rascunho</button>`;
+      else reportBtn = `<button class="pill report-create" style="margin-left:8px;font-size:11.5px;padding:4px 8px" onclick="openReport('${first.id}')">📋 Criar</button>`;
+    }
     return `<div class="hist-row ${isCancelled?'cancelled':''}">
       <div class="hist-date">
         <div class="hist-d">${dataStr}</div>
@@ -1866,7 +2518,7 @@ async function loadHistorico(){
         <div class="hist-name">${esc(first.office_name)}</div>
         <div class="hist-meta">${esc(first.procedure||'—')}${first.office_responsible?' · '+esc(first.office_responsible):''}</div>
       </div>
-      ${badge}
+      <div style="display:flex;align-items:center;gap:4px">${badge}${reportBtn}</div>
     </div>`;
   }).join('');
   document.getElementById('histList').innerHTML = `<div class="card" style="padding:8px">${html}</div>`;
