@@ -1657,6 +1657,35 @@ async function generateReportPDFBase64(){
   const b64 = doc.output('datauristring').split(',')[1];
   return b64;
 }
+async function getEndoLogoDataURL(){
+  if(window._endoLogoCache) return window._endoLogoCache;
+  try{
+    const r = await fetch('/brand/favicon.svg');
+    if(!r.ok) return null;
+    const svgText = await r.text();
+    const blob = new Blob([svgText], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = reject;
+      i.src = url;
+    });
+    const size = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,size,size);
+    ctx.drawImage(img, 0, 0, size, size);
+    URL.revokeObjectURL(url);
+    const dataURL = canvas.toDataURL('image/png');
+    window._endoLogoCache = dataURL;
+    return dataURL;
+  }catch(e){
+    console.warn('logo load failed', e);
+    return null;
+  }
+}
 async function buildReportPDF(){
   const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
   if(!jsPDFCtor){ return null; }
@@ -1671,19 +1700,21 @@ async function buildReportPDF(){
   let y = 15;
 
   // ===== Cabeçalho =====
-  doc.setFillColor(10,93,92);
-  doc.roundedRect(mL, y, 12, 12, 2, 2, 'F');
-  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(16);
-  doc.text('E', mL+6, y+8.6, {align:'center'});
-  doc.setTextColor(10,93,92); doc.setFont('helvetica','bold'); doc.setFontSize(16);
-  doc.text('endodoc', mL+16, y+6.5);
+  const logoData = await getEndoLogoDataURL();
+  const logoSize = 16;
+  if(logoData){
+    doc.addImage(logoData, 'PNG', mL, y-2, logoSize, logoSize);
+  }
+  const textX = mL + logoSize + 2;
+  doc.setTextColor(10,93,92); doc.setFont('helvetica','bold'); doc.setFontSize(17);
+  doc.text('endodoc', textX, y+6.5);
   doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(94,112,111);
-  doc.text('RELATÓRIO DE CONSULTA ENDODÔNTICA', mL+16, y+10);
+  doc.text('RELATÓRIO DE CONSULTA ENDODÔNTICA', textX, y+10.5);
   doc.setTextColor(22,48,47); doc.setFont('helvetica','bold'); doc.setFontSize(10);
   doc.text(prof.name||'', pageW-mR, y+5, {align:'right'});
   doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(94,112,111);
   doc.text(prof.specialty||'Endodontia', pageW-mR, y+10, {align:'right'});
-  y += 14;
+  y += 16;
   doc.setDrawColor(10,93,92); doc.setLineWidth(0.5); doc.line(mL, y, pageW-mR, y); y += 7;
 
   // ===== Nome do paciente — destaque =====
@@ -2231,20 +2262,18 @@ async function exportAnamnesePDF(){
     let y = 15;
 
     // ===== Cabeçalho =====
-    // bloco "E"
-    doc.setFillColor(10,93,92);
-    doc.roundedRect(mL, y, 12, 12, 2, 2, 'F');
-    doc.setTextColor(255,255,255);
-    doc.setFont('helvetica','bold'); doc.setFontSize(16);
-    doc.text('E', mL+6, y+8.6, {align:'center'});
-
-    // wordmark
+    const logoData = await getEndoLogoDataURL();
+    const logoSize = 16;
+    if(logoData){
+      doc.addImage(logoData, 'PNG', mL, y-2, logoSize, logoSize);
+    }
+    const textX = mL + logoSize + 2;
     doc.setTextColor(10,93,92);
-    doc.setFont('helvetica','bold'); doc.setFontSize(16);
-    doc.text('endodoc', mL+16, y+6.5);
+    doc.setFont('helvetica','bold'); doc.setFontSize(17);
+    doc.text('endodoc', textX, y+6.5);
     doc.setFont('helvetica','normal'); doc.setFontSize(7);
     doc.setTextColor(94,112,111);
-    doc.text('ANAMNESE PRÉ-CONSULTA', mL+16, y+10);
+    doc.text('ANAMNESE PRÉ-CONSULTA', textX, y+10.5);
 
     // profissional à direita
     doc.setTextColor(22,48,47);
@@ -2254,7 +2283,7 @@ async function exportAnamnesePDF(){
     doc.setTextColor(94,112,111);
     doc.text(profSpec, pageW-mR, y+10, {align:'right'});
 
-    y += 14;
+    y += 16;
     doc.setDrawColor(10,93,92); doc.setLineWidth(0.5);
     doc.line(mL, y, pageW-mR, y);
     y += 6;
