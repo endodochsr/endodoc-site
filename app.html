@@ -300,6 +300,43 @@
   .hd-info-grid .val{color:var(--ink);font-size:14px}
   .hd-prontuario{background:var(--surface-2);border-radius:11px;padding:12px 14px;font-size:13.5px;line-height:1.6;color:var(--ink);white-space:pre-wrap}
   .hd-prontuario.empty{color:var(--muted);font-style:italic;text-align:center;padding:18px}
+  /* ===== Financeiro ===== */
+  .fin-chart{display:flex;align-items:flex-end;gap:14px;height:200px;padding:10px 0}
+  .fin-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:40px}
+  .fin-bar-val{font-size:11px;color:var(--muted);font-weight:600;text-align:center;min-height:14px}
+  .fin-bar{width:100%;max-width:60px;background:linear-gradient(180deg,var(--primary) 0%,var(--primary-d) 100%);border-radius:6px 6px 0 0;transition:.18s;min-height:4px}
+  .fin-bar.current{background:linear-gradient(180deg,var(--accent) 0%,var(--accent-d) 100%);box-shadow:0 4px 14px rgba(242,104,60,.32)}
+  .fin-bar-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.04em}
+  .fin-rank{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px dashed var(--border)}
+  .fin-rank:last-child{border-bottom:none}
+  .fin-rank-pos{width:26px;height:26px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0}
+  .fin-rank-info{flex:1;min-width:0}
+  .fin-rank-name{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fin-rank-bar{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-bottom:4px}
+  .fin-rank-bar-fill{height:100%;background:var(--primary);border-radius:99px;transition:.4s}
+  .fin-rank-meta{font-size:11.5px;color:var(--muted)}
+  .fin-rank-val{font-weight:700;font-size:14px;color:var(--ink);flex-shrink:0}
+  .fin-list{display:flex;flex-direction:column}
+  .fin-row{display:grid;grid-template-columns:80px 1fr auto auto;gap:14px;align-items:center;padding:11px 6px;border-bottom:1px solid var(--border);font-size:13.5px}
+  .fin-row:hover{background:var(--surface-2)}
+  .fin-row:last-child{border-bottom:none}
+  .fin-row-date{font-family:Georgia,serif;font-weight:600;color:var(--ink);font-size:13px;line-height:1.3}
+  .fin-row-date span{display:block;font-family:inherit;font-weight:400;color:var(--muted);font-size:11px;text-transform:uppercase}
+  .fin-row-main{min-width:0}
+  .fin-row-clinic{font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
+  .fin-row-proc{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .fin-row-value{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:13.5px;text-align:right}
+  .fin-row-value b{font-size:14px;color:var(--ink)}
+  .fin-status{font-size:10.5px;padding:2px 8px;border-radius:99px;font-weight:700;cursor:pointer;letter-spacing:.03em;text-transform:uppercase;user-select:none}
+  .fin-status.paid{background:#dff1ec;color:#0f5d5b}
+  .fin-status.pending{background:#fdf3d8;color:#8a6d27}
+  .fin-status:hover{opacity:.7}
+  @media(max-width:640px){
+    .fin-chart{height:160px;gap:8px}
+    .fin-row{grid-template-columns:70px 1fr auto;gap:10px}
+    .fin-row .pill{display:none}
+    .fin-bar-val{display:none}
+  }
   .hd-actions-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   @media(max-width:640px){
     .hd-info-grid{grid-template-columns:1fr}
@@ -371,6 +408,7 @@
       <button data-v="agenda" onclick="go('agenda')">Agenda</button>
       <button data-v="dispo" onclick="go('dispo')">Disponibilidade</button>
       <button data-v="historico" onclick="go('historico')">Histórico</button>
+      <button data-v="financeiro" onclick="go('financeiro')">Financeiro</button>
       <button data-v="perfil" onclick="go('perfil')">Perfil</button>
     </nav>
     <div class="userchip"><div class="avatar" id="avatar">D</div><button class="btn btn-ghost btn-sm" onclick="doLogout()">Sair</button></div>
@@ -580,6 +618,7 @@ function go(v){
   else if(v==='agenda'){ body.innerHTML='<div class="page-head"><h1>Agenda</h1><p>Carregando…</p></div>'; renderAgenda(); }
   else if(v==='dispo'){ body.innerHTML=dispoShell(); loadDispoSlots(); setTimeout(updateRecPreview,0); }
   else if(v==='historico'){ body.innerHTML='<div class="page-head"><h1>Histórico</h1><p>Carregando…</p></div>'; renderHistorico(); }
+  else if(v==='financeiro'){ body.innerHTML='<div class="page-head"><h1>Financeiro</h1><p>Carregando…</p></div>'; renderFinanceiro(); }
 }
 function hasAccess(p){
   if(!p) return false;
@@ -752,9 +791,10 @@ async function loadStats(){
   const curConsults=countConsults(cur);
   const prevConsults=countConsults(prev);
   const curSlots=cur.length;        // total de horas atendidas
-  const price=Number(currentProf.consultation_price||0);
-  const curFat=curSlots*price;
-  const prevFat=prev.length*price;
+  // soma dos valores REAIS preenchidos em cada atendimento
+  const curFat=cur.reduce((s,b)=>s+Number(b.consultation_value||0),0);
+  const prevFat=prev.reduce((s,b)=>s+Number(b.consultation_value||0),0);
+  const hasAnyValue = curFat>0 || prevFat>0;
 
   // top consultórios
   const counts={};
@@ -789,16 +829,16 @@ async function loadStats(){
         <div class="stat-val">${curSlots}h</div>
         <div class="stat-sub">mês anterior: ${prev.length}h</div>
       </div>`;
-  if(price>0){
+  if(hasAnyValue){
     html += `<div class="stat">
-        <div class="stat-label">Faturamento estimado</div>
+        <div class="stat-label">Receita do mês</div>
         <div class="stat-val">${fmtBRL(curFat)} ${deltaFat(curFat,prevFat)}</div>
         <div class="stat-sub">mês anterior: ${fmtBRL(prevFat)}</div>
       </div>`;
   } else {
     html += `<div class="stat stat-empty">
-        <div class="stat-label">Faturamento estimado</div>
-        <div class="stat-val" style="font-size:14px;color:var(--muted);font-weight:400">Defina o valor médio por atendimento no <a href="#" onclick="go('perfil');return false" style="color:var(--primary);font-weight:600">Perfil</a> pra ver aqui.</div>
+        <div class="stat-label">Receita do mês</div>
+        <div class="stat-val" style="font-size:14px;color:var(--muted);font-weight:400">Preencha o valor cobrado em cada consulta pra ver a receita aqui. Vai em <a href="#" onclick="go('financeiro');return false" style="color:var(--primary);font-weight:600">Financeiro</a>.</div>
       </div>`;
   }
   html += `</div>`;
@@ -1125,11 +1165,6 @@ function viewPerfil(){
       <div class="field"><label>Especialidade</label><input id="pfSpec" value="${esc(p.specialty||'')}"></div>
       <div class="field"><label>Telefone</label><input id="pfPhone" value="${esc(p.phone||'')}"></div>
     </div>
-    <div class="field" style="max-width:280px">
-      <label>Valor médio por atendimento (R$)</label>
-      <input id="pfPrice" type="number" min="0" step="10" value="${p.consultation_price!=null?p.consultation_price:''}" placeholder="Ex.: 350">
-      <p style="font-size:12px;color:var(--muted);margin-top:4px">Só pra estimar seu faturamento no painel. Fica privado, não aparece pra clínicas.</p>
-    </div>
     <div class="field"><label>Sobre você</label>
       <textarea id="pfBio" rows="4" maxlength="500" placeholder="Ex.: Endodontista há 12 anos, especializada em tratamento de canal com microscópio operatório. Atendo consultórios em toda a região metropolitana.">${esc(p.bio||'')}</textarea>
       <p style="font-size:12px;color:var(--muted);margin-top:4px">Aparece logo abaixo do seu nome na página de agendamento. Máx. 500 caracteres.</p>
@@ -1228,11 +1263,9 @@ async function saveProfile(){
   const name=val('pfName'),spec=val('pfSpec'),phone=val('pfPhone');
   const bio=(document.getElementById('pfBio').value||'').trim().slice(0,500);
   const procs=[...document.querySelectorAll('#pfProcs .chip.on')].map(c=>c.textContent.trim());
-  const priceRaw=(document.getElementById('pfPrice').value||'').trim();
-  const price = priceRaw==='' ? null : Number(priceRaw);
-  const{error}=await sb.from('professionals').update({name,specialty:spec,phone,bio,procedures:procs,consultation_price:price}).eq('id',currentProf.id);
+  const{error}=await sb.from('professionals').update({name,specialty:spec,phone,bio,procedures:procs}).eq('id',currentProf.id);
   if(error){toast(error.message,'err');return;}
-  currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;currentProf.bio=bio;currentProf.procedures=procs;currentProf.consultation_price=price;
+  currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;currentProf.bio=bio;currentProf.procedures=procs;
   setAvatar(); toast('Perfil atualizado','ok');
 }
 async function changeSlug(){
@@ -1331,6 +1364,7 @@ function bookingCard(g, opts){
       ${!opts.pending && first.patient_phone ? renderAnamnesePill(first.id) : ''}
       ${prontuarioPill}
       ${reportPill}
+      ${!opts.pending ? (first.consultation_value ? `<button class="pill prontuario-filled" onclick="openValueModal('${first.id}')" title="Editar valor cobrado">💰 R$ ${Number(first.consultation_value).toFixed(2).replace('.',',')}</button>` : `<button class="pill prontuario-empty" onclick="openValueModal('${first.id}')">💰 Valor cobrado</button>`) : ''}
       ${canMarkDone ? `<button class="pill done" onclick='markCompleted("${first.id}", ${idsAttr})'>✓ Marcar realizado</button>` : ''}
       ${first.office_address && !completed ?`<a class="pill" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️ Como chegar</a>`:''}
       ${first.document_path?`<button class="pill dl" onclick="downloadDoc('${encodeURIComponent(first.document_path)}')">📎 Baixar documento</button>`:''}
@@ -2709,14 +2743,17 @@ async function loadHistorico(){
   const seenConsult = new Set();
   realized.forEach(b=>seenConsult.add(b.slot_date+'|'+b.office_name+'|'+(b.office_phone||'')));
   const totalHoras = realized.length;
-  const totalFat = totalHoras * Number(currentProf.consultation_price || 0);
+  // soma real dos valores cobrados
+  const totalFat = realized.reduce((s,b)=>s+Number(b.consultation_value||0),0);
+  const totalRecebido = realized.filter(b=>b.payment_status==='paid').reduce((s,b)=>s+Number(b.consultation_value||0),0);
+  const totalAReceber = totalFat - totalRecebido;
   const fmtBRL = v => 'R$ '+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
   const totEl = document.getElementById('histTotals');
   totEl.style.display='block';
   totEl.innerHTML = `<div class="stats-grid">
     <div class="stat"><div class="stat-label">Consultas realizadas</div><div class="stat-val">${seenConsult.size}</div></div>
     <div class="stat"><div class="stat-label">Horas atendidas</div><div class="stat-val">${totalHoras}h</div></div>
-    ${currentProf.consultation_price?`<div class="stat"><div class="stat-label">Receita estimada</div><div class="stat-val">${fmtBRL(totalFat)}</div></div>`:''}
+    ${totalFat>0?`<div class="stat"><div class="stat-label">Receita total</div><div class="stat-val">${fmtBRL(totalFat)}</div>${totalAReceber>0?`<div class="stat-sub">a receber: ${fmtBRL(totalAReceber)}</div>`:''}</div>`:''}
     <div class="stat"><div class="stat-label">Canceladas</div><div class="stat-val">${cancelled.length}</div></div>
   </div>`;
 
@@ -2782,6 +2819,237 @@ async function openReschedule(ids){
   rescheduleState.calRef.setDate(1);
   renderReschedule();
 }
+/* ===== Financeiro ===== */
+let finState = { period: '30d' };
+async function renderFinanceiro(){
+  const body = document.getElementById('appBody');
+  body.innerHTML = `<div class="page-head"><h1>Financeiro</h1><p>Receita real, ticket médio e quem é seu melhor cliente.</p></div>
+    <div class="card hist-filters" style="margin-bottom:18px">
+      <div class="hist-filter-row">
+        <label>Período:</label>
+        <select id="finPeriod" onchange="finState.period=this.value;loadFinanceiro()">
+          <option value="30d" ${finState.period==='30d'?'selected':''}>Últimos 30 dias</option>
+          <option value="month" ${finState.period==='month'?'selected':''}>Este mês</option>
+          <option value="90d" ${finState.period==='90d'?'selected':''}>Últimos 90 dias</option>
+          <option value="1y"  ${finState.period==='1y' ?'selected':''}>Último ano</option>
+          <option value="all" ${finState.period==='all'?'selected':''}>Tudo</option>
+        </select>
+      </div>
+    </div>
+    <div id="finContent"><div style="color:var(--muted);text-align:center;padding:20px;font-size:14px">Carregando…</div></div>`;
+  loadFinanceiro();
+}
+async function loadFinanceiro(){
+  const now = new Date();
+  let sinceISO;
+  if(finState.period==='month'){
+    sinceISO = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+  } else {
+    const since = new Date();
+    if(finState.period==='30d') since.setDate(now.getDate()-30);
+    else if(finState.period==='90d') since.setDate(now.getDate()-90);
+    else if(finState.period==='1y') since.setFullYear(now.getFullYear()-1);
+    else since.setFullYear(2020,0,1);
+    sinceISO = since.getFullYear()+'-'+String(since.getMonth()+1).padStart(2,'0')+'-'+String(since.getDate()).padStart(2,'0');
+  }
+  const today = todayISO();
+  // realizadas: active com slot_date < hoje OU completed_at marcado
+  const [pastQ, completedQ] = await Promise.all([
+    sb.from('bookings').select('*').eq('status','active').gte('slot_date',sinceISO).lt('slot_date',today),
+    sb.from('bookings').select('*').eq('status','active').not('completed_at','is',null).gte('slot_date',today)
+  ]);
+  let list = (pastQ.data||[]).concat(completedQ.data||[]);
+  if(pastQ.error){ document.getElementById('finContent').innerHTML='<div class="card" style="color:var(--danger)">Erro: '+esc(pastQ.error.message)+'</div>'; return; }
+
+  const fmtBRL = v => 'R$ '+Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const withValue = list.filter(b=>b.consultation_value);
+  const totalReceita = list.reduce((s,b)=>s+Number(b.consultation_value||0),0);
+  const totalRecebido = list.filter(b=>b.payment_status==='paid').reduce((s,b)=>s+Number(b.consultation_value||0),0);
+  const totalAReceber = totalReceita - totalRecebido;
+  const consultasComValor = withValue.length;
+  const ticketMedio = consultasComValor>0 ? totalReceita/consultasComValor : 0;
+
+  // Estado vazio se nenhum atendimento tem valor preenchido
+  if(!totalReceita && !list.length){
+    document.getElementById('finContent').innerHTML = `<div class="card empty-state">
+      <div class="empty-ico">💰</div>
+      <h3>Sem dados financeiros ainda</h3>
+      <p>Conforme você for atendendo e preenchendo o valor cobrado em cada consulta, sua receita aparece aqui — separada por clínica, com tendência mês a mês.</p>
+    </div>`;
+    return;
+  }
+  if(!totalReceita){
+    document.getElementById('finContent').innerHTML = `<div class="card empty-state">
+      <div class="empty-ico">💰</div>
+      <h3>Preencha o valor das consultas</h3>
+      <p>Você tem ${list.length} consulta(s) no período mas nenhuma com valor cobrado. Vai em <a href="#" onclick="go('agenda');return false" style="color:var(--primary);font-weight:600">Agenda</a> ou <a href="#" onclick="go('historico');return false" style="color:var(--primary);font-weight:600">Histórico</a> e adiciona o valor de cada uma.</p>
+    </div>`;
+    return;
+  }
+
+  // Top clínicas
+  const porClinica = {};
+  list.forEach(b=>{
+    if(!b.consultation_value) return;
+    const k = b.office_name || 'Sem nome';
+    if(!porClinica[k]) porClinica[k]={ name:k, count:0, total:0 };
+    porClinica[k].count++;
+    porClinica[k].total += Number(b.consultation_value||0);
+  });
+  const topClinicas = Object.values(porClinica).sort((a,b)=>b.total-a.total).slice(0,5);
+
+  // Por procedimento
+  const porProc = {};
+  list.forEach(b=>{
+    if(!b.consultation_value) return;
+    const k = (b.procedure||'Não especificado').trim() || 'Não especificado';
+    if(!porProc[k]) porProc[k]={ name:k, count:0, total:0 };
+    porProc[k].count++;
+    porProc[k].total += Number(b.consultation_value||0);
+  });
+  const topProcs = Object.values(porProc).sort((a,b)=>b.total-a.total).slice(0,5);
+
+  // Receita por mês (últimos 6)
+  const monthBuckets = {};
+  list.forEach(b=>{
+    if(!b.consultation_value) return;
+    const k = (b.slot_date||'').slice(0,7); // YYYY-MM
+    if(!monthBuckets[k]) monthBuckets[k]=0;
+    monthBuckets[k] += Number(b.consultation_value||0);
+  });
+  const months = [];
+  for(let i=5;i>=0;i--){
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
+    const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const lbl = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][d.getMonth()];
+    months.push({ key:k, label:lbl, value: monthBuckets[k]||0 });
+  }
+  const maxMonth = Math.max(...months.map(m=>m.value), 1);
+
+  // Lista detalhada (mais recente primeiro)
+  list.sort((a,b)=>{
+    if(a.slot_date!==b.slot_date) return b.slot_date.localeCompare(a.slot_date);
+    return (a.slot_time||'').localeCompare(b.slot_time||'');
+  });
+
+  document.getElementById('finContent').innerHTML = `
+    <div class="stats-grid" style="margin-bottom:18px">
+      <div class="stat"><div class="stat-label">Receita total</div><div class="stat-val">${fmtBRL(totalReceita)}</div><div class="stat-sub">${withValue.length} atendimento(s) com valor</div></div>
+      <div class="stat"><div class="stat-label">Recebido</div><div class="stat-val" style="color:var(--success)">${fmtBRL(totalRecebido)}</div>${totalAReceber>0?`<div class="stat-sub" style="color:var(--accent-d)">a receber: ${fmtBRL(totalAReceber)}</div>`:'<div class="stat-sub">tudo pago ✓</div>'}</div>
+      <div class="stat"><div class="stat-label">Ticket médio</div><div class="stat-val">${fmtBRL(ticketMedio)}</div></div>
+      <div class="stat"><div class="stat-label">Sem valor preenchido</div><div class="stat-val" style="font-size:18px;color:${list.length-withValue.length>0?'var(--danger)':'var(--muted)'}">${list.length-withValue.length}</div>${list.length-withValue.length>0?'<div class="stat-sub">precisa preencher</div>':'<div class="stat-sub">tudo certo ✓</div>'}</div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div class="section-title" style="margin-bottom:16px">📈 Evolução mensal (últimos 6 meses)</div>
+      <div class="fin-chart">
+        ${months.map(m=>{
+          const h = m.value>0 ? Math.max(6, Math.round((m.value/maxMonth)*140)) : 4;
+          const isCurrent = m.key === todayISO().slice(0,7);
+          return `<div class="fin-bar-col">
+            <div class="fin-bar-val">${m.value>0?fmtBRL(m.value).replace('R$ ',''):''}</div>
+            <div class="fin-bar ${isCurrent?'current':''}" style="height:${h}px" title="${fmtBRL(m.value)}"></div>
+            <div class="fin-bar-lbl">${m.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="row2" style="margin-bottom:18px">
+      <div class="card">
+        <div class="section-title" style="margin-bottom:14px">🏆 Top clínicas (por receita)</div>
+        ${topClinicas.length?topClinicas.map((c,i)=>{
+          const pct = Math.round((c.total/totalReceita)*100);
+          return `<div class="fin-rank">
+            <div class="fin-rank-pos">${i+1}</div>
+            <div class="fin-rank-info">
+              <div class="fin-rank-name">${esc(c.name)}</div>
+              <div class="fin-rank-bar"><div class="fin-rank-bar-fill" style="width:${pct}%"></div></div>
+              <div class="fin-rank-meta">${c.count} consulta(s) · ${pct}% da receita</div>
+            </div>
+            <div class="fin-rank-val">${fmtBRL(c.total)}</div>
+          </div>`;
+        }).join(''):'<div style="color:var(--muted);text-align:center;padding:12px">Sem dados</div>'}
+      </div>
+      <div class="card">
+        <div class="section-title" style="margin-bottom:14px">🦷 Por procedimento</div>
+        ${topProcs.length?topProcs.map((p,i)=>{
+          const pct = Math.round((p.total/totalReceita)*100);
+          return `<div class="fin-rank">
+            <div class="fin-rank-pos">${i+1}</div>
+            <div class="fin-rank-info">
+              <div class="fin-rank-name">${esc(p.name)}</div>
+              <div class="fin-rank-bar"><div class="fin-rank-bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+              <div class="fin-rank-meta">${p.count} consulta(s) · ${pct}% da receita</div>
+            </div>
+            <div class="fin-rank-val">${fmtBRL(p.total)}</div>
+          </div>`;
+        }).join(''):'<div style="color:var(--muted);text-align:center;padding:12px">Sem dados</div>'}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-bottom:14px">📋 Atendimentos no período (${list.length})</div>
+      <div class="fin-list">
+        ${list.map(b=>{
+          const [y,m,d] = (b.slot_date||'').split('-');
+          const dataStr = `${d}/${m}/${y}`;
+          const isPaid = b.payment_status==='paid';
+          return `<div class="fin-row">
+            <div class="fin-row-date">${dataStr}<span>${(b.slot_time||'').slice(0,5)}</span></div>
+            <div class="fin-row-main">
+              <div class="fin-row-clinic">${esc(b.office_name||'—')}</div>
+              <div class="fin-row-proc">${esc(b.procedure||'—')}</div>
+            </div>
+            <div class="fin-row-value">
+              ${b.consultation_value?`<b>${fmtBRL(b.consultation_value)}</b>`:`<span style="color:var(--muted);font-size:12px">sem valor</span>`}
+              ${b.consultation_value?`<span class="fin-status ${isPaid?'paid':'pending'}" onclick="togglePaid('${b.id}',${isPaid?'false':'true'})" title="Clique pra alternar">${isPaid?'✓ pago':'⏳ pendente'}</span>`:''}
+            </div>
+            <button class="pill" onclick="openValueModal('${b.id}')" title="Editar valor">${b.consultation_value?'✏️':'+ Valor'}</button>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+async function togglePaid(bookingId, makePaid){
+  const status = makePaid==='true' || makePaid===true ? 'paid' : 'pending';
+  const paidAt = status==='paid' ? new Date().toISOString() : null;
+  const { error } = await sb.from('bookings').update({ payment_status:status, paid_at:paidAt }).eq('id',bookingId);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast(status==='paid'?'✓ Marcado como pago':'⏳ Marcado como pendente','ok');
+  loadFinanceiro();
+}
+async function openValueModal(bookingId){
+  const { data:bk } = await sb.from('bookings').select('id,consultation_value,office_name,slot_date,slot_time').eq('id',bookingId).maybeSingle();
+  if(!bk){ toast('Erro ao carregar','err'); return; }
+  const cur = bk.consultation_value || '';
+  const html = `<h3>Valor cobrado</h3>
+    <p class="sub">${esc(bk.office_name||'')} · ${(bk.slot_date||'').split('-').reverse().join('/')}</p>
+    <div class="field" style="margin-top:14px">
+      <label>Valor cobrado por esse atendimento (R$)</label>
+      <input id="valIn" type="number" min="0" step="10" value="${cur}" placeholder="Ex.: 350" style="font-size:18px">
+      <p style="font-size:12px;color:var(--muted);margin-top:4px">Esse valor entra no seu financeiro. Privado, só você vê.</p>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn btn-ghost btn-block" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary btn-block" onclick="saveValue('${bookingId}')">Salvar</button>
+    </div>`;
+  showModal(html);
+  setTimeout(()=>document.getElementById('valIn')?.focus(), 100);
+}
+async function saveValue(bookingId){
+  const raw = (document.getElementById('valIn')?.value||'').trim();
+  const v = raw==='' ? null : Number(raw);
+  if(raw!=='' && (isNaN(v)||v<0)){ toast('Valor inválido','err'); return; }
+  const { error } = await sb.from('bookings').update({ consultation_value:v }).eq('id',bookingId);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  closeModal();
+  toast('✓ Valor salvo','ok');
+  if(document.getElementById('finContent')) loadFinanceiro();
+  if(window._agenda) renderAgenda();
+  if(document.getElementById('histList')) loadHistorico();
+}
+
 function renderReschedule(){
   const s = rescheduleState;
   const fmt = d => d.split('-').reverse().join('/');
