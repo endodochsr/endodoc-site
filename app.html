@@ -2248,7 +2248,9 @@ function fetchImageAsDataURL(url){
 }
 async function renderAgenda(){
   const body=document.getElementById('appBody');
-  const {data,error}=await sb.from('bookings').select('*').in('status',['active','pending']).gte('slot_date',todayISO()).order('slot_date',{ascending:true}).order('slot_time',{ascending:true});
+  // Carrega últimos 12 meses + futuro pra mostrar histórico no calendário também
+  const past12mo = (()=>{const d=new Date(); d.setMonth(d.getMonth()-12); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+  const {data,error}=await sb.from('bookings').select('*').in('status',['active','pending']).gte('slot_date',past12mo).order('slot_date',{ascending:true}).order('slot_time',{ascending:true});
   if(error){body.innerHTML='<div class="page-head"><h1>Agenda</h1></div><div class="card">Erro: '+esc(error.message)+'</div>';return;}
   const list=data||[];
   // anamneses + relatórios pros bookings ativos
@@ -2276,8 +2278,17 @@ async function renderAgenda(){
   if(!window._agenda || !window._agenda.month){
     let selected = today;
     const hasToday = list.some(b => b.slot_date === today);
-    if(!hasToday && list[0]) selected = list[0].slot_date;
-    window._agenda = { month: today.slice(0,7), selected };
+    if(!hasToday){
+      // Sem nada hoje: prefere o próximo atendimento FUTURO mais próximo
+      const nextFuture = list.find(b => b.slot_date > today);
+      if(nextFuture) selected = nextFuture.slot_date;
+      else {
+        // Sem futuro: pega o mais recente do passado
+        const pastSorted = list.filter(b => b.slot_date < today).sort((a,b)=>b.slot_date.localeCompare(a.slot_date));
+        if(pastSorted[0]) selected = pastSorted[0].slot_date;
+      }
+    }
+    window._agenda = { month: selected.slice(0,7), selected };
   }
   window._agenda.pending = pending;
   window._agenda.active = active;
