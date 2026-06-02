@@ -2150,7 +2150,7 @@ async function buildReportPDF(){
     y = await ensureSpace(doc, y, 18, mB);
     doc.setFillColor(248,232,232); doc.rect(mL, y-0.5, 3, 5, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(22,48,47);
-    doc.text('🦷 Procedimento Realizado:', mL+5, y+3);
+    doc.text('Procedimento Realizado:', mL+5, y+3);
     y += 7;
     doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120,40,60);
     const procLines = String(data.procedimento_detalhado).split(/\n+/).filter(Boolean);
@@ -2204,6 +2204,29 @@ async function buildReportPDF(){
     y += 5;
   }
 
+  // ===== Bloco "Agende sua próxima consulta" (link público do dentista) =====
+  if(prof.slug){
+    y = await ensureSpace(doc, y, 32, mB);
+    y += 4;
+    // caixa decorativa rosé suave com borda esquerda destacada
+    doc.setFillColor(252,243,238); // rosé bem claro
+    doc.roundedRect(mL, y, contentW, 24, 3, 3, 'F');
+    doc.setFillColor(194,85,58); // accent dark
+    doc.rect(mL, y, 2.5, 24, 'F');
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(120,40,60);
+    doc.text('AGENDE A PRÓXIMA CONSULTA', mL+7, y+8);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(22,48,47);
+    doc.text(`Agendamento online com ${prof.name||'a/o profissional'} pelo link:`, mL+7, y+15);
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(14,124,123);
+    const link = `endodoc.com.br/${prof.slug}`;
+    doc.textWithLink(link, mL+7, y+21.5, { url: `https://${link}` });
+
+    y += 28;
+  }
+
   // ===== Rodapé em cada página =====
   const pageCount = doc.internal.getNumberOfPages();
   for(let p=1; p<=pageCount; p++){
@@ -2224,15 +2247,22 @@ async function drawPhotoRow(doc, paths, y, mL, contentW, perRow, sizeMM, mB){
   const gap = 3;
   const cellW = (contentW - gap*(perRow-1)) / perRow;
   const cellH = sizeMM;
-  let row = 0, col = 0;
+  let col = 0;
   for(const path of paths){
     const url = sb.storage.from('consultation-reports').getPublicUrl(path).data.publicUrl;
-    let dataUrl;
-    try{ dataUrl = await fetchImageAsDataURL(url); }catch(_){ continue; }
+    let img;
+    try{ img = await fetchImage(url); }catch(_){ continue; }
     if(col === 0){ y = await ensureSpace(doc, y, cellH + 4, mB); }
     const x = mL + col*(cellW+gap);
+
+    // Preserva proporção (fit contain): escala dentro da célula sem distorcer
+    const scale = Math.min(cellW / img.width, cellH / img.height);
+    const drawW = img.width * scale;
+    const drawH = img.height * scale;
+    const offX = x + (cellW - drawW) / 2;
+    const offY = y + (cellH - drawH) / 2;
     try{
-      doc.addImage(dataUrl, 'JPEG', x, y, cellW, cellH, undefined, 'FAST');
+      doc.addImage(img.dataUrl, 'JPEG', offX, offY, drawW, drawH, undefined, 'FAST');
     }catch(_){}
     col++;
     if(col >= perRow){ col = 0; y += cellH + gap; }
@@ -2240,11 +2270,18 @@ async function drawPhotoRow(doc, paths, y, mL, contentW, perRow, sizeMM, mB){
   if(col > 0) y += cellH + gap;
   return y;
 }
-function fetchImageAsDataURL(url){
+// Carrega imagem + retorna data URL e dimensões reais (pra preservar proporção no PDF)
+function fetchImage(url){
   return new Promise((resolve,reject)=>{
     fetch(url).then(r=>r.blob()).then(blob=>{
       const fr = new FileReader();
-      fr.onload = () => resolve(fr.result);
+      fr.onload = () => {
+        const dataUrl = fr.result;
+        const im = new Image();
+        im.onload = () => resolve({ dataUrl, width: im.naturalWidth, height: im.naturalHeight });
+        im.onerror = reject;
+        im.src = dataUrl;
+      };
       fr.onerror = reject;
       fr.readAsDataURL(blob);
     }).catch(reject);
