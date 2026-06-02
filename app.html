@@ -528,11 +528,13 @@ async function doRegister(e){
     if(croUf && !cro){ msg('Informe o número do CRO','err'); btn.disabled=false; btn.textContent='Começar teste grátis'; return false; }
     const { data, error } = await sb.auth.signUp({ email, password:pass, options:{ data:{ name:val('regName'), specialty:val('regSpec')||'Endodontia', phone:val('regPhone'), cro, cro_uf:croUf } } });
     if(error) throw error;
-    // Meta Pixel: signup completo (lead qualificado)
+    // Meta Pixel + GA4: signup completo (lead qualificado)
     try{ window.fbqTrack && window.fbqTrack('CompleteRegistration', { content_name: 'Trial signup', status: 'pending_confirmation' }); }catch(_){}
+    try{ window.gaTrack && window.gaTrack('sign_up', { method: 'email' }); }catch(_){}
     if(!data.session){ msg('Conta criada! Confirme pelo link no seu e-mail e depois faça login.','ok'); btn.disabled=false; btn.textContent='Começar teste grátis'; return false; }
-    // Meta Pixel: trial iniciado (sessão criada direto sem confirm)
+    // Meta Pixel + GA4: trial iniciado (sessão criada direto sem confirm)
     try{ window.fbqTrack && window.fbqTrack('StartTrial', { predicted_ltv: 59, currency: 'BRL' }); }catch(_){}
+    try{ window.gaTrack && window.gaTrack('start_trial', { value: 59, currency: 'BRL' }); }catch(_){}
     await openApp();
   }catch(err){ msg(traduz(err),'err'); btn.disabled=false; btn.textContent='Começar teste grátis'; }
   return false;
@@ -961,9 +963,11 @@ async function startSubscribe(){
   const doc=((inp&&inp.value)||'').replace(/\D/g,'');
   if(doc.length<11){ toast('Informe um CPF ou CNPJ válido','err'); return; }
   toast('Gerando pagamento…','');
-  // Meta Pixel: InitiateCheckout (intenção real de pagamento)
+  // Meta Pixel + GA4: InitiateCheckout (intenção real de pagamento)
   const priceMap = { MONTHLY: 59, SEMIANNUAL: 319, ANNUAL: 566 };
-  try{ window.fbqTrack && window.fbqTrack('InitiateCheckout', { value: priceMap[selectedSubPeriod]||59, currency: 'BRL', content_name: selectedSubPeriod }); }catch(_){}
+  const checkoutValue = priceMap[selectedSubPeriod]||59;
+  try{ window.fbqTrack && window.fbqTrack('InitiateCheckout', { value: checkoutValue, currency: 'BRL', content_name: selectedSubPeriod }); }catch(_){}
+  try{ window.gaTrack && window.gaTrack('begin_checkout', { value: checkoutValue, currency: 'BRL', items:[{ item_name: 'Assinatura EndoDoc '+selectedSubPeriod, price: checkoutValue, quantity: 1 }] }); }catch(_){}
   try{
     const { data:{ session } } = await sb.auth.getSession();
     const r = await fetch(SUPA_URL+'/functions/v1/asaas-subscribe', {
