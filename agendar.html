@@ -217,7 +217,7 @@ function render(){
     <div class="pub-photo-wrap"><div class="pub-photo">${fotoHtml}</div></div>
     <div>
       <div class="pub-name">${esc(prof.name||'')}</div>
-      <div class="pub-specialty">${esc(prof.specialty||'Endodontia')}</div>
+      <div class="pub-specialty">${esc(prof.specialty||'Endodontia')}${prof.cro&&prof.cro_uf?` · CRO ${esc(prof.cro)}/${esc(prof.cro_uf)}`:''}</div>
       <div class="pub-tagline">Atendimento no seu consultório, com agendamento online.</div>
     </div>
   </div></div>`;

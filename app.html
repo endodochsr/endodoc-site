@@ -392,6 +392,21 @@
         <div class="field"><label>Especialidade</label><input id="regSpec" value="Endodontia" required></div>
         <div class="field"><label>Telefone</label><input id="regPhone" placeholder="(11) 90000-0000"></div>
       </div>
+      <div class="row2" style="grid-template-columns:2fr 1fr">
+        <div class="field"><label>CRO</label><input id="regCro" placeholder="Ex.: 12345" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        <div class="field"><label>UF</label>
+          <select id="regCroUf">
+            <option value="">—</option>
+            <option>AC</option><option>AL</option><option>AM</option><option>AP</option>
+            <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+            <option>GO</option><option>MA</option><option>MG</option><option>MS</option>
+            <option>MT</option><option>PA</option><option>PB</option><option>PE</option>
+            <option>PI</option><option>PR</option><option>RJ</option><option>RN</option>
+            <option>RO</option><option>RR</option><option>RS</option><option>SC</option>
+            <option>SE</option><option>SP</option><option>TO</option>
+          </select>
+        </div>
+      </div>
       <div class="field"><label>E-mail</label><input type="email" id="regEmail" required></div>
       <div class="field"><label>Senha (mín. 6)</label><input type="password" id="regPass" required minlength="6"></div>
       <button class="btn btn-primary btn-block" type="submit" id="regBtn">Começar teste grátis</button>
@@ -506,7 +521,12 @@ async function doRegister(e){
   const btn=document.getElementById('regBtn'); btn.disabled=true; btn.textContent='Criando…';
   try{
     const email=val('regEmail').toLowerCase(), pass=document.getElementById('regPass').value;
-    const { data, error } = await sb.auth.signUp({ email, password:pass, options:{ data:{ name:val('regName'), specialty:val('regSpec')||'Endodontia', phone:val('regPhone') } } });
+    const cro = (val('regCro')||'').replace(/\D/g,'').slice(0,6);
+    const croUf = val('regCroUf') || '';
+    // validação leve — CRO e UF são opcionais no signup, mas se preenchidos têm que estar consistentes
+    if(cro && !croUf){ msg('Informe a UF do CRO','err'); btn.disabled=false; btn.textContent='Começar teste grátis'; return false; }
+    if(croUf && !cro){ msg('Informe o número do CRO','err'); btn.disabled=false; btn.textContent='Começar teste grátis'; return false; }
+    const { data, error } = await sb.auth.signUp({ email, password:pass, options:{ data:{ name:val('regName'), specialty:val('regSpec')||'Endodontia', phone:val('regPhone'), cro, cro_uf:croUf } } });
     if(error) throw error;
     // Meta Pixel: signup completo (lead qualificado)
     try{ window.fbqTrack && window.fbqTrack('CompleteRegistration', { content_name: 'Trial signup', status: 'pending_confirmation' }); }catch(_){}
@@ -573,7 +593,7 @@ async function openApp(){
   let { data:prof } = await sb.from('professionals').select('*').maybeSingle();
   if(!prof){ // fallback: cria se a trigger não tiver criado
     const { data:{ user } } = await sb.auth.getUser();
-    if(user){ await sb.from('professionals').insert({ id:user.id, slug:'prof-'+user.id.slice(0,8), name:user.user_metadata?.name||'Profissional', specialty:user.user_metadata?.specialty||'Endodontia', phone:user.user_metadata?.phone||null }); const r=await sb.from('professionals').select('*').maybeSingle(); prof=r.data; }
+    if(user){ await sb.from('professionals').insert({ id:user.id, slug:'prof-'+user.id.slice(0,8), name:user.user_metadata?.name||'Profissional', specialty:user.user_metadata?.specialty||'Endodontia', phone:user.user_metadata?.phone||null, cro:user.user_metadata?.cro||null, cro_uf:user.user_metadata?.cro_uf||null }); const r=await sb.from('professionals').select('*').maybeSingle(); prof=r.data; }
   }
   currentProf=prof;
   // pega o e-mail do auth.users (a tabela professionals não tem)
@@ -1178,6 +1198,16 @@ function viewPerfil(){
       <div class="field"><label>Especialidade</label><input id="pfSpec" value="${esc(p.specialty||'')}"></div>
       <div class="field"><label>Telefone</label><input id="pfPhone" value="${esc(p.phone||'')}"></div>
     </div>
+    <div class="row2" style="grid-template-columns:2fr 1fr">
+      <div class="field"><label>CRO</label><input id="pfCro" value="${esc(p.cro||'')}" placeholder="Ex.: 12345" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/\\D/g,'')"></div>
+      <div class="field"><label>UF</label>
+        <select id="pfCroUf">
+          <option value="">—</option>
+          ${['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'].map(uf=>`<option ${p.cro_uf===uf?'selected':''}>${uf}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin:-8px 0 14px">Vai aparecer abaixo do seu nome na página pública (ex: "CRO 12345/SP"), reforçando sua credibilidade.</p>
     <div class="field"><label>Sobre você</label>
       <textarea id="pfBio" rows="4" maxlength="500" placeholder="Ex.: Endodontista há 12 anos, especializada em tratamento de canal com microscópio operatório. Atendo consultórios em toda a região metropolitana.">${esc(p.bio||'')}</textarea>
       <p style="font-size:12px;color:var(--muted);margin-top:4px">Aparece logo abaixo do seu nome na página de agendamento. Máx. 500 caracteres.</p>
@@ -1276,9 +1306,14 @@ async function saveProfile(){
   const name=val('pfName'),spec=val('pfSpec'),phone=val('pfPhone');
   const bio=(document.getElementById('pfBio').value||'').trim().slice(0,500);
   const procs=[...document.querySelectorAll('#pfProcs .chip.on')].map(c=>c.textContent.trim());
-  const{error}=await sb.from('professionals').update({name,specialty:spec,phone,bio,procedures:procs}).eq('id',currentProf.id);
+  const cro = (val('pfCro')||'').replace(/\D/g,'').slice(0,6) || null;
+  const croUf = val('pfCroUf') || null;
+  // Valida: se preencheu um, tem que preencher o outro
+  if(cro && !croUf){ toast('Informe a UF do CRO','err'); return; }
+  if(croUf && !cro){ toast('Informe o número do CRO','err'); return; }
+  const{error}=await sb.from('professionals').update({name,specialty:spec,phone,bio,procedures:procs,cro,cro_uf:croUf}).eq('id',currentProf.id);
   if(error){toast(error.message,'err');return;}
-  currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;currentProf.bio=bio;currentProf.procedures=procs;
+  currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;currentProf.bio=bio;currentProf.procedures=procs;currentProf.cro=cro;currentProf.cro_uf=croUf;
   setAvatar(); toast('Perfil atualizado','ok');
 }
 async function changeSlug(){
