@@ -327,10 +327,23 @@
   .fin-row-proc{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
   .fin-row-value{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:13.5px;text-align:right}
   .fin-row-value b{font-size:14px;color:var(--ink)}
-  .fin-status{font-size:10.5px;padding:2px 8px;border-radius:99px;font-weight:700;cursor:pointer;letter-spacing:.03em;text-transform:uppercase;user-select:none}
-  .fin-status.paid{background:#dff1ec;color:#0f5d5b}
-  .fin-status.pending{background:#fdf3d8;color:#8a6d27}
-  .fin-status:hover{opacity:.7}
+  .fin-status{font-size:11px;padding:4px 10px;border-radius:8px;font-weight:700;cursor:pointer;letter-spacing:.03em;user-select:none;border:1.5px solid transparent;display:inline-flex;align-items:center;gap:5px;transition:.15s;font-family:inherit}
+  .fin-status::after{content:"↻";font-size:10px;opacity:.55;margin-left:2px}
+  .fin-status.paid{background:#dff1ec;color:#0f5d5b;border-color:#a5d6cf}
+  .fin-status.pending{background:#fdf3d8;color:#8a6d27;border-color:#ecdfbf}
+  .fin-status:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.08)}
+  .fin-status.paid:hover{background:#c6e8e2}
+  .fin-status.pending:hover{background:#f7eed9}
+  /* Botões "Já recebi" / "Ainda não" do modal de valor */
+  .val-status-btn{flex:1;display:flex;gap:10px;align-items:center;padding:14px;border:2px solid var(--border);border-radius:11px;background:#fff;cursor:pointer;text-align:left;font-family:inherit;transition:.15s}
+  .val-status-btn:hover{border-color:var(--primary-soft);background:var(--surface-2)}
+  .val-status-btn.active{border-color:var(--primary);background:var(--primary-soft);box-shadow:0 4px 14px rgba(14,124,123,.18)}
+  .val-status-btn .val-status-ico{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#fff;font-size:18px;font-weight:700;color:var(--muted);flex-shrink:0;border:1.5px solid var(--border)}
+  .val-status-btn.active .val-status-ico{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .val-status-btn .val-status-txt{flex:1;min-width:0}
+  .val-status-btn .val-status-txt b{display:block;font-size:14px;color:var(--ink);font-weight:600;line-height:1.2}
+  .val-status-btn.active .val-status-txt b{color:var(--primary-d)}
+  .val-status-btn .val-status-txt span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
   @media(max-width:640px){
     .fin-chart{height:160px;gap:8px}
     .fin-row{grid-template-columns:70px 1fr auto;gap:10px}
@@ -3046,7 +3059,7 @@ async function loadFinanceiro(){
             </div>
             <div class="fin-row-value">
               ${b.consultation_value?`<b>${fmtBRL(b.consultation_value)}</b>`:`<span style="color:var(--muted);font-size:12px">sem valor</span>`}
-              ${b.consultation_value?`<span class="fin-status ${isPaid?'paid':'pending'}" onclick="togglePaid('${b.id}',${isPaid?'false':'true'})" title="Clique pra alternar">${isPaid?'✓ pago':'⏳ pendente'}</span>`:''}
+              ${b.consultation_value?`<span class="fin-status ${isPaid?'paid':'pending'}" onclick="togglePaid('${b.id}',${isPaid?'false':'true'})" title="${isPaid?'Clique pra marcar como a receber':'Clique pra marcar como recebido'}">${isPaid?'✓ Recebido':'⏳ A receber'}</span>`:''}
             </div>
             <button class="pill" onclick="openValueModal('${b.id}')" title="Editar valor">${b.consultation_value?'✏️':'+ Valor'}</button>
           </div>`;
@@ -3065,31 +3078,60 @@ async function togglePaid(bookingId, makePaid){
   else if(document.getElementById('histList')) loadHistorico();
 }
 async function openValueModal(bookingId){
-  const { data:bk } = await sb.from('bookings').select('id,consultation_value,office_name,slot_date,slot_time').eq('id',bookingId).maybeSingle();
+  const { data:bk } = await sb.from('bookings').select('id,consultation_value,payment_status,office_name,slot_date,slot_time').eq('id',bookingId).maybeSingle();
   if(!bk){ toast('Erro ao carregar','err'); return; }
   const cur = bk.consultation_value || '';
+  const isPaid = bk.payment_status === 'paid';
   const html = `<h3>Valor cobrado</h3>
     <p class="sub">${esc(bk.office_name||'')} · ${(bk.slot_date||'').split('-').reverse().join('/')}</p>
     <div class="field" style="margin-top:14px">
       <label>Valor cobrado por esse atendimento (R$)</label>
       <input id="valIn" type="number" min="0" step="10" value="${cur}" placeholder="Ex.: 350" style="font-size:18px">
-      <p style="font-size:12px;color:var(--muted);margin-top:4px">Esse valor entra no seu financeiro. Privado, só você vê.</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px">Privado, só você vê. Não aparece pra clínica.</p>
     </div>
-    <div style="display:flex;gap:10px;margin-top:14px">
+
+    <div style="margin-top:18px;padding:14px;background:var(--surface-2);border-radius:11px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">Você já recebeu esse valor?</div>
+      <div style="display:flex;gap:10px">
+        <button type="button" id="valBtnPaid" class="val-status-btn ${isPaid?'active':''}" onclick="selectValueStatus('paid')">
+          <div class="val-status-ico">✓</div>
+          <div class="val-status-txt"><b>Sim, já recebi</b><span>Entra como pago</span></div>
+        </button>
+        <button type="button" id="valBtnPending" class="val-status-btn ${!isPaid?'active':''}" onclick="selectValueStatus('pending')">
+          <div class="val-status-ico">⏳</div>
+          <div class="val-status-txt"><b>Ainda não</b><span>Marca a receber</span></div>
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px">
       <button class="btn btn-ghost btn-block" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary btn-block" onclick="saveValue('${bookingId}')">Salvar</button>
     </div>`;
   showModal(html);
+  window._valStatus = bk.payment_status || 'pending';
   setTimeout(()=>document.getElementById('valIn')?.focus(), 100);
+}
+function selectValueStatus(status){
+  window._valStatus = status;
+  document.getElementById('valBtnPaid')?.classList.toggle('active', status==='paid');
+  document.getElementById('valBtnPending')?.classList.toggle('active', status==='pending');
 }
 async function saveValue(bookingId){
   const raw = (document.getElementById('valIn')?.value||'').trim();
   const v = raw==='' ? null : Number(raw);
   if(raw!=='' && (isNaN(v)||v<0)){ toast('Valor inválido','err'); return; }
-  const { error } = await sb.from('bookings').update({ consultation_value:v }).eq('id',bookingId);
+  const status = window._valStatus || 'pending';
+  const paidAt = status==='paid' && v ? new Date().toISOString() : null;
+  const updates = { consultation_value:v };
+  if(v){
+    updates.payment_status = status;
+    updates.paid_at = paidAt;
+  }
+  const { error } = await sb.from('bookings').update(updates).eq('id',bookingId);
   if(error){ toast('Erro: '+error.message,'err'); return; }
   closeModal();
-  toast('✓ Valor salvo','ok');
+  toast(v ? (status==='paid'?'✓ Salvo como recebido':'⏳ Salvo como a receber') : 'Valor removido','ok');
   // Atualiza SÓ a view atualmente renderizada (não troca de tela)
   if(document.getElementById('finContent')) loadFinanceiro();
   else if(document.getElementById('histList')) loadHistorico();
