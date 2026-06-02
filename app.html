@@ -1518,6 +1518,21 @@ async function openHistoryDetail(bookingId){
     </div>
 
     <div class="hd-section">
+      <h4>💰 Financeiro <span class="h4-meta">${bk.consultation_value?(bk.payment_status==='paid'?'pago ✓':'pendente'):'sem valor'}</span></h4>
+      ${bk.consultation_value
+        ? `<div class="hd-info-grid">
+            <div><div class="lbl">Valor cobrado</div><div class="val" style="font-family:Georgia,serif;font-size:20px;font-weight:600;color:var(--primary-d)">R$ ${Number(bk.consultation_value).toFixed(2).replace('.',',').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.')}</div></div>
+            <div><div class="lbl">Status do pagamento</div><div class="val">${bk.payment_status==='paid'?`<span style="color:var(--success);font-weight:600">✓ Recebido</span>${bk.paid_at?` <span style="color:var(--muted);font-size:12px">· ${new Date(bk.paid_at).toLocaleDateString('pt-BR')}</span>`:''}`:'<span style="color:#8a6d27;font-weight:600">⏳ A receber</span>'}</div></div>
+          </div>
+          <div class="hd-actions-row" style="margin-top:10px">
+            <button class="pill prontuario-filled" onclick="closeHistoryDetail();openValueModal('${bk.id}')">✏️ Editar valor</button>
+            <button class="pill ${bk.payment_status==='paid'?'prontuario-empty':'done'}" onclick="togglePaid('${bk.id}','${bk.payment_status==='paid'?'false':'true'}');closeHistoryDetail();setTimeout(()=>openHistoryDetail('${bk.id}'),200)">${bk.payment_status==='paid'?'↩️ Marcar pendente':'✓ Marcar pago'}</button>
+          </div>`
+        : `<div class="hd-actions-row"><button class="pill prontuario-empty" onclick="closeHistoryDetail();openValueModal('${bk.id}')">💰 Adicionar valor cobrado</button></div>`
+      }
+    </div>
+
+    <div class="hd-section">
       <h4>📝 Prontuário <span class="h4-meta">${bk.clinical_notes?'preenchido':'sem registro'}</span></h4>
       ${prontBlock}
     </div>
