@@ -1532,12 +1532,39 @@ async function openHistoryDetail(bookingId){
       ${repBlock}
     </div>
 
-    <div class="rep-actions">
+    <div class="rep-actions" style="justify-content:space-between">
+      <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger-soft)" onclick="confirmDeleteBooking('${bk.id}')">🗑️ Excluir permanentemente</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="closeHistoryDetail()">Fechar</button>
     </div>`;
   document.getElementById('modal').classList.add('modal-lg');
   document.getElementById('modal').innerHTML = html;
   document.getElementById('overlay').classList.add('show');
+}
+async function confirmDeleteBooking(bookingId){
+  if(!confirm('⚠️ Excluir esse atendimento PERMANENTEMENTE?\n\nIsso vai apagar:\n• O atendimento do histórico\n• Anamnese (se houver)\n• Relatório e fotos (se houver)\n• Evento do Google Calendar (se sincronizado)\n• Valor financeiro vinculado\n\nNão é possível recuperar depois. Tem certeza?')) return;
+  if(!confirm('Confirmar exclusão definitiva? Última chance.')) return;
+  toast('Excluindo…','');
+  try{
+    // 1) Coleta + apaga fotos do consultation-reports no storage (não cascade)
+    const { data:rep } = await sb.from('consultation_reports').select('radiografias,galeria').eq('booking_id',bookingId).maybeSingle();
+    if(rep){
+      const allPaths = [...(rep.radiografias||[]), ...(rep.galeria||[])].filter(Boolean);
+      if(allPaths.length){
+        try{ await sb.storage.from('consultation-reports').remove(allPaths); }catch(_){}
+      }
+    }
+    // 2) RPC que valida dono + deleta (cascade limpa anamnese + report no banco + trigger remove Google event)
+    const { error } = await sb.rpc('delete_booking_permanently',{ p_booking_id: bookingId });
+    if(error) throw error;
+    toast('✓ Atendimento excluído','ok');
+    closeHistoryDetail();
+    // refresh das views que possam estar abertas
+    if(document.getElementById('histList')) loadHistorico();
+    if(document.getElementById('finContent')) loadFinanceiro();
+    if(window._agenda) renderAgenda();
+  }catch(e){
+    toast('Erro: '+(e.message||e),'err');
+  }
 }
 function closeHistoryDetail(){
   document.getElementById('modal').classList.remove('modal-lg');
