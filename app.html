@@ -1429,9 +1429,10 @@ async function saveProntuario(){
   if(error){ toast('Erro: '+(error.message||'falha'),'err'); return; }
   toast('✓ Prontuário salvo','ok');
   closeProntuario();
-  // re-render a view atual pra refletir a mudança
-  if(window._agenda) renderAgenda();
-  if(document.getElementById('histList')) loadHistorico();
+  // re-render SÓ a view atual pra refletir a mudança (não trocar de tela)
+  if(document.getElementById('finContent')) loadFinanceiro();
+  else if(document.getElementById('histList')) loadHistorico();
+  else if(document.querySelector('.cal-wrap')) renderAgenda();
 }
 
 /* ===== Detalhes completos do atendimento (modal grande do histórico) ===== */
@@ -1573,10 +1574,10 @@ async function confirmDeleteBooking(bookingId){
     if(error) throw error;
     toast('✓ Atendimento excluído','ok');
     closeHistoryDetail();
-    // refresh das views que possam estar abertas
-    if(document.getElementById('histList')) loadHistorico();
+    // refresh SÓ da view atual
     if(document.getElementById('finContent')) loadFinanceiro();
-    if(window._agenda) renderAgenda();
+    else if(document.getElementById('histList')) loadHistorico();
+    else if(document.querySelector('.cal-wrap')) renderAgenda();
   }catch(e){
     toast('Erro: '+(e.message||e),'err');
   }
@@ -3059,7 +3060,9 @@ async function togglePaid(bookingId, makePaid){
   const { error } = await sb.from('bookings').update({ payment_status:status, paid_at:paidAt }).eq('id',bookingId);
   if(error){ toast('Erro: '+error.message,'err'); return; }
   toast(status==='paid'?'✓ Marcado como pago':'⏳ Marcado como pendente','ok');
-  loadFinanceiro();
+  // Atualiza só a view atual
+  if(document.getElementById('finContent')) loadFinanceiro();
+  else if(document.getElementById('histList')) loadHistorico();
 }
 async function openValueModal(bookingId){
   const { data:bk } = await sb.from('bookings').select('id,consultation_value,office_name,slot_date,slot_time').eq('id',bookingId).maybeSingle();
@@ -3087,9 +3090,10 @@ async function saveValue(bookingId){
   if(error){ toast('Erro: '+error.message,'err'); return; }
   closeModal();
   toast('✓ Valor salvo','ok');
+  // Atualiza SÓ a view atualmente renderizada (não troca de tela)
   if(document.getElementById('finContent')) loadFinanceiro();
-  if(window._agenda) renderAgenda();
-  if(document.getElementById('histList')) loadHistorico();
+  else if(document.getElementById('histList')) loadHistorico();
+  else if(document.querySelector('.cal-wrap')) renderAgenda();
 }
 
 function renderReschedule(){
