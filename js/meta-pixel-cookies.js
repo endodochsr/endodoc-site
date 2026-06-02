@@ -21,6 +21,9 @@
   // Pixel ID da Meta (Business Manager → Events Manager → Pixel EndoDoc)
   const PIXEL_ID = '1980002546077873';
 
+  // Google Analytics 4 Measurement ID (GA Admin → Streams de dados → EndoDoc Web → ID da métrica)
+  const GA4_ID = 'G-0MRXC6CCY8';
+
   const STORAGE_KEY = 'endodoc-cookie-consent-v1';
 
   // ===== Estado: lê escolha salva =====
@@ -59,6 +62,37 @@
     }
   }
 
+  // ===== Carrega o Google Analytics 4 =====
+  function loadGA4(){
+    if(window._ga4Loaded) return;
+    if(!GA4_ID || GA4_ID === '__GA4_ID_PLACEHOLDER__'){
+      console.warn('GA4 Measurement ID não configurado ainda');
+      return;
+    }
+    window._ga4Loaded = true;
+    // gtag.js — script oficial do GA4
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){ window.dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', GA4_ID, {
+      anonymize_ip: true,             // LGPD: anonimiza último octeto do IP
+      allow_google_signals: false,    // Não compartilha com Google Ads sem consent explícito
+      send_page_view: true            // Dispara PageView automático
+    });
+
+    // Disparar eventos que foram enfileirados
+    if(window._ga4Queue && Array.isArray(window._ga4Queue)){
+      for(const ev of window._ga4Queue){
+        try{ gtag('event', ev.event, ev.params || {}); }catch(_){}
+      }
+      window._ga4Queue = [];
+    }
+  }
+
   // Função pública pra disparar eventos
   window.fbqTrack = function(event, params){
     // Se Pixel não carregou ainda (sem consentimento ou ID), enfileira
@@ -68,6 +102,22 @@
       return;
     }
     try{ fbq('track', event, params || {}); }catch(e){}
+  };
+
+  // Função pública pra disparar eventos no Google Analytics
+  window.gaTrack = function(event, params){
+    if(typeof gtag === 'undefined'){
+      window._ga4Queue = window._ga4Queue || [];
+      window._ga4Queue.push({ event, params: params || {} });
+      return;
+    }
+    try{ gtag('event', event, params || {}); }catch(e){}
+  };
+
+  // Helper: dispara o evento NOS DOIS (Meta + Google) — usa quando faz sentido pra ambos
+  window.trackEvent = function(event, params){
+    if(window.fbqTrack) window.fbqTrack(event, params);
+    if(window.gaTrack) window.gaTrack(event, params);
   };
 
   // ===== Banner de cookies =====
@@ -103,7 +153,7 @@
       </style>
       <div class="ck-wrap">
         <div class="ck-text">
-          🍪 <b>Usamos cookies</b> pra melhorar sua experiência e medir desempenho dos anúncios. Compartilhamos dados anônimos com Meta (Facebook/Instagram). Veja nossa <a href="/privacidade" target="_blank">Política de Privacidade</a>.
+          🍪 <b>Usamos cookies</b> pra melhorar sua experiência, medir desempenho dos anúncios e entender como o site é usado. Compartilhamos dados anônimos com Meta (Facebook/Instagram) e Google Analytics. Veja nossa <a href="/privacidade" target="_blank">Política de Privacidade</a>.
         </div>
         <div class="ck-buttons">
           <button class="ck-reject" onclick="window._cookieReject()">Só essenciais</button>
@@ -122,11 +172,12 @@
     setConsent({ marketing: true, ts: Date.now() });
     hideBanner();
     loadPixel();
+    loadGA4();
   };
   window._cookieReject = function(){
     setConsent({ marketing: false, ts: Date.now() });
     hideBanner();
-    // não carrega Pixel
+    // não carrega Pixel nem GA4
   };
   // Função pública pra reabrir o banner (link no footer)
   window.openCookieSettings = function(){
@@ -141,8 +192,9 @@
       // primeira visita — mostra banner
       renderBanner();
     } else if(consent.marketing){
-      // já aceitou — carrega Pixel direto
+      // já aceitou — carrega Pixel + GA4 direto
       loadPixel();
+      loadGA4();
     }
     // se rejeitou, não faz nada
   }
