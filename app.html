@@ -456,6 +456,7 @@
       <button data-v="historico" onclick="go('historico')">Histórico</button>
       <button data-v="financeiro" onclick="go('financeiro')">Financeiro</button>
       <button data-v="perfil" onclick="go('perfil')">Perfil</button>
+      <button onclick="openSupport()" title="Suporte e contato">💬 Suporte</button>
     </nav>
     <div class="userchip"><div class="avatar" id="avatar">D</div><button class="btn btn-ghost btn-sm" onclick="doLogout()">Sair</button></div>
   </div>
@@ -3107,10 +3108,63 @@ async function loadHistorico(){
   document.getElementById('histList').innerHTML = `<div class="card" style="padding:8px">${html}</div>`;
 }
 
+/* ===== suporte (modal de contato) ===== */
+function openSupport(){
+  const html = `
+    <div class="rep-head">
+      <div>
+        <h3>💬 Suporte EndoDoc</h3>
+        <div class="sub">Tô aqui pra te ajudar — escolhe o canal que preferir.</div>
+      </div>
+      <button class="rep-close" onclick="closeModal()" title="Fechar">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+      <a href="https://wa.me/5511989794945?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20EndoDoc" target="_blank" rel="noopener"
+         style="display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid #d6f1de;background:#eaf9ef;border-radius:12px;text-decoration:none;transition:.15s"
+         onmouseover="this.style.background='#dff4e6'" onmouseout="this.style.background='#eaf9ef'">
+        <div style="width:46px;height:46px;background:#25d366;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:24px;flex-shrink:0">📱</div>
+        <div style="flex:1">
+          <div style="font-weight:700;color:#0e6630;font-size:15px">WhatsApp</div>
+          <div style="font-size:13px;color:#3a6b48">(11) 98979-4945 · resposta mais rápida</div>
+        </div>
+        <span style="font-size:18px;color:#0e6630">→</span>
+      </a>
+      <a href="mailto:contato@endodoc.com.br?subject=Suporte%20EndoDoc"
+         style="display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid var(--border);background:var(--surface-2);border-radius:12px;text-decoration:none;transition:.15s"
+         onmouseover="this.style.background='var(--primary-soft)'" onmouseout="this.style.background='var(--surface-2)'">
+        <div style="width:46px;height:46px;background:var(--primary);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:24px;flex-shrink:0">✉️</div>
+        <div style="flex:1">
+          <div style="font-weight:700;color:var(--ink);font-size:15px">E-mail</div>
+          <div style="font-size:13px;color:var(--muted)">contato@endodoc.com.br · pra dúvidas detalhadas</div>
+        </div>
+        <span style="font-size:18px;color:var(--primary-d)">→</span>
+      </a>
+      <a href="https://instagram.com/endodoc.app" target="_blank" rel="noopener"
+         style="display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid #f5d6e4;background:#fdf0f5;border-radius:12px;text-decoration:none;transition:.15s"
+         onmouseover="this.style.background='#fbe5ec'" onmouseout="this.style.background='#fdf0f5'">
+        <div style="width:46px;height:46px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:22px;flex-shrink:0">📷</div>
+        <div style="flex:1">
+          <div style="font-weight:700;color:#8a1746;font-size:15px">Instagram</div>
+          <div style="font-size:13px;color:#a04063">@endodoc.app · novidades e dicas</div>
+        </div>
+        <span style="font-size:18px;color:#8a1746">→</span>
+      </a>
+    </div>
+    <div style="margin-top:14px;padding:10px 12px;background:var(--surface-2);border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.5">
+      <b>Horário de atendimento:</b> segunda a sexta, das 9h às 18h (horário de Brasília). Fora desse horário a gente responde no próximo dia útil.
+    </div>
+    <div class="rep-actions">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal()">Fechar</button>
+    </div>`;
+  document.getElementById('modal').classList.add('modal-lg');
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+
 /* ===== reagendamento ===== */
 let rescheduleState = { ids:[], dur:1, origDate:null, origTimes:[], pickedDate:null, calRef:new Date() };
 function showModal(html){document.getElementById('modal').innerHTML=html;document.getElementById('overlay').classList.add('show');}
-function closeModal(){document.getElementById('overlay').classList.remove('show');}
+function closeModal(){document.getElementById('overlay').classList.remove('show');document.getElementById('modal').classList.remove('modal-lg');}
 async function openReschedule(ids){
   // busca dados das reservas pra exibir contexto + duração
   const { data, error } = await sb.from('bookings').select('id,slot_date,slot_time,office_name').in('id',ids).order('slot_time',{ascending:true});
