@@ -665,7 +665,7 @@ function go(v){
   appView=v;
   document.querySelectorAll('#appNav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
   const body=document.getElementById('appBody');
-  if(v==='visao'){ body.innerHTML=viewVisao(); loadStats(); loadOnboarding(); }
+  if(v==='visao'){ body.innerHTML=viewVisao(); loadStats(); loadOnboarding(); setTimeout(tryAutoApplyCoupon, 80); }
   else if(v==='perfil') body.innerHTML=viewPerfil();
   else if((v==='agenda'||v==='dispo') && !hasAccess(currentProf)){
     body.innerHTML=lockedView(v);
@@ -971,12 +971,15 @@ function subscribeCard(p){
       <input id="subDoc" type="text" inputmode="numeric" placeholder="Somente números" value="${esc(doc)}">
     </div>
 
-    <div style="margin-top:14px;max-width:420px">
+    <div style="margin-top:14px;max-width:420px" id="cupBlock">
       <button type="button" id="cupToggleBtn" onclick="toggleCouponField()"
         style="background:none;border:none;color:var(--primary-d);font-size:13.5px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:6px">
         🎫 Tem cupom? <span style="font-size:11px">▾</span>
       </button>
       <div id="cupArea" style="display:none;margin-top:10px;padding:12px;background:var(--surface-2);border-radius:11px;border:1.5px dashed var(--border)">
+        <div id="cupAutoBadge" style="display:none;background:#fffbf2;border:1px solid #ecdfbf;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#8a6d27;font-weight:600">
+          🎁 Cupom da sua indicação aplicado automaticamente
+        </div>
         <div style="display:flex;gap:8px;align-items:flex-start">
           <input id="subCoupon" type="text" placeholder="EX: LANCAMENTO30 ou JOAO-A8K3"
             style="flex:1;padding:11px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;text-transform:uppercase;background:#fff;color:var(--ink)"
@@ -996,6 +999,39 @@ function toggleCouponField(){
   const a = document.getElementById('cupArea');
   if(!a) return;
   a.style.display = a.style.display === 'none' ? 'block' : 'none';
+}
+/* Se chegou no app com ?cupom= ou ?ref= na URL (capturado pelo coupon-capture.js),
+   abre o campo já preenchido + valida automaticamente. */
+async function tryAutoApplyCoupon(){
+  try{
+    if(!window.EndodocCoupon) return;
+    const stored = window.EndodocCoupon.getFull();
+    if(!stored || !stored.code) return;
+
+    const input = document.getElementById('subCoupon');
+    const area = document.getElementById('cupArea');
+    const badge = document.getElementById('cupAutoBadge');
+    if(!input || !area) return; // não tá na view de assinatura
+
+    input.value = stored.code;
+    area.style.display = 'block';
+    if(badge) badge.style.display = 'block';
+
+    // valida automaticamente
+    await validateCouponInline();
+
+    // se validou com sucesso, ajusta o badge pra dar mais detalhe
+    if(window._validatedCoupon && badge){
+      const isRef = window._validatedCoupon.type === 'referral';
+      const ref = window._validatedCoupon.referrer_name;
+      badge.innerHTML = isRef && ref
+        ? `🎁 Você foi indicado por <b>${esc(ref)}</b> — desconto aplicado automaticamente`
+        : '🎁 Cupom aplicado automaticamente da sua chegada';
+      // remove o badge se o cupom NÃO validar (pra não confundir)
+    } else if(badge && !window._validatedCoupon){
+      badge.style.display = 'none';
+    }
+  }catch(e){ console.warn('autoApplyCoupon:', e); }
 }
 function clearCouponStatus(){
   window._validatedCoupon = null;
@@ -3724,6 +3760,7 @@ async function downloadDoc(encPath){
 
 boot();
 </script>
+<script src="/js/coupon-capture.js"></script>
 <script src="/js/meta-pixel-cookies.js" defer></script>
 </body>
 </html>
