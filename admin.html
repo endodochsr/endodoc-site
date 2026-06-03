@@ -72,6 +72,29 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px}
   .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:18px}
+  .chip-btn{background:var(--surface-2);color:var(--muted);padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;border:1px solid transparent;transition:.15s}
+  .chip-btn:hover{background:var(--primary-soft);color:var(--primary-d)}
+  .chip-btn.active{background:var(--primary);color:#fff}
+  .coupon-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .coupon-row:last-child{border-bottom:none}
+  .coupon-code{font-family:'JetBrains Mono','Monaco',monospace;font-weight:700;color:var(--primary-d);background:var(--primary-soft);padding:6px 12px;border-radius:8px;font-size:13.5px;letter-spacing:.5px}
+  .coupon-info{flex:1;min-width:0}
+  .coupon-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:3px;align-items:center}
+  .coupon-tag{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:5px}
+  .coupon-tag.mkt{background:var(--gold-soft);color:var(--gold)}
+  .coupon-tag.ref{background:#e5d8f5;color:#5a3a8d}
+  .coupon-tag.inactive{background:#eee;color:#666}
+  .coupon-actions{display:flex;gap:6px}
+  .coupon-actions button{padding:6px 11px;font-size:12px;border-radius:7px;background:var(--surface-2);color:var(--ink);font-weight:600}
+  .coupon-actions button:hover{background:var(--primary-soft);color:var(--primary-d)}
+  .coupon-actions button.danger{color:var(--danger)}
+  .coupon-actions button.danger:hover{background:var(--danger-soft)}
+  .redemption-row{display:grid;grid-template-columns:120px 1fr 120px 100px;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px;align-items:center}
+  .redemption-row:last-child{border-bottom:none}
+  .redemption-row .when{font-size:12px;color:var(--muted)}
+  .redemption-row .ref-badge{background:#e4f3ec;color:var(--success);font-size:11px;padding:2px 7px;border-radius:5px;font-weight:600;text-align:center}
+  .redemption-row .ref-badge.pending{background:#fff3cd;color:#85620a}
+  .empty-msg{padding:24px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface-2);border-radius:10px}
   .panel h3{font-size:15px;margin-bottom:2px}
   .panel .cap{font-size:12px;color:var(--muted);margin-bottom:12px}
   .panel .chartbox{position:relative;height:240px}
@@ -190,6 +213,7 @@
         <button id="navAssin" onclick="go('assinantes')">Assinantes</button>
         <button id="navPagto" onclick="go('pagamentos')">Pagamentos</button>
         <button id="navPlanos" onclick="go('planos')">Planos</button>
+        <button id="navCupons" onclick="go('cupons')">Cupons</button>
       </nav>
       <div class="userchip">
         <span class="tag">Admin</span>
@@ -304,6 +328,61 @@
         </div>
       </div>
     </div>
+
+    <!-- CUPONS -->
+    <div id="viewCupons" class="container hidden">
+      <div class="page-head">
+        <h1>Cupons</h1>
+        <p>Crie cupons de marketing pra campanhas (Meta Ads, parcerias, lançamentos). Cupons de indicação dos próprios dentistas aparecem listados abaixo.</p>
+      </div>
+
+      <div class="stats" id="cupKpis"></div>
+
+      <div class="grid2" style="align-items:start;margin-top:18px">
+        <div class="panel">
+          <h3 id="cupFormTitle">Novo cupom</h3>
+          <div class="cap">Código vira maiúsculo automaticamente (ex: LANCAMENTO30).</div>
+          <div class="field"><label>Código</label><input id="cupCode" placeholder="LANCAMENTO30" style="text-transform:uppercase"></div>
+          <div class="row2">
+            <div class="field"><label>Desconto (%)</label><input id="cupPercent" type="number" min="1" max="100" step="1" placeholder="30"></div>
+            <div class="field">
+              <label>Aplica em</label>
+              <select id="cupApplies" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface);color:var(--ink)">
+                <option value="first_payment">Só no 1º pagamento</option>
+                <option value="all_payments">Em todos os pagamentos</option>
+              </select>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Limite de usos totais (vazio = ilimitado)</label><input id="cupMaxUses" type="number" min="1" step="1" placeholder="ilimitado"></div>
+            <div class="field"><label>Limite por dentista</label><input id="cupMaxPerUser" type="number" min="1" step="1" value="1"></div>
+          </div>
+          <div class="field"><label>Validade (vazio = sem expiração)</label><input id="cupValidUntil" type="date"></div>
+          <div class="field"><label>Notas internas (só você vê)</label><input id="cupNotes" placeholder="Ex: Campanha Meta Ads junho 2026"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="saveCoupon()">Criar cupom</button>
+            <button id="cupCancel" class="btn btn-ghost hidden" onclick="resetCouponForm()">Cancelar</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Cupons ativos</h3>
+          <div class="cap">Cupons marcados como "indicação" são gerados automaticamente pelos próprios dentistas.</div>
+          <div style="margin:10px 0;display:flex;gap:6px;flex-wrap:wrap">
+            <button class="chip-btn active" id="cupFilterAll" onclick="setCupFilter('all')">Todos</button>
+            <button class="chip-btn" id="cupFilterMkt" onclick="setCupFilter('marketing')">Marketing</button>
+            <button class="chip-btn" id="cupFilterRef" onclick="setCupFilter('referral')">Indicação</button>
+            <button class="chip-btn" id="cupFilterInactive" onclick="setCupFilter('inactive')">Inativos</button>
+          </div>
+          <div id="couponsList"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:18px">
+        <h3>Histórico de uso (últimas 50 redenções)</h3>
+        <div id="redemptionsList"></div>
+      </div>
+    </div>
+
   </div>
 
   <div id="toast" class="toast"></div>
@@ -377,14 +456,15 @@ async function enter(){
 let STATUS_FILTER = 'all';
 function go(v){
   view=v;
-  ['Resumo','Assin','Pagto','Planos'].forEach(k=>{
+  ['Resumo','Assin','Pagto','Planos','Cupons'].forEach(k=>{
     document.getElementById('nav'+k).classList.toggle('active', mapNav(k)===v);
     document.getElementById('view'+k).classList.toggle('hidden', mapNav(k)!==v);
   });
   if(v==='pagamentos') renderPagto();
   if(v==='assinantes') renderStatusChips();
+  if(v==='cupons') loadCoupons();
 }
-function mapNav(k){ return {Resumo:'resumo',Assin:'assinantes',Pagto:'pagamentos',Planos:'planos'}[k]; }
+function mapNav(k){ return {Resumo:'resumo',Assin:'assinantes',Pagto:'pagamentos',Planos:'planos',Cupons:'cupons'}[k]; }
 
 async function loadAll(stats){
   const [a,b,c] = await Promise.all([
@@ -468,6 +548,180 @@ async function deletePlan(code){
   const { error } = await sb.rpc('admin_delete_plan', { p_code:code });
   if(error){ toast(traduz(error),'err'); return; }
   toast('Plano excluído','ok'); await reloadPlans();
+}
+
+/* ===== CUPONS ===== */
+let COUPONS = [];
+let CUP_FILTER = 'all';
+let REDEMPTIONS = [];
+
+function setCupFilter(f){
+  CUP_FILTER = f;
+  ['All','Mkt','Ref','Inactive'].forEach(k=>{
+    const map = {All:'all',Mkt:'marketing',Ref:'referral',Inactive:'inactive'};
+    document.getElementById('cupFilter'+k).classList.toggle('active', map[k] === f);
+  });
+  renderCouponsList();
+}
+
+async function loadCoupons(){
+  const [stats, list, red] = await Promise.all([
+    sb.rpc('admin_coupon_stats'),
+    sb.rpc('admin_list_coupons'),
+    sb.rpc('admin_list_redemptions', { p_limit: 50 })
+  ]);
+  if(stats.error){ toast(traduz(stats.error),'err'); return; }
+  if(list.error){ toast(traduz(list.error),'err'); return; }
+  if(red.error){ console.warn('redemptions:', red.error); }
+
+  COUPONS = list.data || [];
+  REDEMPTIONS = red.data || [];
+  renderCouponKpis(stats.data && stats.data[0]);
+  renderCouponsList();
+  renderRedemptionsList();
+}
+
+function renderCouponKpis(s){
+  if(!s){ document.getElementById('cupKpis').innerHTML = ''; return; }
+  const cards = [
+    ['Cupons marketing', Number(s.total_marketing||0), '', Number(s.total_active||0)+' ativos'],
+    ['Cupons indicação', Number(s.total_referral||0), 'teal', 'gerados pelos dentistas'],
+    ['Redenções totais', Number(s.total_redemptions||0), 'green', BRL(Number(s.total_discounted_brl||0))+' descontados'],
+    ['Dias creditados', Number(s.total_referrer_days_credited||0)+' d', 'gold', 'a indicadores premiados']
+  ];
+  document.getElementById('cupKpis').innerHTML = cards.map(c =>
+    '<div class="stat '+c[2]+'"><div class="n">'+c[1]+'</div><div class="l">'+c[0]+'</div>'+(c[3]?'<div class="sub">'+c[3]+'</div>':'')+'</div>'
+  ).join('');
+}
+
+function couponMatchesFilter(c){
+  if(CUP_FILTER === 'all')        return c.active;
+  if(CUP_FILTER === 'marketing')  return c.active && c.type === 'marketing';
+  if(CUP_FILTER === 'referral')   return c.active && c.type === 'referral';
+  if(CUP_FILTER === 'inactive')   return !c.active;
+  return true;
+}
+
+function renderCouponsList(){
+  const list = COUPONS.filter(couponMatchesFilter);
+  const el = document.getElementById('couponsList');
+  if(!list.length){
+    el.innerHTML = '<div class="empty-msg">Nenhum cupom encontrado neste filtro. Crie um marketing acima ou aguarde os dentistas gerarem códigos de indicação.</div>';
+    return;
+  }
+  el.innerHTML = list.map(c => {
+    const tag = c.type === 'marketing'
+      ? '<span class="coupon-tag mkt">marketing</span>'
+      : '<span class="coupon-tag ref">indicação</span>';
+    const inactiveTag = c.active ? '' : ' <span class="coupon-tag inactive">inativo</span>';
+    const valid = c.valid_until
+      ? 'válido até '+ new Date(c.valid_until).toLocaleDateString('pt-BR')
+      : 'sem expiração';
+    const uses = c.max_uses
+      ? Number(c.total_redemptions||0)+'/'+c.max_uses+' usos'
+      : Number(c.total_redemptions||0)+' usos';
+    const refr = c.type === 'referral' && c.referrer_name
+      ? ' · indicador: <b>'+esc(c.referrer_name)+'</b>'
+      : '';
+    const notes = c.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:2px">'+esc(c.notes)+'</div>' : '';
+    const totalDisc = Number(c.total_discounted_brl||0);
+    const totalDiscStr = totalDisc > 0 ? ' · '+BRL(totalDisc)+' descontados' : '';
+    const actions = c.type === 'marketing'
+      ? `<div class="coupon-actions">
+           <button onclick="toggleCoupon('${c.id}', ${!c.active})">${c.active?'Desativar':'Reativar'}</button>
+           <button class="danger" onclick="deleteCoupon('${c.id}','${esc(c.code)}')">Excluir</button>
+         </div>`
+      : `<div class="coupon-actions">
+           <button onclick="toggleCoupon('${c.id}', ${!c.active})">${c.active?'Desativar':'Reativar'}</button>
+         </div>`;
+    return `<div class="coupon-row">
+      <div class="coupon-code">${esc(c.code)}</div>
+      <div class="coupon-info">
+        <div><b>${c.discount_percent}%</b> off ${c.applies_to==='first_payment'?'no 1º pagamento':'em todos os pagamentos'}${inactiveTag}</div>
+        <div class="coupon-meta">${tag}${refr} · ${uses} · ${valid}${totalDiscStr}</div>
+        ${notes}
+      </div>
+      ${actions}
+    </div>`;
+  }).join('');
+}
+
+function renderRedemptionsList(){
+  const el = document.getElementById('redemptionsList');
+  if(!REDEMPTIONS.length){
+    el.innerHTML = '<div class="empty-msg">Nenhuma redenção ainda. Vai aparecer aqui quando algum dentista usar um cupom no checkout.</div>';
+    return;
+  }
+  const head = '<div class="redemption-row" style="font-weight:700;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em">'+
+    '<div>Cupom</div><div>Dentista</div><div>Quando</div><div>Premiado?</div></div>';
+  const rows = REDEMPTIONS.map(r => {
+    const tag = r.coupon_type === 'marketing'
+      ? '<span class="coupon-tag mkt">mkt</span>'
+      : '<span class="coupon-tag ref">ref</span>';
+    const ref = r.coupon_type === 'referral'
+      ? (r.referrer_rewarded_at
+          ? '<span class="ref-badge">✓ creditado</span>'
+          : '<span class="ref-badge pending">⏳ aguardando pagto</span>')
+      : '<span style="color:var(--muted);font-size:12px">—</span>';
+    return `<div class="redemption-row">
+      <div><span class="coupon-code">${esc(r.coupon_code)}</span> ${tag}</div>
+      <div><b>${esc(r.professional_name||'—')}</b><div style="font-size:11.5px;color:var(--muted)">${esc(r.professional_email||'')}</div></div>
+      <div class="when">${new Date(r.redeemed_at).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}<div style="font-size:11px">${BRL(Number(r.amount_discounted_brl||0))}</div></div>
+      ${ref}
+    </div>`;
+  }).join('');
+  el.innerHTML = head + rows;
+}
+
+async function saveCoupon(){
+  const code = val('cupCode').toUpperCase();
+  const percent = parseInt(document.getElementById('cupPercent').value||'0',10);
+  const applies = document.getElementById('cupApplies').value;
+  const maxUsesRaw = document.getElementById('cupMaxUses').value;
+  const maxUses = maxUsesRaw ? parseInt(maxUsesRaw,10) : null;
+  const maxPerUser = parseInt(document.getElementById('cupMaxPerUser').value||'1',10) || 1;
+  const validUntilRaw = document.getElementById('cupValidUntil').value;
+  const validUntil = validUntilRaw ? new Date(validUntilRaw+'T23:59:59').toISOString() : null;
+  const notes = val('cupNotes') || null;
+
+  if(!code || code.length < 3){ toast('Código precisa ter pelo menos 3 caracteres','err'); return; }
+  if(!percent || percent < 1 || percent > 100){ toast('Desconto entre 1 e 100','err'); return; }
+
+  const { error } = await sb.rpc('admin_create_coupon', {
+    p_code: code,
+    p_discount_percent: percent,
+    p_applies_to: applies,
+    p_max_uses: maxUses,
+    p_max_uses_per_user: maxPerUser,
+    p_valid_until: validUntil,
+    p_notes: notes
+  });
+  if(error){ toast(traduz(error),'err'); return; }
+  toast('Cupom criado','ok');
+  resetCouponForm();
+  await loadCoupons();
+}
+
+function resetCouponForm(){
+  ['cupCode','cupPercent','cupMaxUses','cupValidUntil','cupNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cupMaxPerUser').value='1';
+  document.getElementById('cupApplies').value='first_payment';
+  document.getElementById('cupCancel').classList.add('hidden');
+}
+
+async function toggleCoupon(id, newActive){
+  const { error } = await sb.rpc('admin_toggle_coupon_active', { p_coupon_id: id, p_active: newActive });
+  if(error){ toast(traduz(error),'err'); return; }
+  toast(newActive?'Cupom reativado':'Cupom desativado','ok');
+  await loadCoupons();
+}
+
+async function deleteCoupon(id, code){
+  if(!window.confirm('Excluir o cupom "'+code+'"? Só funciona se nunca foi usado. Se já foi, prefira desativar.')) return;
+  const { error } = await sb.rpc('admin_delete_coupon', { p_coupon_id: id });
+  if(error){ toast(traduz(error),'err'); return; }
+  toast('Cupom excluído','ok');
+  await loadCoupons();
 }
 
 /* ===== KPIs ===== */

@@ -455,6 +455,7 @@
       <button data-v="dispo" onclick="go('dispo')">Disponibilidade</button>
       <button data-v="historico" onclick="go('historico')">Histórico</button>
       <button data-v="financeiro" onclick="go('financeiro')">Financeiro</button>
+      <button data-v="indique" onclick="go('indique')">🎁 Indique</button>
       <button data-v="perfil" onclick="go('perfil')">Perfil</button>
       <button onclick="openSupport()" title="Suporte e contato">💬 Suporte</button>
     </nav>
@@ -673,6 +674,7 @@ function go(v){
   else if(v==='dispo'){ body.innerHTML=dispoShell(); loadDispoSlots(); setTimeout(updateRecPreview,0); }
   else if(v==='historico'){ body.innerHTML='<div class="page-head"><h1>Histórico</h1><p>Carregando…</p></div>'; renderHistorico(); }
   else if(v==='financeiro'){ body.innerHTML='<div class="page-head"><h1>Financeiro</h1><p>Carregando…</p></div>'; renderFinanceiro(); }
+  else if(v==='indique'){ body.innerHTML='<div class="page-head"><h1>🎁 Indique e ganhe</h1><p>Carregando seu código…</p></div>'; renderIndique(); }
 }
 function hasAccess(p){
   if(!p) return false;
@@ -968,9 +970,64 @@ function subscribeCard(p){
       <label>CPF ou CNPJ (para a nota)</label>
       <input id="subDoc" type="text" inputmode="numeric" placeholder="Somente números" value="${esc(doc)}">
     </div>
-    <button class="btn btn-primary" onclick="startSubscribe()">Ir para o pagamento →</button>
+
+    <div style="margin-top:14px;max-width:420px">
+      <button type="button" id="cupToggleBtn" onclick="toggleCouponField()"
+        style="background:none;border:none;color:var(--primary-d);font-size:13.5px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:6px">
+        🎫 Tem cupom? <span style="font-size:11px">▾</span>
+      </button>
+      <div id="cupArea" style="display:none;margin-top:10px;padding:12px;background:var(--surface-2);border-radius:11px;border:1.5px dashed var(--border)">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <input id="subCoupon" type="text" placeholder="EX: LANCAMENTO30 ou JOAO-A8K3"
+            style="flex:1;padding:11px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;text-transform:uppercase;background:#fff;color:var(--ink)"
+            oninput="this.value=this.value.toUpperCase();clearCouponStatus()">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="validateCouponInline()">Validar</button>
+        </div>
+        <div id="cupStatus" style="margin-top:8px;font-size:13px;display:none"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-top:16px" onclick="startSubscribe()">Ir para o pagamento →</button>
     <p style="font-size:12px;color:var(--muted);margin-top:10px">Você será redirecionado para o Asaas. Após o pagamento confirmado, sua assinatura é ativada automaticamente.</p>
   </div>`;
+}
+
+function toggleCouponField(){
+  const a = document.getElementById('cupArea');
+  if(!a) return;
+  a.style.display = a.style.display === 'none' ? 'block' : 'none';
+}
+function clearCouponStatus(){
+  window._validatedCoupon = null;
+  const s = document.getElementById('cupStatus');
+  if(s){ s.style.display='none'; s.innerHTML=''; }
+}
+async function validateCouponInline(){
+  const code = (document.getElementById('subCoupon')?.value || '').trim().toUpperCase();
+  const status = document.getElementById('cupStatus');
+  if(!code){ status.style.display='block'; status.innerHTML='<span style="color:var(--danger)">Digite o código do cupom.</span>'; return; }
+  status.style.display='block';
+  status.innerHTML='<span style="color:var(--muted)">Validando…</span>';
+  try{
+    const { data:{ user } } = await sb.auth.getUser();
+    const { data, error } = await sb.rpc('validate_coupon', { p_code: code, p_professional_id: user?.id || null });
+    if(error){ status.innerHTML='<span style="color:var(--danger)">⚠ '+esc(error.message||'erro')+'</span>'; window._validatedCoupon=null; return; }
+    const c = Array.isArray(data) ? data[0] : data;
+    if(!c || !c.valid){
+      status.innerHTML='<span style="color:var(--danger)">⚠ '+esc(c?.reason||'Cupom inválido')+'</span>';
+      window._validatedCoupon=null;
+      return;
+    }
+    window._validatedCoupon = { code, discount_percent: c.discount_percent, type: c.type, referrer_name: c.referrer_name };
+    const typeLabel = c.type === 'referral'
+      ? (c.referrer_name ? `indicado por <b>${esc(c.referrer_name)}</b>` : 'cupom de indicação')
+      : 'cupom promocional';
+    status.innerHTML = `<span style="color:var(--success);font-weight:600">✓ Cupom válido!</span>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${c.discount_percent}% de desconto no 1º pagamento · ${typeLabel}</div>`;
+  }catch(e){
+    status.innerHTML='<span style="color:var(--danger)">⚠ Erro ao validar: '+esc(e.message||e)+'</span>';
+    window._validatedCoupon=null;
+  }
 }
 function selectPeriod(code){
   selectedSubPeriod=code;
@@ -989,10 +1046,14 @@ async function startSubscribe(){
   try{ window.gaTrack && window.gaTrack('begin_checkout', { value: checkoutValue, currency: 'BRL', items:[{ item_name: 'Assinatura EndoDoc '+selectedSubPeriod, price: checkoutValue, quantity: 1 }] }); }catch(_){}
   try{
     const { data:{ session } } = await sb.auth.getSession();
+    // cupom validado (se houver)
+    const coupon = window._validatedCoupon?.code || null;
+    const payload = { period:selectedSubPeriod, cpfCnpj:doc };
+    if(coupon) payload.couponCode = coupon;
     const r = await fetch(SUPA_URL+'/functions/v1/asaas-subscribe', {
       method:'POST',
       headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+(session?.access_token||'') },
-      body: JSON.stringify({ period:selectedSubPeriod, cpfCnpj:doc })
+      body: JSON.stringify(payload)
     });
     const data = await r.json().catch(()=>({}));
     console.log('asaas-subscribe response', r.status, data);
@@ -3191,6 +3252,103 @@ async function openReschedule(ids){
   rescheduleState.calRef.setDate(1);
   renderReschedule();
 }
+/* ===== Indique e Ganhe ===== */
+async function renderIndique(){
+  const body = document.getElementById('appBody');
+  body.innerHTML = `<div class="page-head"><h1>🎁 Indique e ganhe</h1><p>Carregando seu código de indicação…</p></div>`;
+
+  try {
+    const { data, error } = await sb.rpc('get_or_create_my_referral_code');
+    if(error) throw error;
+    const info = Array.isArray(data) ? data[0] : data;
+    const code = info?.code || '—';
+    const redemptions = Number(info?.total_redemptions || 0);
+    const daysCredited = Number(info?.total_days_credited || 0);
+    const link = `https://endodoc.com.br/app?ref=${encodeURIComponent(code)}`;
+    const waMsg = encodeURIComponent(
+`Oi! Tô usando o EndoDoc — uma plataforma feita pra endodontista delivery (agenda, anamnese automática, relatório no WhatsApp do consultório, financeiro por clínica).
+
+Se quiser testar, usa meu código de indicação ${code} no checkout pra ganhar 30% off no 1º pagamento:
+${link}`);
+    const waShare = `https://wa.me/?text=${waMsg}`;
+
+    body.innerHTML = `
+      <div class="page-head">
+        <h1>🎁 Indique e ganhe</h1>
+        <p>Compartilhe seu código com outros endodontistas. Quando eles assinarem, ambos ganham.</p>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,#0e7c7b 0%,#0a5d5c 100%);color:#fff;padding:28px;margin-bottom:18px">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.85;margin-bottom:8px">Seu código pessoal</div>
+        <div style="font-family:'Monaco','JetBrains Mono',monospace;font-size:36px;font-weight:700;letter-spacing:2px;margin-bottom:16px;background:rgba(255,255,255,.15);padding:14px 18px;border-radius:12px;display:inline-block">${esc(code)}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:none;font-weight:700" onclick="copyText('${esc(code)}','Código copiado!')">📋 Copiar código</button>
+          <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:none;font-weight:700" onclick="copyText('${link}','Link copiado!')">🔗 Copiar link</button>
+          <a class="btn btn-ghost btn-sm" style="background:#25d366;color:#fff;border:none;font-weight:700;text-decoration:none" href="${waShare}" target="_blank" rel="noopener">📱 Compartilhar no WhatsApp</a>
+        </div>
+      </div>
+
+      <div class="stats-grid" style="margin-bottom:18px">
+        <div class="stat"><div class="stat-label">Indicações que pagaram</div><div class="stat-val">${redemptions}</div></div>
+        <div class="stat"><div class="stat-label">Dias grátis ganhos</div><div class="stat-val">${daysCredited}d</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div class="section-title">Como funciona</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:8px">
+          <div style="text-align:center;padding:14px">
+            <div style="font-size:30px;margin-bottom:8px">📤</div>
+            <div style="font-weight:700;margin-bottom:6px;font-size:15px">1. Compartilhe seu código</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.45">Manda pra colegas endodontistas que poderiam usar o EndoDoc.</div>
+          </div>
+          <div style="text-align:center;padding:14px">
+            <div style="font-size:30px;margin-bottom:8px">💰</div>
+            <div style="font-weight:700;margin-bottom:6px;font-size:15px">2. Ele assina com 30% off</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.45">No 1º pagamento ele paga 30% a menos. Tudo automático no checkout.</div>
+          </div>
+          <div style="text-align:center;padding:14px">
+            <div style="font-size:30px;margin-bottom:8px">🎁</div>
+            <div style="font-weight:700;margin-bottom:6px;font-size:15px">3. Você ganha 30 dias</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.45">Sua assinatura é estendida em 30 dias por cada indicado que paga.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--surface-2);border:1px dashed var(--border)">
+        <div style="font-size:13px;color:var(--muted);line-height:1.6">
+          <b style="color:var(--ink)">Regras do programa:</b><br>
+          • Recompensa só conta quando o indicado <b>completa o primeiro pagamento</b> (não basta criar conta).<br>
+          • Não há limite de indicações — quanto mais, mais dias grátis você acumula.<br>
+          • Você não pode usar seu próprio código.<br>
+          • O bônus é creditado na sua assinatura ativa (estende a data de renovação).<br>
+          • Se você não estiver com assinatura ativa quando alguém pagar pela sua indicação, os 30 dias começam a contar do dia da sua próxima ativação.
+        </div>
+      </div>
+    `;
+  } catch(e){
+    console.error(e);
+    body.innerHTML = `<div class="page-head"><h1>🎁 Indique e ganhe</h1></div>
+      <div class="card" style="text-align:center;padding:32px"><div style="font-size:32px">⚠️</div>
+        <h3 style="margin:10px 0 8px">Não foi possível carregar seu código</h3>
+        <p style="color:var(--muted);font-size:14px">${esc(e.message||'erro desconhecido')}</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="renderIndique()">Tentar de novo</button>
+      </div>`;
+  }
+}
+
+async function copyText(text, msg){
+  try{
+    await navigator.clipboard.writeText(text);
+    toast(msg||'Copiado','ok');
+  }catch(_){
+    // fallback antigo
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast(msg||'Copiado','ok'); }catch(_){ toast('Não consegui copiar — selecione manualmente','err'); }
+    document.body.removeChild(ta);
+  }
+}
+
 /* ===== Financeiro ===== */
 let finState = { period: '30d' };
 async function renderFinanceiro(){
