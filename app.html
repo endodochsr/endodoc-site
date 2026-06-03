@@ -282,9 +282,27 @@
   .pill.prontuario-empty{background:#fff;border:1.5px dashed var(--primary);color:var(--primary-d)}
   .pill.prontuario-empty:hover{background:var(--primary-soft)}
   .pill.prontuario-filled{background:var(--primary-soft);color:var(--primary-d);font-weight:700}
-  .pront-modal-area textarea{min-height:200px;width:100%;padding:14px;border:1.5px solid var(--border);border-radius:11px;font:inherit;font-size:14.5px;line-height:1.55;color:var(--ink);background:var(--surface);resize:vertical}
+  .pront-modal-area textarea{min-height:160px;width:100%;padding:14px;border:1.5px solid var(--border);border-radius:11px;font:inherit;font-size:14.5px;line-height:1.55;color:var(--ink);background:var(--surface);resize:vertical}
   .pront-modal-area textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
   .pront-meta{font-size:12px;color:var(--muted);margin-top:8px}
+  /* Timeline de evoluções do paciente */
+  .pt-summary{background:var(--primary-soft);color:var(--primary-d);padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .pt-timeline{max-height:60vh;overflow-y:auto;padding-right:6px;margin:-4px -4px 0;padding-left:4px;padding-top:4px}
+  .pt-entry{position:relative;padding:14px 16px;margin-bottom:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;transition:.15s}
+  .pt-entry.current{border-color:var(--primary);background:linear-gradient(180deg,#fff 0%,var(--primary-soft) 100%);box-shadow:0 4px 14px rgba(14,124,123,.1)}
+  .pt-entry-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .pt-entry-num{min-width:28px;height:28px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);display:inline-grid;place-items:center;font-weight:800;font-size:12px;flex-shrink:0;padding:0 6px}
+  .pt-entry.current .pt-entry-num{background:var(--primary);color:#fff}
+  .pt-entry-date{font-weight:700;color:var(--ink);font-size:14px}
+  .pt-entry-meta{color:var(--muted);font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pt-entry-tag{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:6px;background:var(--primary);color:#fff}
+  .pt-entry-body{font-size:13.5px;line-height:1.55;color:var(--ink);white-space:pre-wrap;background:var(--surface-2);padding:10px 12px;border-radius:8px;margin-top:4px}
+  .pt-entry-body.empty{color:var(--muted);font-style:italic;text-align:center;padding:14px}
+  .pt-entry-actions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+  .pt-entry textarea{min-height:140px;width:100%;padding:12px;border:1.5px solid var(--primary);border-radius:10px;font:inherit;font-size:14px;line-height:1.55;color:var(--ink);background:#fff;resize:vertical;margin-top:6px}
+  .pt-entry textarea:focus{outline:none;box-shadow:0 0 0 3px var(--primary-soft)}
+  .pt-empty-state{text-align:center;padding:32px 16px;color:var(--muted);font-size:13.5px}
+  .pill.session-count{background:var(--accent);color:#fff;font-weight:700;font-size:11px;padding:3px 9px;border-radius:6px;display:inline-block;margin-left:6px}
   /* ===== Detalhe do atendimento (modal big do histórico) ===== */
   .hist-row{cursor:pointer;transition:background .15s}
   .hist-row:hover{background:var(--surface-2)}
@@ -1351,6 +1369,29 @@ function hourDiff(a,b){
   const [h1,m1]=a.split(':').map(Number); const [h2,m2]=b.split(':').map(Number);
   return ((h2*60+m2)-(h1*60+m1))/60;
 }
+/* Atribui número da sessão a cada booking baseado nos dados já em memória.
+   Agrupa por telefone normalizado (preferencial) ou nome lowercased.
+   Marca b._sessionNumber (1ª, 2ª, ...) e b._totalSessions.
+   IMPORTANTE: a contagem é limitada aos bookings já carregados — se houver
+   sessões fora do escopo, o badge subestima. Aceitável pra MVP. */
+function assignSessionNumbers(list){
+  if(!Array.isArray(list)) return;
+  const buckets = new Map();
+  for(const b of list){
+    const phone = (b.patient_phone||'').replace(/\D/g,'');
+    const name = (b.patient_name||'').trim().toLowerCase();
+    if(!phone && !name){ b._sessionNumber=null; b._totalSessions=null; continue; }
+    const key = phone ? 'p:'+phone : 'n:'+name;
+    if(!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(b);
+  }
+  for(const arr of buckets.values()){
+    // ordena por (data, hora) ASC pra dar números cronológicos
+    arr.sort((a,b)=> (a.slot_date+(a.slot_time||'')).localeCompare(b.slot_date+(b.slot_time||'')));
+    const total = arr.length;
+    arr.forEach((b,i)=>{ b._sessionNumber = i+1; b._totalSessions = total; });
+  }
+}
 function bookingCard(g, opts){
   // g.bookings é array de 1+ slots consecutivos
   const first=g.bookings[0]; const last=g.bookings[g.bookings.length-1];
@@ -1409,7 +1450,7 @@ function bookingCard(g, opts){
       ${headerActions}
     </div>
     <div class="bk-line">📍 ${esc(first.office_address||'—')}</div>
-    ${first.patient_name?`<div class="bk-line">👤 <b>${esc(first.patient_name)}</b>${first.patient_phone?' · '+esc(formatPhone(first.patient_phone)):''}</div>`:''}
+    ${first.patient_name?`<div class="bk-line">👤 <b>${esc(first.patient_name)}</b>${first.patient_phone?' · '+esc(formatPhone(first.patient_phone)):''}${first._totalSessions>1?` <span class="pill session-count" title="Esta é a ${first._sessionNumber}ª sessão deste paciente com você">${first._sessionNumber}ª de ${first._totalSessions}</span>`:''}</div>`:''}
     ${first.office_address && !completed ?`<iframe class="bk-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${q}&z=16&output=embed"></iframe>`:''}
     <div class="bk-notes">📝 ${esc(first.notes||'—')}</div>
     <div class="bk-actions">
@@ -1434,54 +1475,173 @@ function renderProntuarioPill(bookingId, hasNotes){
   return `<button class="pill prontuario-empty" onclick="openProntuario('${bookingId}')">📝 Prontuário</button>`;
 }
 
-/* ===== Prontuário (notas clínicas) ===== */
+/* ===== Prontuário com TIMELINE de evoluções por paciente ===== */
 async function openProntuario(bookingId){
   toast('Carregando…','');
-  const { data:bk, error } = await sb.from('bookings').select('id,slot_date,slot_time,office_name,patient_name,clinical_notes,clinical_notes_updated_at').eq('id',bookingId).maybeSingle();
+  // 1) busca o booking atual
+  const { data:bk, error } = await sb.from('bookings')
+    .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,clinical_notes,clinical_notes_updated_at')
+    .eq('id',bookingId).maybeSingle();
   if(error || !bk){ toast('Erro ao carregar','err'); return; }
+
+  // 2) busca histórico completo do paciente (matched por telefone, ou nome se sem telefone)
+  const { data:history, error:errH } = await sb.rpc('get_patient_history', {
+    p_phone: bk.patient_phone || null,
+    p_name:  bk.patient_phone ? null : (bk.patient_name || null)
+  });
+  if(errH){ console.error(errH); }
+
+  // garante que o booking atual está na lista (caso RPC ainda não tenha rodado ou paciente sem identificação)
+  let entries = Array.isArray(history) ? [...history] : [];
+  if(!entries.find(e=>e.id===bk.id)){
+    entries.unshift({
+      id: bk.id, slot_date: bk.slot_date, slot_time: bk.slot_time,
+      office_name: bk.office_name, patient_name: bk.patient_name, patient_phone: bk.patient_phone,
+      clinical_notes: bk.clinical_notes, clinical_notes_updated_at: bk.clinical_notes_updated_at,
+      status: 'completed', created_at: null
+    });
+  }
+  // ordena DESC (mais recente primeiro). A RPC já faz isso, mas garantimos.
+  entries.sort((a,b)=> (b.slot_date+(b.slot_time||'')).localeCompare(a.slot_date+(a.slot_time||'')));
+
   window._prontBk = bk;
-  const dt = new Date(bk.slot_date+'T12:00:00');
-  const dtStr = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
-  const updated = bk.clinical_notes_updated_at ? `Salvo em ${new Date(bk.clinical_notes_updated_at).toLocaleString('pt-BR')}` : 'Sem prontuário ainda';
+  window._prontEntries = entries;
+  window._prontEditingId = bk.id; // entrada em edição (sempre começa pela atual)
+
+  renderProntuarioModal();
+}
+
+function renderProntuarioModal(){
+  const bk = window._prontBk;
+  const entries = window._prontEntries || [];
+  const editingId = window._prontEditingId;
+  const total = entries.length;
+
+  // header: paciente + contagem de sessões
+  const phoneStr = bk.patient_phone ? ' · '+esc(formatPhone(bk.patient_phone)) : '';
+  const sessionsLabel = total <= 1
+    ? '1ª sessão com você'
+    : `${total} atendimentos registrados`;
+
+  // timeline
+  const timelineHtml = entries.map((e, idx) => {
+    const pos = total - idx; // número da sessão (1ª é a mais antiga)
+    const dt = new Date(e.slot_date+'T12:00:00');
+    const dtStr = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+    const isCurrent = e.id === bk.id;
+    const isEditing = e.id === editingId;
+    const officeStr = e.office_name ? esc(e.office_name) : '';
+
+    let bodyHtml;
+    if(isEditing){
+      bodyHtml = `
+        <textarea id="prontText_${e.id}" placeholder="Escreva a evolução desta sessão. Ex:
+- Acesso coronário + isolamento absoluto
+- Localizados 4 condutos no 36 (MV, ML, DV, DL)
+- Instrumentação até K40, irrigação com NaOCl 2,5%
+- Medicação intracanal: Ca(OH)2
+- Retorno em 15 dias">${esc(e.clinical_notes||'')}</textarea>
+        <div class="pt-entry-actions">
+          ${total > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="cancelEditEntry()">Cancelar</button>` : ''}
+          <button type="button" class="btn btn-primary btn-sm" onclick="saveProntuario('${e.id}')">💾 Salvar</button>
+        </div>`;
+    } else if(e.clinical_notes){
+      bodyHtml = `
+        <div class="pt-entry-body">${esc(e.clinical_notes)}</div>
+        <div class="pt-entry-actions">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')">✏️ Editar</button>
+        </div>`;
+    } else {
+      bodyHtml = `
+        <div class="pt-entry-body empty">Sem evolução registrada nesta sessão.</div>
+        <div class="pt-entry-actions">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')">📝 Adicionar evolução</button>
+        </div>`;
+    }
+
+    return `
+      <div class="pt-entry ${isCurrent?'current':''}">
+        <div class="pt-entry-head">
+          <span class="pt-entry-num">${pos}ª</span>
+          <span class="pt-entry-date">${dtStr}</span>
+          <span class="pt-entry-meta">${officeStr}</span>
+          ${isCurrent ? '<span class="pt-entry-tag">Atual</span>' : ''}
+        </div>
+        ${bodyHtml}
+      </div>`;
+  }).join('');
+
   const html = `
     <div class="rep-head">
       <div>
-        <h3>📝 Prontuário</h3>
-        <div class="sub">${esc(bk.patient_name||'Paciente')} · ${dtStr}${bk.office_name?' · '+esc(bk.office_name):''}</div>
+        <h3>📝 Prontuário do paciente</h3>
+        <div class="sub">${esc(bk.patient_name||'Paciente')}${phoneStr}</div>
       </div>
       <button class="rep-close" onclick="closeProntuario()" title="Fechar">✕</button>
     </div>
-    <div class="pront-modal-area">
-      <textarea id="prontText" placeholder="Anote o que foi feito na consulta. Ex:
-- Sessão 1: acesso + descontaminação + medicação intracanal (hidróxido de cálcio)
-- Localizados 4 condutos no dente 36 (MV, ML, DV, DL)
-- Paciente tolerou bem
-- Retorno em 30 dias pra obturação">${esc(bk.clinical_notes||'')}</textarea>
-      <div class="pront-meta">${updated} · Salvo apenas pra você (não vai pro consultório)</div>
+    <div class="pt-summary">📋 ${sessionsLabel} · Visível somente pra você</div>
+    <div class="pt-timeline">
+      ${entries.length ? timelineHtml : '<div class="pt-empty-state">Nenhum atendimento encontrado.</div>'}
     </div>
     <div class="rep-actions">
       <button type="button" class="btn btn-ghost btn-sm" onclick="closeProntuario()">Fechar</button>
-      <button type="button" class="btn btn-primary btn-sm" onclick="saveProntuario()">💾 Salvar prontuário</button>
     </div>`;
+
   document.getElementById('modal').classList.add('modal-lg');
   document.getElementById('modal').innerHTML = html;
   document.getElementById('overlay').classList.add('show');
-  setTimeout(()=>document.getElementById('prontText')?.focus(), 100);
+  // foco no textarea da entrada em edição
+  setTimeout(()=>{
+    const ta = document.getElementById('prontText_'+editingId);
+    if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  }, 100);
 }
+
+function editProntuarioEntry(bookingId){
+  window._prontEditingId = bookingId;
+  renderProntuarioModal();
+}
+
+function cancelEditEntry(){
+  // volta a editar a sessão atual (default)
+  if(window._prontBk) window._prontEditingId = window._prontBk.id;
+  renderProntuarioModal();
+}
+
 function closeProntuario(){
   document.getElementById('modal').classList.remove('modal-lg');
   closeModal();
   window._prontBk = null;
+  window._prontEntries = null;
+  window._prontEditingId = null;
 }
-async function saveProntuario(){
-  const bk = window._prontBk; if(!bk) return;
-  const txt = (document.getElementById('prontText')?.value||'').trim();
+
+async function saveProntuario(bookingId){
+  // suporta chamada antiga sem id (mantém compat) e nova com id da entrada em edição
+  const id = bookingId || (window._prontBk && window._prontBk.id);
+  if(!id) return;
+  const ta = document.getElementById('prontText_'+id);
+  const txt = (ta?.value || '').trim();
   toast('Salvando…','');
-  const { error } = await sb.rpc('save_clinical_notes',{ p_booking_id: bk.id, p_notes: txt || null });
+  const { error } = await sb.rpc('save_clinical_notes',{ p_booking_id: id, p_notes: txt || null });
   if(error){ toast('Erro: '+(error.message||'falha'),'err'); return; }
-  toast('✓ Prontuário salvo','ok');
-  closeProntuario();
-  // re-render SÓ a view atual pra refletir a mudança (não trocar de tela)
+  toast('✓ Evolução salva','ok');
+
+  // atualiza a entry localmente pra refletir no modal sem nova consulta
+  if(window._prontEntries){
+    const ent = window._prontEntries.find(e=>e.id===id);
+    if(ent){
+      ent.clinical_notes = txt || null;
+      ent.clinical_notes_updated_at = new Date().toISOString();
+    }
+    // se editou uma entrada anterior, volta visualização da entrada atual
+    if(window._prontBk && id !== window._prontBk.id){
+      window._prontEditingId = window._prontBk.id;
+    }
+    renderProntuarioModal();
+  }
+
+  // re-render da view de trás (agenda/histórico/financeiro) pra refletir o pill "Prontuário ✓"
   if(document.getElementById('finContent')) loadFinanceiro();
   else if(document.getElementById('histList')) loadHistorico();
   else if(document.querySelector('.cal-wrap')) renderAgenda();
@@ -2311,6 +2471,9 @@ async function renderAgenda(){
       }catch(_){}
     }
   }
+  // atribui número de sessão por paciente (usa todos bookings em memória)
+  assignSessionNumbers(list);
+
   const pending=list.filter(b=>b.status==='pending');
   const active=list.filter(b=>b.status==='active');
 
@@ -2909,6 +3072,8 @@ async function loadHistorico(){
     </div>`;
     return;
   }
+  // atribui número de sessão por paciente (mesma janela carregada)
+  assignSessionNumbers(list);
   // agrupa por (data, clínica, telefone) pra mostrar multi-slot como 1 linha
   const groups = groupBookings(list);
   const html = groups.map(g => {
