@@ -1008,15 +1008,48 @@ function toggleCouponField(){
    Útil chamado em openApp() e logo após signup. */
 async function maybeAttachReferral(){
   try{
-    if(!window.EndodocCoupon) return;
+    if(!window.EndodocCoupon){
+      console.log('[referral] EndodocCoupon não está disponível (script não carregou?)');
+      return;
+    }
     const code = window.EndodocCoupon.get();
-    if(!code) return;
-    // chama RPC — ela mesma valida que é referral (não marketing) e que não é o próprio code
+    if(!code){
+      console.log('[referral] nenhum cupom salvo no localStorage — usuário chegou sem ?ref=');
+      return;
+    }
+    console.log('[referral] tentando vincular cupom:', code);
     const { data, error } = await sb.rpc('attach_referral_to_me', { p_code: code });
-    if(error){ console.warn('attach_referral_to_me:', error.message); return; }
-    if(data === true) console.log('[referral] vinculado ao código:', code);
-  }catch(e){ console.warn('maybeAttachReferral:', e); }
+    if(error){
+      console.warn('[referral] ERRO da RPC:', error.message, error);
+      return;
+    }
+    if(data === true){
+      console.log('[referral] ✓ VINCULADO COM SUCESSO ao código:', code);
+    } else {
+      console.warn('[referral] RPC retornou FALSE — possíveis causas: cupom não é referral, está inativo, é seu próprio código, ou você já tinha referência. Code:', code);
+    }
+  }catch(e){
+    console.warn('[referral] exceção em maybeAttachReferral:', e);
+  }
 }
+// expõe pra debug manual no console: window.debugReferral()
+window.debugReferral = async function(){
+  console.group('🔍 Debug do programa de indicação');
+  console.log('1. window.EndodocCoupon disponível?', !!window.EndodocCoupon);
+  if(window.EndodocCoupon){
+    const stored = window.EndodocCoupon.getFull();
+    console.log('2. Cupom no localStorage:', stored);
+  }
+  try{
+    const { data:{ user } } = await sb.auth.getUser();
+    console.log('3. User autenticado:', user?.id, user?.email);
+    if(user){
+      const { data:prof } = await sb.from('professionals').select('id,name,email,referred_by_code,referred_at').eq('id',user.id).maybeSingle();
+      console.log('4. Profissional do banco:', prof);
+    }
+  }catch(e){ console.warn('erro:', e); }
+  console.groupEnd();
+};
 /* Se chegou no app com ?cupom= ou ?ref= na URL (capturado pelo coupon-capture.js),
    abre o campo já preenchido + valida automaticamente. */
 async function tryAutoApplyCoupon(){
