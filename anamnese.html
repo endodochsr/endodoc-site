@@ -60,7 +60,7 @@
 <body>
 
 <div class="wrap" id="root">
-  <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">EndoDoc</div></div>
+  <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">Endo<span style="color:#0a5d5c">Doc</span></div></div>
   <div class="center">Carregando…</div>
 </div>
 
@@ -128,7 +128,7 @@ async function init(){
 
 function renderError(msg){
   document.getElementById('root').innerHTML = `
-    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">EndoDoc</div></div>
+    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">Endo<span style="color:#0a5d5c">Doc</span></div></div>
     <div class="card">
       <div class="err-state">
         <div class="icon">!</div>
@@ -140,7 +140,7 @@ function renderError(msg){
 
 function renderSuccess(){
   document.getElementById('root').innerHTML = `
-    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">EndoDoc</div></div>
+    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">Endo<span style="color:#0a5d5c">Doc</span></div></div>
     <div class="card">
       <div class="ok-state">
         <div class="icon">✓</div>
@@ -164,7 +164,7 @@ function render(){
   const questionsHtml = QUESTIONS.map((q,i) => renderQuestion(q, i+1, prev[q.id], prev[q.id+'_detail'])).join('');
 
   document.getElementById('root').innerHTML = `
-    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">EndoDoc</div></div>
+    <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">Endo<span style="color:#0a5d5c">Doc</span></div></div>
     <div class="card">
       <div class="head">
         <h1>Anamnese</h1>
@@ -184,7 +184,7 @@ function render(){
         </div>
       </form>
     </div>
-    <div class="footer">Powered by <a href="https://endodoc.com.br">EndoDoc</a></div>
+    <div class="footer">Powered by <a href="https://endodoc.com.br">Endo<span style="color:#0a5d5c">Doc</span></a></div>
   `;
 }
 
