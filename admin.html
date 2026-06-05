@@ -167,6 +167,22 @@
   .row-btn{padding:6px 10px;border-radius:7px;background:var(--surface-2);font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;border:none;font-family:inherit;white-space:nowrap}
   .row-btn:hover{background:var(--border)}
   .row-btn.danger{color:var(--danger)}
+  /* Modal de exclusão */
+  .ov{position:fixed;inset:0;background:rgba(16,48,47,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+  .ov.show{display:flex}
+  .ov-box{background:#fff;border-radius:18px;padding:28px;max-width:500px;width:100%;box-shadow:var(--shadow-lg)}
+  .ov-box h3{font-family:'Fraunces',serif;font-size:22px;color:var(--danger);margin-bottom:8px}
+  .ov-box .sub{color:var(--muted);font-size:14px;margin-bottom:18px;line-height:1.55}
+  .ov-summary{background:var(--surface-2);border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:13.5px;line-height:1.7}
+  .ov-summary b{color:var(--ink)}
+  .ov-summary .warn{color:var(--danger);font-weight:700}
+  .ov-confirm-label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .ov-confirm{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;letter-spacing:1px;text-transform:uppercase}
+  .ov-confirm:focus{outline:none;border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-soft)}
+  .ov-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+  .ov-actions .btn-danger{background:var(--danger);color:#fff}
+  .ov-actions .btn-danger:hover{background:#a13b25}
+  .ov-actions .btn-danger:disabled{background:#d9b3a8;cursor:not-allowed}
   .row-btn.gold{color:var(--gold);background:var(--gold-soft)}
   .row-btn.green{color:var(--success);background:var(--success-soft)}
   /* pagto kpi cores extras */
@@ -386,6 +402,21 @@
   </div>
 
   <div id="toast" class="toast"></div>
+
+  <!-- Modal de exclusão definitiva -->
+  <div id="delOv" class="ov" onclick="if(event.target===this)closeDeleteDialog()">
+    <div class="ov-box">
+      <h3>🗑 Excluir conta permanentemente</h3>
+      <div class="sub" id="delIntro">Carregando dados…</div>
+      <div class="ov-summary" id="delSummary"></div>
+      <label class="ov-confirm-label">Pra confirmar, digite <b>EXCLUIR</b> (maiúsculo) abaixo:</label>
+      <input id="delConfirm" class="ov-confirm" type="text" placeholder="EXCLUIR" oninput="onDelConfirmType()" autocomplete="off">
+      <div class="ov-actions">
+        <button class="btn btn-ghost" onclick="closeDeleteDialog()">Cancelar</button>
+        <button id="delBtn" class="btn btn-danger" onclick="confirmDelete()" disabled>Excluir definitivamente</button>
+      </div>
+    </div>
+  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -874,7 +905,10 @@ function renderTable(){
     acts.push(`<a class="row-btn" href="/${esc(r.slug)}" target="_blank" rel="noopener" title="Ver perfil público">👁</a>`);
     if(r.is_admin && r.id===MY_ID) acts.push('<span class="badge-admin">Você</span>');
     else if(r.is_admin) acts.push(`<span class="badge-admin">Dono</span>`);
-    else acts.push(`<button class="row-btn" onclick="setAdmin('${r.id}',true)" title="Tornar dono da plataforma">★ Dono</button>`);
+    else {
+      acts.push(`<button class="row-btn" onclick="setAdmin('${r.id}',true)" title="Tornar dono da plataforma">★ Dono</button>`);
+      acts.push(`<button class="row-btn danger" onclick="openDeleteDialog('${r.id}')" title="Excluir conta permanentemente">🗑 Excluir</button>`);
+    }
 
     return '<tr>'+
       '<td><div class="nm">'+esc(r.name)+'</div><a class="lk" href="/'+esc(r.slug)+'" target="_blank" rel="noopener">/'+esc(r.slug)+'</a></td>'+
@@ -903,6 +937,85 @@ async function suspendUser(id){
   const { error } = await sb.rpc('admin_set_status', { p_id:id, p_status:'canceled', p_plan:r.plan });
   if(error){ toast(traduz(error),'err'); return; }
   r.subscription_status='canceled'; toast('Acesso suspenso','ok'); renderTable(); renderStatusChips(); renderCharts(); refreshKpis();
+}
+
+/* ===== Exclusão definitiva ===== */
+let DELETE_TARGET_ID = null;
+async function openDeleteDialog(id){
+  DELETE_TARGET_ID = id;
+  const r = ROWS.find(x=>x.id===id);
+  document.getElementById('delConfirm').value='';
+  document.getElementById('delBtn').disabled=true;
+  document.getElementById('delIntro').innerHTML = `Você está prestes a apagar <b>${esc(r?.name||r?.email||'(sem nome)')}</b>. Esta ação <span style="color:var(--danger);font-weight:700">não pode ser desfeita</span>.`;
+  document.getElementById('delSummary').innerHTML = '<div style="text-align:center;color:var(--muted)">Carregando resumo…</div>';
+  document.getElementById('delOv').classList.add('show');
+  setTimeout(()=>document.getElementById('delConfirm').focus(), 100);
+
+  // busca resumo via RPC pra mostrar o que vai sumir
+  try{
+    const { data, error } = await sb.rpc('admin_get_professional_summary', { p_id: id });
+    if(error) throw error;
+    const s = Array.isArray(data) ? data[0] : data;
+    if(!s){
+      document.getElementById('delSummary').innerHTML = '<span style="color:var(--danger)">Não foi possível carregar o resumo.</span>';
+      return;
+    }
+    if(!s.can_delete){
+      document.getElementById('delSummary').innerHTML = `<span class="warn">⛔ ${esc(s.block_reason||'Não é permitido excluir esta conta')}</span>`;
+      document.getElementById('delConfirm').disabled = true;
+      return;
+    }
+    document.getElementById('delConfirm').disabled = false;
+    const items = [];
+    items.push(`Conta criada em <b>${fmtDate(s.created_at)}</b>`);
+    items.push(`Status atual: <b>${STATUS_LABEL[s.subscription_status]||s.subscription_status||'—'}</b>${s.plan?' · '+esc(s.plan):''}`);
+    if(s.bookings_count > 0) items.push(`<span class="warn">${s.bookings_count}</span> agendamento(s) <span class="muted">(${s.bookings_active_count} ativos)</span>`);
+    if(s.anamneses_count > 0) items.push(`<span class="warn">${s.anamneses_count}</span> anamnese(s)`);
+    if(s.reports_count > 0) items.push(`<span class="warn">${s.reports_count}</span> relatório(s)`);
+    if(s.coupons_owned_count > 0) items.push(`${s.coupons_owned_count} cupom(s) de indicação (ficará órfão)`);
+    if(s.redemptions_count > 0) items.push(`${s.redemptions_count} redenção(ões) de cupom`);
+    if(s.subscription_status==='active' || s.subscription_status==='past_due' || s.subscription_status==='courtesy'){
+      items.push(`<span class="warn">⚠ Esta conta tem assinatura ${s.subscription_status}. Considere cancelar primeiro no Asaas.</span>`);
+    }
+    document.getElementById('delSummary').innerHTML = items.map(t=>'• '+t).join('<br>');
+  }catch(e){
+    document.getElementById('delSummary').innerHTML = '<span style="color:var(--danger)">'+esc(e.message||'erro ao carregar resumo')+'</span>';
+  }
+}
+function closeDeleteDialog(){
+  DELETE_TARGET_ID = null;
+  document.getElementById('delOv').classList.remove('show');
+}
+function onDelConfirmType(){
+  const txt = document.getElementById('delConfirm').value.trim();
+  document.getElementById('delBtn').disabled = (txt !== 'EXCLUIR');
+}
+async function confirmDelete(){
+  const id = DELETE_TARGET_ID; if(!id) return;
+  const confirmTxt = document.getElementById('delConfirm').value.trim();
+  if(confirmTxt !== 'EXCLUIR'){ toast('Digite EXCLUIR pra confirmar','err'); return; }
+  const btn = document.getElementById('delBtn');
+  btn.disabled = true; btn.textContent = 'Excluindo…';
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    const r = await fetch(SUPA_URL+'/functions/v1/admin-delete-professional', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+(session?.access_token||'') },
+      body: JSON.stringify({ professional_id: id, confirm: 'EXCLUIR' })
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok){
+      throw new Error(data.detail || data.error || ('HTTP '+r.status));
+    }
+    toast('Conta excluída: '+esc(data.deleted_name||''),'ok');
+    closeDeleteDialog();
+    // remove da lista local + re-renderiza
+    ROWS = ROWS.filter(x=>x.id!==id);
+    renderTable(); renderStatusChips(); renderCharts(); refreshKpis();
+  }catch(e){
+    toast('Falhou: '+(e.message||e),'err');
+    btn.disabled = false; btn.textContent = 'Excluir definitivamente';
+  }
 }
 
 /* ===== Pagamentos ===== */
