@@ -477,7 +477,7 @@ let sb = null;
 
 const SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-const PROCEDURES_LIST=['Tratamento de canal','Retratamento endodôntico','Pulpectomia','Urgência endodôntica','Avaliação / diagnóstico','Cirurgia perirradicular','Clareamento interno'];
+const PROCEDURES_LIST=['Tratamento Endodôntico','Retratamento Endodôntico','Consulta de Urgência','Selamento de Perfuração','Instalação de Retentores Intraradiculares','Clareamento Interno','Cirurgia Endodôntica','Confecção de Provisórios','Restauração em Resina'];
 let currentProf=null, appView='visao', dispoDate=todayISO();
 let PLANS_APP=[], selectedSubPeriod=null;
 const PERIOD_LABEL_APP={ mensal:'Mensal', semestral:'Semestral', anual:'Anual' };
@@ -1008,29 +1008,39 @@ function toggleCouponField(){
    Útil chamado em openApp() e logo após signup. */
 async function maybeAttachReferral(){
   try{
-    if(!window.EndodocCoupon){
-      console.log('[referral] EndodocCoupon não está disponível (script não carregou?)');
-      return;
-    }
+    if(!window.EndodocCoupon) return;
     const code = window.EndodocCoupon.get();
-    if(!code){
-      console.log('[referral] nenhum cupom salvo no localStorage — usuário chegou sem ?ref=');
+    if(!code) return;
+
+    // Curto-circuito: se o user já tem referência atribuída no profile,
+    // nada a fazer. Limpa o storage pra economia.
+    if(currentProf && currentProf.referred_by_code){
+      window.EndodocCoupon.clear();
       return;
     }
-    console.log('[referral] tentando vincular cupom:', code);
+
     const { data, error } = await sb.rpc('attach_referral_to_me', { p_code: code });
     if(error){
-      console.warn('[referral] ERRO da RPC:', error.message, error);
+      console.warn('[referral] erro da RPC:', error.message);
       return;
     }
     if(data === true){
-      console.log('[referral] ✓ VINCULADO COM SUCESSO ao código:', code);
+      console.log('[referral] ✓ vinculado ao código:', code);
+      // refresh do prof local pra refletir o novo referred_by_code
+      try{
+        if(currentProf){
+          const { data:prof } = await sb.from('professionals').select('*').eq('id', currentProf.id).maybeSingle();
+          if(prof) currentProf = prof;
+        }
+      }catch(_){}
+      window.EndodocCoupon.clear();
     } else {
-      console.warn('[referral] RPC retornou FALSE — possíveis causas: cupom não é referral, está inativo, é seu próprio código, ou você já tinha referência. Code:', code);
+      // retorno false é esperado pra dono do próprio código, cupom marketing,
+      // inativo, etc. Limpa storage pra não tentar de novo a toda visita.
+      console.log('[referral] cupom não aplicável a esta conta (próprio código ou inválido):', code);
+      window.EndodocCoupon.clear();
     }
-  }catch(e){
-    console.warn('[referral] exceção em maybeAttachReferral:', e);
-  }
+  }catch(e){ /* silencioso */ }
 }
 // expõe pra debug manual no console: window.debugReferral()
 window.debugReferral = async function(){
