@@ -621,6 +621,9 @@ async function openApp(){
   // Se chegou aqui com cupom de indicação no localStorage, vincula à conta
   // (idempotente — só atribui se referred_by_code ainda é null no banco)
   try{ await maybeAttachReferral(); }catch(_){}
+  // Dispara email de boas-vindas se ainda não recebeu (idempotente — edge
+  // function checa trial_email_welcome_sent_at). Não-bloqueante.
+  try{ maybeSendWelcomeEmail(); }catch(_){}
   // pega o e-mail do auth.users (a tabela professionals não tem)
   try{
     const { data:{ user } } = await sb.auth.getUser();
@@ -1042,6 +1045,36 @@ async function maybeAttachReferral(){
     }
   }catch(e){ /* silencioso */ }
 }
+/* Dispara o email de welcome do trial. Idempotente: se a edge function
+   detectar trial_email_welcome_sent_at != null, não envia de novo.
+   Aqui no front, fazemos um guard simples pra economizar chamada. */
+async function maybeSendWelcomeEmail(){
+  try{
+    if(!currentProf) return;
+    if(currentProf.trial_email_welcome_sent_at) return; // já recebeu
+    // só pra contas em trial (não pra quem já é active/courtesy/cancelled)
+    if(currentProf.subscription_status !== 'trial') return;
+
+    const { data:{ session } } = await sb.auth.getSession();
+    const r = await fetch(SUPA_URL+'/functions/v1/send-trial-email', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+(session?.access_token||'') },
+      body: JSON.stringify({ professional_id: currentProf.id, type: 'welcome' })
+    });
+    if(r.ok){
+      // marca local pra não tentar de novo nesta sessão
+      currentProf.trial_email_welcome_sent_at = new Date().toISOString();
+      // persiste no banco (security definer ou via service role no backend marca dentro da edge function — se não, aqui é só local)
+      try{
+        await sb.from('professionals').update({ trial_email_welcome_sent_at: new Date().toISOString() }).eq('id', currentProf.id);
+      }catch(_){}
+      console.log('[trial-email] welcome enviado');
+    } else {
+      console.warn('[trial-email] falha:', r.status);
+    }
+  }catch(e){ /* silencioso */ }
+}
+
 // expõe pra debug manual no console: window.debugReferral()
 window.debugReferral = async function(){
   console.group('🔍 Debug do programa de indicação');
