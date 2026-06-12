@@ -141,6 +141,14 @@
     .legend{justify-content:center;font-size:12px}
   }
 </style>
+<style>
+  /* Modo embed (?embed=1): esconde cabeçalho fixo para incorporar só a agenda */
+  body.embed .pub-banner,
+  body.embed .pub-top,
+  body.embed .pub-footer{display:none!important}
+  body.embed{background:#f5efe6}
+  body.embed #root{padding-top:6px}
+</style>
 </head>
 <body>
 <div class="pub-banner">Página de agendamento — escolha um horário disponível</div>
@@ -156,6 +164,7 @@
 const SUPA_URL='https://tuolwdniugjwbepujqoy.supabase.co';
 const SUPA_KEY='sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
 let sb=null;
+const EMBED = new URLSearchParams(location.search).get('embed')==='1';
 const PROCEDURES=['Tratamento de canal','Retratamento endodôntico','Pulpectomia','Urgência endodôntica','Avaliação / diagnóstico'];
 const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -180,6 +189,7 @@ document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==
 async function init(){
   if(!window.supabase){document.getElementById('root').innerHTML='<div class="center">Não consegui carregar a biblioteca. Recarregue a página.</div>';return;}
   sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+  if(EMBED) document.body.classList.add('embed');
   const slug=getSlug();
   if(!slug){ askSlug(); return; }
   const {data,error}=await sb.from('public_professionals').select('*').eq('slug',slug).maybeSingle();
@@ -255,7 +265,9 @@ function render(){
          <div class="pub-cal-card">${calendarHTML()}</div>
        </div>`;
   const footerHtml = `<div class="pub-footer">Agendamento via EndoDoc · pagamento e procedimentos combinados diretamente com o profissional.</div>`;
-  document.getElementById('root').innerHTML=`${heroHtml}${badgesHtml}${bioHtml}${procsHtml}${howHtml}${body}${footerHtml}`;
+  document.getElementById('root').innerHTML = EMBED
+    ? `${body}`
+    : `${heroHtml}${badgesHtml}${bioHtml}${procsHtml}${howHtml}${body}${footerHtml}`;
 }
 function calendarHTML(){
   const y=calRef.getFullYear(),m=calRef.getMonth();
