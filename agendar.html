@@ -268,6 +268,19 @@ function render(){
   document.getElementById('root').innerHTML = EMBED
     ? `${body}`
     : `${heroHtml}${badgesHtml}${bioHtml}${procsHtml}${howHtml}${body}${footerHtml}`;
+  if(EMBED) postEmbedHeight();
+}
+function postEmbedHeight(){
+  if(!EMBED) return;
+  try{
+    const h=Math.ceil(document.documentElement.scrollHeight);
+    parent.postMessage({type:'endodoc-embed-height',height:h},'*');
+  }catch(e){}
+}
+if(EMBED){
+  window.addEventListener('resize',postEmbedHeight);
+  setTimeout(postEmbedHeight,300);
+  setTimeout(postEmbedHeight,1200);
 }
 function calendarHTML(){
   const y=calRef.getFullYear(),m=calRef.getMonth();
