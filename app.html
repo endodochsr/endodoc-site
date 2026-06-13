@@ -268,44 +268,46 @@
   .bk-card-pending{border-color:#e8c87a;background:linear-gradient(180deg,#fffbf2 0%,#ffffff 100%)}
   .bk-ribbon{margin:-16px -16px 14px;padding:8px 16px;background:#f7eed9;color:#8a6d27;font-size:12.5px;font-weight:700;letter-spacing:.02em;border-bottom:1px solid #ecdfbf;border-radius:13px 13px 0 0}
   /* ===== Calendário da Agenda ===== */
-  .cal-wrap{border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--surface);box-shadow:var(--shadow);margin-top:14px}
-  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .cal-wrap{border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--surface);box-shadow:var(--shadow);margin-top:14px;position:relative;overflow:hidden}
+  .cal-wrap::before{content:'';position:absolute;bottom:-38px;left:-38px;width:160px;height:130px;background:var(--primary-soft);border-radius:55% 80% 65% 40%/45% 55% 65% 55%;opacity:.75;pointer-events:none;z-index:0}
+  .cal-wrap::after{content:'';position:absolute;bottom:-28px;right:-28px;width:130px;height:110px;background:var(--primary-soft);border-radius:70% 35% 50% 65%/60% 45% 55% 45%;opacity:.75;pointer-events:none;z-index:0}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;position:relative;z-index:1}
   .cal-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;text-transform:capitalize;letter-spacing:-0.3px}
   .cal-nav{display:flex;align-items:center;gap:6px}
   .cal-nav-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:16px;cursor:pointer;display:grid;place-items:center;color:var(--ink);transition:.15s}
   .cal-nav-btn:hover{background:var(--surface-2);border-color:var(--primary)}
   .cal-today-btn{font-size:13px;font-weight:600;padding:0 14px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--ink)}
   .cal-today-btn:hover{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-d)}
-  .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
+  .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px;position:relative;z-index:1}
   .cal-dow div{text-align:center;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:4px 0}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-  .cal-cell{aspect-ratio:1/1;border-radius:11px;border:1px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:.15s;background:transparent;font-size:15px;color:var(--ink);min-height:48px}
+  .cal-dow .dow-sun{color:#c0392b}
+  .cal-dow .dow-sat{color:#2563eb}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;position:relative;z-index:1}
+  .cal-cell{border-radius:11px;border:1px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:.15s;background:transparent;font-size:15px;font-weight:500;color:var(--ink);min-height:52px;gap:4px;padding:6px 2px}
   .cal-cell:hover{background:var(--surface-2)}
   .cal-cell.muted{color:#c5cdcc;cursor:default}
   .cal-cell.muted:hover{background:transparent}
-  .cal-cell.weekend{color:#7a8281}
+  .cal-cell.sunday{color:#c0392b}
+  .cal-cell.saturday{color:#2563eb}
   .cal-cell.today{border-color:var(--primary);font-weight:700;color:var(--primary-d)}
-  .cal-cell.has-active{background:var(--primary-soft);color:var(--primary-d);font-weight:600}
-  .cal-cell.has-active:hover{background:#cce8e6}
-  .cal-cell.has-pending{background:#fdf3d8;color:#8a6d27;font-weight:700}
-  .cal-cell.has-pending:hover{background:#f7eed9}
+  .cal-cell.has-active{color:var(--primary-d);font-weight:600}
+  .cal-cell.has-pending{color:#8a6d27;font-weight:700}
   .cal-cell.selected{background:var(--primary)!important;color:#fff!important;border-color:var(--primary);box-shadow:0 4px 12px rgba(14,124,123,.32)}
-  .cal-cell.selected .cal-count,.cal-cell.selected .cal-dot{color:#fff!important;background:rgba(255,255,255,.25)!important}
-  .cal-count{position:absolute;top:4px;right:6px;font-size:10px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;min-width:16px;height:16px;display:grid;place-items:center;padding:0 4px;line-height:1}
-  .cal-cell.has-pending .cal-count{background:#c79520}
-  .cal-dot{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--primary)}
-  .cal-cell.has-pending .cal-dot{background:#c79520}
-  .cal-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
-  .cal-legend span{display:inline-flex;align-items:center;gap:5px}
-  .cal-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .cal-cell.selected .cal-dot-active,.cal-cell.selected .cal-dot-pending{background:rgba(255,255,255,.7)!important}
+  .cal-num{line-height:1}
+  .cal-dots{display:flex;gap:3px;align-items:center;min-height:7px}
+  .cal-dot-active{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+  .cal-dot-pending{width:7px;height:7px;border-radius:50%;background:#f59e0b;flex-shrink:0}
+  .cal-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--border);position:relative;z-index:1}
+  .cal-legend span{display:inline-flex;align-items:center;gap:6px}
+  .cal-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
   .cal-day-head{display:flex;align-items:baseline;gap:10px;margin:24px 0 4px;padding:0 2px}
   .cal-day-head h2{font-family:'Fraunces',serif;font-size:22px;font-weight:600;letter-spacing:-0.4px;margin:0;text-transform:capitalize}
   .cal-day-head .meta{font-size:13px;color:var(--muted)}
   .cal-empty-day{padding:32px 20px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface-2);border-radius:12px;margin-top:10px}
   @media(max-width:640px){
     .cal-wrap{padding:14px 12px}
-    .cal-cell{min-height:42px;font-size:14px}
-    .cal-cell .cal-count{font-size:9px;height:14px;min-width:14px;top:2px;right:3px}
+    .cal-cell{min-height:44px;font-size:14px}
     .cal-title{font-size:18px}
   }
   /* ===== Realizado + Relatório ===== */
@@ -3320,7 +3322,7 @@ function renderCalendar(y, m, selectedISO, counts){
   let cells = '';
   // dias do mês anterior (preenchimento)
   for(let i = firstDow-1; i >= 0; i--){
-    cells += `<div class="cal-cell muted">${prevLastDay - i}</div>`;
+    cells += `<div class="cal-cell muted"><span class="cal-num">${prevLastDay - i}</span></div>`;
   }
   // dias do mês
   for(let d = 1; d <= lastDay; d++){
@@ -3328,23 +3330,30 @@ function renderCalendar(y, m, selectedISO, counts){
     const dow = new Date(y, m-1, d).getDay();
     const c = counts[iso];
     let cls = 'cal-cell';
-    if(dow === 0 || dow === 6) cls += ' weekend';
+    if(dow === 0) cls += ' sunday';
+    else if(dow === 6) cls += ' saturday';
     if(iso === todayStr) cls += ' today';
     if(c){
       if(c.pending > 0) cls += ' has-pending';
       else if(c.active > 0) cls += ' has-active';
     }
     if(iso === selectedISO) cls += ' selected';
-    const total = c ? (c.active + c.pending) : 0;
-    const badge = total > 0 ? `<span class="cal-count">${total}</span>` : '';
-    cells += `<div class="${cls}" onclick="selectAgendaDay('${iso}')">${badge}${d}</div>`;
+    let dots = '';
+    if(c && c.active > 0)  dots += `<span class="cal-dot-active"></span>`;
+    if(c && c.pending > 0) dots += `<span class="cal-dot-pending"></span>`;
+    cells += `<div class="${cls}" onclick="selectAgendaDay('${iso}')"><span class="cal-num">${d}</span><span class="cal-dots">${dots}</span></div>`;
   }
   // dias do próximo mês (preenchimento até completar a grade)
   const used = firstDow + lastDay;
   const trailing = (7 - (used % 7)) % 7;
   for(let d = 1; d <= trailing; d++){
-    cells += `<div class="cal-cell muted">${d}</div>`;
+    cells += `<div class="cal-cell muted"><span class="cal-num">${d}</span></div>`;
   }
+
+  const dowHeaders = dowNames.map((n,i) => {
+    const cls = i===0 ? 'dow-sun' : i===6 ? 'dow-sat' : '';
+    return `<div class="${cls}">${n}</div>`;
+  }).join('');
 
   return `<div class="cal-wrap">
     <div class="cal-head">
@@ -3355,12 +3364,12 @@ function renderCalendar(y, m, selectedISO, counts){
         <button class="cal-nav-btn" onclick="agendaShiftMonth(1)" title="Próximo mês">›</button>
       </div>
     </div>
-    <div class="cal-dow">${dowNames.map(d=>`<div>${d}</div>`).join('')}</div>
+    <div class="cal-dow">${dowHeaders}</div>
     <div class="cal-grid">${cells}</div>
     <div class="cal-legend">
-      <span><i style="background:var(--primary-soft)"></i>Confirmadas</span>
-      <span><i style="background:#fdf3d8"></i>Aguardando confirmação</span>
-      <span><i style="background:transparent;border:1.5px solid var(--primary)"></i>Hoje</span>
+      <span><i style="background:#22c55e"></i>Confirmadas</span>
+      <span><i style="background:#f59e0b"></i>Aguardando confirmação</span>
+      <span><i style="background:transparent;border:2px solid var(--primary)"></i>Hoje</span>
     </div>
   </div>`;
 }
