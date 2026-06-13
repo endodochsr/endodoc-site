@@ -824,6 +824,7 @@ async function _updatePushBtn(){
   if(!btn) return;
   const supported = ('serviceWorker' in navigator) && ('PushManager' in window);
   if(!supported){ btn.style.display='none'; return; }
+  btn.style.display='';
   const perm = Notification.permission;
   let subActive = false;
   if(_swReg && perm === 'granted'){
