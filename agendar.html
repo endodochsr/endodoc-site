@@ -50,9 +50,9 @@
   .cal-nav{display:flex;gap:8px}
   .cal-nav button{width:38px;height:38px;border-radius:10px;background:var(--surface-2);font-size:18px;color:var(--ink);display:grid;place-items:center}
   .cal-month{font-family:'Fraunces',serif;font-size:20px;text-transform:capitalize}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
   .cal-dow{text-align:center;font-size:11.5px;font-weight:600;color:var(--muted);padding:3px 0;text-transform:uppercase}
-  .cal-cell{aspect-ratio:1/1;border-radius:11px;border:1.5px solid transparent;background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  .cal-cell{aspect-ratio:1/1;min-width:0;overflow:hidden;box-sizing:border-box;padding:2px;border-radius:11px;border:1.5px solid transparent;background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
   .cal-cell.empty{background:transparent}
   .cal-cell.muted{color:#b9c6c5;background:#fafcfc}
   .cal-cell .num{font-weight:600;font-size:15px}
@@ -135,9 +135,9 @@
     .pub-howit{grid-template-columns:1fr}
     .pub-bio-inner{font-size:15.5px}
     .pub-cal-card{padding:14px}
-    .cal-grid{gap:5px}
+    .cal-grid{gap:4px}
     .cal-cell .num{font-size:14px}
-    .slot-dot{font-size:9.5px;line-height:1.1}
+    .slot-dot{font-size:8.5px;line-height:1;white-space:nowrap}
     .legend{justify-content:center;font-size:12px}
   }
 </style>
