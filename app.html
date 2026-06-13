@@ -52,21 +52,24 @@
   .msg.ok{display:block;background:var(--success-soft);color:var(--success)}
   /* ===== SIDEBAR LAYOUT ===== */
   #appView{display:flex;min-height:100vh;align-items:stretch}
-  #sidebar{width:244px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:40}
-  .sidebar-logo{padding:14px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px}
+  #sidebar{width:244px;flex-shrink:0;background:var(--primary-d);border-right:none;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:40}
+  .sidebar-logo{padding:14px 14px 12px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .sidebar-logo .name{color:#fff}
+  .sidebar-logo .name small{color:rgba(255,255,255,.55)}
   #appNav{flex:1;padding:8px;display:flex;flex-direction:column;gap:2px}
-  #appNav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;font-weight:600;font-size:14px;color:var(--muted);position:relative;transition:.12s;background:none;border:none;font-family:inherit;cursor:pointer}
-  #appNav button:hover{background:var(--surface-2);color:var(--ink)}
-  #appNav button.active{background:var(--primary-soft);color:var(--primary-d)}
+  #appNav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;font-weight:600;font-size:14px;color:rgba(255,255,255,.62);position:relative;transition:.12s;background:none;border:none;font-family:inherit;cursor:pointer}
+  #appNav button:hover{background:rgba(255,255,255,.1);color:#fff}
+  #appNav button.active{background:rgba(255,255,255,.17);color:#fff}
   .nav-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0;line-height:1}
-  .sidebar-footer{padding:10px 8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px}
-  .sidebar-user{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:10px;background:var(--surface-2);margin-bottom:4px}
+  .nav-badge{background:var(--accent)!important}
+  .sidebar-footer{padding:10px 8px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:3px}
+  .sidebar-user{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.1);margin-bottom:4px}
   .sidebar-user-info{min-width:0}
-  .sidebar-user-name{font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px;line-height:1.3}
-  .sidebar-user-email{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px}
-  .sidebar-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--muted);background:none;border:none;font-family:inherit;cursor:pointer;transition:.12s}
-  .sidebar-btn:hover{background:var(--surface-2);color:var(--ink)}
-  .sidebar-btn.push-active{color:var(--primary-d);background:var(--primary-soft)}
+  .sidebar-user-name{font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px;line-height:1.3}
+  .sidebar-user-email{font-size:11px;color:rgba(255,255,255,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px}
+  .sidebar-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.62);background:none;border:none;font-family:inherit;cursor:pointer;transition:.12s}
+  .sidebar-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+  .sidebar-btn.push-active{color:#fff;background:rgba(255,255,255,.17)}
   /* Overlay e hamburger (mobile) */
   #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(16,48,47,.45);z-index:39}
   #sidebarOverlay.show{display:block}
@@ -536,8 +539,8 @@
   <!-- ── Sidebar ── -->
   <aside id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">Endo<span style="color:var(--primary-d)">Doc</span></div></div>
-      <button class="hamburger-btn sidebar-close-btn" onclick="closeSidebar()" title="Fechar menu" style="display:none;font-size:18px">✕</button>
+      <div class="logo"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">Endo<span style="color:rgba(255,255,255,.75)">Doc</span></div></div>
+      <button class="hamburger-btn sidebar-close-btn" onclick="closeSidebar()" title="Fechar menu" style="display:none;font-size:18px;color:#fff">✕</button>
     </div>
     <nav id="appNav">
       <button data-v="visao"      class="active" onclick="go('visao')"     ><span class="nav-icon">🏠</span>Visão geral</button>
