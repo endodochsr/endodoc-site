@@ -187,7 +187,46 @@
   .row-btn.green{color:var(--success);background:var(--success-soft)}
   /* pagto kpi cores extras */
   .stat.purple .n{color:#7c5ec9}
-  @media(max-width:980px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.usage{grid-template-columns:1fr}}
+  /* ===== Drawer de detalhe do usuário ===== */
+  .drawer-ov{position:fixed;inset:0;background:rgba(16,48,47,.45);z-index:40;display:none}
+  .drawer-ov.show{display:block}
+  .drawer{position:fixed;right:0;top:0;bottom:0;width:520px;max-width:95vw;background:var(--surface);box-shadow:var(--shadow-lg);z-index:41;transform:translateX(110%);transition:transform .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column}
+  .drawer.open{transform:translateX(0)}
+  .drawer-head{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;background:var(--surface);position:sticky;top:0;z-index:2}
+  .drawer-close{width:34px;height:34px;border-radius:9px;background:var(--surface-2);color:var(--muted);font-size:22px;line-height:1;flex-shrink:0;margin-left:auto;display:grid;place-items:center}
+  .drawer-close:hover{background:var(--border);color:var(--ink)}
+  .drawer-body{padding:20px 22px;flex:1}
+  .d-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+  .d-kpi{background:var(--surface-2);border-radius:11px;padding:12px;text-align:center}
+  .d-kpi .v{font-family:'Fraunces',serif;font-size:22px;font-weight:600;line-height:1}
+  .d-kpi .k{font-size:11px;color:var(--muted);margin-top:5px}
+  .d-sec{margin-bottom:20px}
+  .d-sec-title{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px}
+  .d-bk{padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;font-size:13.5px}
+  .d-bk .bkw{font-weight:600}.d-bk .bks{font-size:12px;color:var(--muted);margin-top:2px}
+  .d-bk.cancelled{opacity:.55}
+  .d-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border)}
+  .d-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13.5px}
+  .d-row label{font-weight:600;color:var(--muted);min-width:120px;flex-shrink:0}
+  .extend-inp{width:64px;padding:7px 9px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;text-align:center;font-family:inherit}
+  .extend-inp:focus{outline:none;border-color:var(--primary)}
+  /* ===== Contatos ===== */
+  .ct-row{display:flex;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);align-items:flex-start}
+  .ct-row:last-child{border-bottom:none}
+  .ct-row.handled{opacity:.6}
+  .ct-meta{flex-shrink:0;min-width:150px}
+  .ct-date{font-size:12.5px;font-weight:600;color:var(--ink)}
+  .ct-from{font-size:12px;color:var(--muted);margin-top:2px}
+  .ct-body{flex:1;min-width:0}
+  .ct-subject{font-weight:600;font-size:14px;color:var(--ink);margin-bottom:4px}
+  .ct-msg{font-size:13px;color:var(--muted);line-height:1.5;white-space:pre-wrap}
+  .ct-acts{display:flex;gap:6px;flex-shrink:0;flex-direction:column;align-items:flex-end}
+  .nav-badge-ct{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 4px;background:var(--danger);color:#fff;border-radius:9px;font-size:10.5px;font-weight:700;margin-left:4px;vertical-align:1px}
+  /* ===== Receita real ===== */
+  .rev-empty{padding:28px;text-align:center;color:var(--muted);font-size:13.5px;background:var(--surface-2);border-radius:11px}
+  .pay-log-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+  .pay-log-row:last-child{border-bottom:none}
+  @media(max-width:980px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.usage{grid-template-columns:1fr}.drawer{width:100%}}
 </style>
 </head>
 <body>
@@ -230,6 +269,7 @@
         <button id="navPagto" onclick="go('pagamentos')">Pagamentos</button>
         <button id="navPlanos" onclick="go('planos')">Planos</button>
         <button id="navCupons" onclick="go('cupons')">Cupons</button>
+        <button id="navContatos" onclick="go('contatos')">Contatos <span id="ctNavBadge" class="nav-badge-ct hidden">0</span></button>
       </nav>
       <div class="userchip">
         <span class="tag">Admin</span>
@@ -296,6 +336,19 @@
           <tbody id="pagBody"></tbody>
         </table>
       </div>
+      <div class="grid2" style="margin-top:18px">
+        <div class="panel">
+          <h3>Receita real cobrada (Asaas)</h3>
+          <div class="cap">Pagamentos confirmados via webhook — atualiza automaticamente</div>
+          <div class="chartbox" id="revRealWrap"><canvas id="chRevReal"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>Últimas confirmações</h3>
+          <div class="cap">Eventos recentes de pagamento recebidos</div>
+          <div id="payEventsLog"><div class="rev-empty">Carregando…</div></div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:14px">💡 Os dados de <b>receita real</b> são alimentados pela tabela <code>payment_events</code>. Rode o arquivo <b>supabase-payment-events.sql</b> e faça o deploy do webhook atualizado para ativar este painel.</div>
     </div>
 
     <!-- ASSINANTES -->
@@ -399,9 +452,38 @@
       </div>
     </div>
 
+    <!-- CONTATOS -->
+    <div id="viewContatos" class="container hidden">
+      <div class="page-head">
+        <h1>Contatos</h1>
+        <p>Mensagens recebidas pelo formulário público do site.</p>
+      </div>
+      <div class="filter-chips">
+        <button class="filter-chip on" id="ctFilterAll" onclick="setCtFilter('all')">Todos <span class="ct" id="ctCountAll">0</span></button>
+        <button class="filter-chip" id="ctFilterPending" onclick="setCtFilter('pending')">Aguardando resposta <span class="ct" id="ctCountPending">0</span></button>
+        <button class="filter-chip" id="ctFilterHandled" onclick="setCtFilter('handled')">Respondidos <span class="ct" id="ctCountHandled">0</span></button>
+      </div>
+      <div class="panel" id="ctList" style="padding:0;min-height:80px"></div>
+    </div>
+
   </div>
 
   <div id="toast" class="toast"></div>
+
+  <!-- Drawer de detalhe do usuário -->
+  <div class="drawer-ov" id="drawerOv" onclick="closeDrawer()"></div>
+  <div class="drawer" id="userDrawer">
+    <div class="drawer-head">
+      <div style="min-width:0">
+        <div style="font-family:'Fraunces',serif;font-size:21px;font-weight:600;line-height:1.2" id="drawerName">—</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px" id="drawerEmail">—</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">×</button>
+    </div>
+    <div class="drawer-body" id="drawerBody">
+      <div style="text-align:center;padding:40px 0;color:var(--muted)"><div class="spin" style="margin:0 auto 10px"></div>Carregando…</div>
+    </div>
+  </div>
 
   <!-- Modal de exclusão definitiva -->
   <div id="delOv" class="ov" onclick="if(event.target===this)closeDeleteDialog()">
@@ -431,6 +513,7 @@ const PERIOD_MONTHS = { mensal:1, semestral:6, anual:12 };
 const planMonths = code => PERIOD_MONTHS[code] || 1;
 
 let sb = null, ROWS = [], BYMONTH = [], PLANS = [], MY_ID = null, view='resumo';
+let CONTACTS = [], CT_FILTER = 'all', PAY_EVENTS = [], DRAWER_ID = null;
 const charts = {};
 
 const STATUS_LABEL = { trial:'Em teste', active:'Ativo', courtesy:'Cortesia', past_due:'Inadimplente', canceled:'Cancelado' };
@@ -487,26 +570,29 @@ async function enter(){
 let STATUS_FILTER = 'all';
 function go(v){
   view=v;
-  ['Resumo','Assin','Pagto','Planos','Cupons'].forEach(k=>{
+  ['Resumo','Assin','Pagto','Planos','Cupons','Contatos'].forEach(k=>{
     document.getElementById('nav'+k).classList.toggle('active', mapNav(k)===v);
     document.getElementById('view'+k).classList.toggle('hidden', mapNav(k)!==v);
   });
-  if(v==='pagamentos') renderPagto();
+  if(v==='pagamentos'){ renderPagto(); loadPayEvents(); }
   if(v==='assinantes') renderStatusChips();
   if(v==='cupons') loadCoupons();
+  if(v==='contatos') loadContacts();
 }
-function mapNav(k){ return {Resumo:'resumo',Assin:'assinantes',Pagto:'pagamentos',Planos:'planos',Cupons:'cupons'}[k]; }
+function mapNav(k){ return {Resumo:'resumo',Assin:'assinantes',Pagto:'pagamentos',Planos:'planos',Cupons:'cupons',Contatos:'contatos'}[k]; }
 
 async function loadAll(stats){
-  const [a,b,c] = await Promise.all([
+  const [a,b,c,d] = await Promise.all([
     sb.rpc('admin_list_professionals'),
     sb.rpc('admin_bookings_by_month'),
-    sb.from('plans').select('*').order('sort_order',{ascending:true})
+    sb.from('plans').select('*').order('sort_order',{ascending:true}),
+    sb.rpc('admin_list_contacts', {p_limit:200})
   ]);
   if(a.error){ toast(traduz(a.error),'err'); } ROWS = a.data || [];
   if(b.error){ toast(traduz(b.error),'err'); } BYMONTH = b.data || [];
   if(!c.error && c.data){ PLANS = c.data; }
   if(PLANS.length){ PLAN_PRICES = {}; PLANS.forEach(p=>{ PLAN_PRICES[p.code]=Number(p.price)||0; }); }
+  if(!d.error && d.data){ CONTACTS = d.data; updateCtBadge(); }
   renderKpis(stats);
   renderStatusChips();
   renderTable();
@@ -868,9 +954,15 @@ function donutOpts(){ return { responsive:true, maintainAspectRatio:false, cutou
 /* ===== filtros + tabela ===== */
 function renderStatusChips(){
   const el = document.getElementById('statusChips'); if(!el) return;
-  const counts = {all:ROWS.length, trial:0,active:0,courtesy:0,past_due:0,canceled:0};
-  ROWS.forEach(r=>{ if(r.subscription_status in counts) counts[r.subscription_status]++; });
-  const labels = {all:'Todos',trial:'Em teste',active:'Ativos',courtesy:'Cortesia',past_due:'Inadimplentes',canceled:'Cancelados'};
+  const now = new Date(), soon = new Date(now.getTime()+3*86400000);
+  const counts = {all:ROWS.length, trial:0,active:0,courtesy:0,past_due:0,canceled:0,expiring:0};
+  ROWS.forEach(r=>{
+    if(r.subscription_status in counts) counts[r.subscription_status]++;
+    if(r.subscription_status==='trial'&&r.trial_ends_at){
+      const d=new Date(r.trial_ends_at); if(d>=now&&d<=soon) counts.expiring++;
+    }
+  });
+  const labels = {all:'Todos',trial:'Em teste',expiring:'⏰ Expira em 3d',active:'Ativos',courtesy:'Cortesia',past_due:'Inadimplentes',canceled:'Cancelados'};
   el.innerHTML = Object.keys(labels).map(k =>
     `<button class="filter-chip ${STATUS_FILTER===k?'on':''}" onclick="setStatusFilter('${k}')">${labels[k]} <span class="ct">${counts[k]||0}</span></button>`
   ).join('');
@@ -879,12 +971,15 @@ function setStatusFilter(s){ STATUS_FILTER=s; renderStatusChips(); renderTable()
 
 function renderTable(){
   const q=(document.getElementById('search').value||'').toLowerCase().trim();
+  const now=new Date(), soon=new Date(now.getTime()+3*86400000);
   const rows = ROWS.filter(r => {
-    if(STATUS_FILTER !== 'all' && r.subscription_status !== STATUS_FILTER) return false;
-    return !q
-      || (r.name||'').toLowerCase().includes(q)
-      || (r.email||'').toLowerCase().includes(q)
-      || (r.slug||'').toLowerCase().includes(q);
+    if(q && !((r.name||'').toLowerCase().includes(q)||(r.email||'').toLowerCase().includes(q)||(r.slug||'').toLowerCase().includes(q))) return false;
+    if(STATUS_FILTER==='all') return true;
+    if(STATUS_FILTER==='expiring'){
+      const d=r.trial_ends_at?new Date(r.trial_ends_at):null;
+      return r.subscription_status==='trial'&&d&&d>=now&&d<=soon;
+    }
+    return r.subscription_status===STATUS_FILTER;
   });
   document.getElementById('count').textContent = rows.length+' de '+ROWS.length;
   const tb=document.getElementById('tbody');
@@ -911,7 +1006,7 @@ function renderTable(){
     }
 
     return '<tr>'+
-      '<td><div class="nm">'+esc(r.name)+'</div><a class="lk" href="/'+esc(r.slug)+'" target="_blank" rel="noopener">/'+esc(r.slug)+'</a></td>'+
+      '<td><div class="nm" style="cursor:pointer;color:var(--primary-d)" onclick="openUserDrawer(\''+r.id+'\')" title="Ver detalhes">'+esc(r.name)+'</div><a class="lk" href="/'+esc(r.slug)+'" target="_blank" rel="noopener">/'+esc(r.slug)+'</a></td>'+
       '<td>'+esc(r.email)+(r.phone?'<div class="sub">'+esc(r.phone)+'</div>':'')+'</td>'+
       '<td>'+statusSel+'</td>'+
       '<td>'+planSel+'</td>'+
@@ -1141,6 +1236,212 @@ async function refresh(){
   const { data:stats } = await sb.rpc('admin_stats');
   await loadAll(stats&&stats.length?stats[0]:{});
   toast('Atualizado','ok');
+}
+
+/* ===== Drawer de detalhe do usuário ===== */
+function openUserDrawer(id){
+  const r=ROWS.find(x=>x.id===id); if(!r) return;
+  DRAWER_ID=id;
+  document.getElementById('drawerName').textContent=r.name||'(sem nome)';
+  document.getElementById('drawerEmail').textContent=r.email||'—';
+  document.getElementById('drawerBody').innerHTML='<div style="text-align:center;padding:40px 0;color:var(--muted)"><div class="spin" style="margin:0 auto 10px"></div>Carregando…</div>';
+  document.getElementById('drawerOv').classList.add('show');
+  document.getElementById('userDrawer').classList.add('open');
+  _loadDrawer(r);
+}
+function closeDrawer(){
+  document.getElementById('drawerOv').classList.remove('show');
+  document.getElementById('userDrawer').classList.remove('open');
+  DRAWER_ID=null;
+}
+async function _loadDrawer(r){
+  const {data:bks,error}=await sb.rpc('admin_get_user_bookings',{p_id:r.id});
+  if(error){document.getElementById('drawerBody').innerHTML='<p style="color:var(--danger);padding:20px">Erro ao carregar dados.</p>';return;}
+  const stColors={trial:'var(--gold)',active:'var(--success)',courtesy:'var(--primary-d)',past_due:'var(--danger)',canceled:'var(--muted)'};
+  const stColor=stColors[r.subscription_status]||'var(--muted)';
+  const trialDays=r.subscription_status==='trial'&&r.trial_ends_at?Math.ceil((new Date(r.trial_ends_at)-new Date())/86400000):null;
+  const bookings=bks||[];
+  let html='';
+
+  // Infos
+  html+='<div class="d-sec">';
+  html+='<div class="d-sec-title">Informações</div>';
+  html+=`<div class="d-row"><label>Slug</label><a href="/${esc(r.slug)}" target="_blank" style="color:var(--primary-d);font-weight:600">/${esc(r.slug)}</a></div>`;
+  html+=`<div class="d-row"><label>Status</label><span style="color:${stColor};font-weight:700">${STATUS_LABEL[r.subscription_status]||r.subscription_status}</span></div>`;
+  if(r.plan){const pl=PLANS.find(p=>p.code===r.plan);html+=`<div class="d-row"><label>Plano</label><span>${esc(pl?pl.name:r.plan)}</span></div>`;}
+  if(trialDays!==null){
+    const tcolor=trialDays<0?'var(--muted)':trialDays<=1?'var(--danger)':trialDays<=3?'var(--gold)':'var(--ink)';
+    html+=`<div class="d-row"><label>Trial</label><span style="color:${tcolor};font-weight:600">${trialDays<0?'Expirado':trialDays+' dia'+(trialDays===1?'':'s')}</span></div>`;
+  }
+  if(r.current_period_end){html+=`<div class="d-row"><label>Assinatura até</label><span>${fmtDate(r.current_period_end)}</span></div>`;}
+  html+=`<div class="d-row"><label>Cadastro</label><span>${fmtDate(r.created_at)}</span></div>`;
+  html+=`<div class="d-row"><label>Google Calendar</label><span>${r.google_connected?'✅ Conectado':'❌ Não conectado'}</span></div>`;
+  if(r.phone)html+=`<div class="d-row"><label>Telefone</label><span>${esc(r.phone)}</span></div>`;
+  html+='</div>';
+
+  // KPIs
+  html+='<div class="d-kpis">';
+  html+=`<div class="d-kpi"><div class="v">${r.bookings_active}</div><div class="k">Ativos</div></div>`;
+  html+=`<div class="d-kpi"><div class="v">${r.bookings_total}</div><div class="k">Total agend.</div></div>`;
+  html+=`<div class="d-kpi"><div class="v">${r.availability_count}</div><div class="k">Slots abertos</div></div>`;
+  html+='</div>';
+
+  // Bookings recentes
+  html+=`<div class="d-sec"><div class="d-sec-title">Últimos agendamentos (${bookings.length})</div>`;
+  if(!bookings.length){html+='<div style="color:var(--muted);font-size:13.5px;padding:8px 0">Nenhum agendamento ainda.</div>';}
+  else{bookings.forEach(b=>{
+    const [yy,mm,dd]=b.slot_date.split('-');
+    const date=new Date(+yy,+mm-1,+dd).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+    const time=(b.slot_time||'').slice(0,5);
+    const active=b.status==='active';
+    html+=`<div class="d-bk ${active?'':'cancelled'}">
+      <div class="bkw">${date} · ${time} <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:${active?'var(--success)':'var(--muted)'}">${active?'ativo':'cancelado'}</span></div>
+      <div class="bks">${esc(b.office_name||'—')}${b.procedure?' · '+esc(b.procedure):''}</div>
+    </div>`;
+  });}
+  html+='</div>';
+
+  // Ações
+  html+='<div class="d-actions">';
+  html+=`<a class="btn btn-ghost btn-sm" href="/${esc(r.slug)}" target="_blank">👁 Ver perfil</a>`;
+  if(r.subscription_status==='trial'){
+    html+=`<div style="display:flex;align-items:center;gap:7px">
+      <input class="extend-inp" id="extendDays" type="number" value="7" min="1" max="90" title="Dias de extensão">
+      <button class="btn btn-ghost btn-sm" onclick="extendTrial('${r.id}')">+ dias trial</button>
+    </div>`;
+  }
+  if(!['courtesy','active'].includes(r.subscription_status)){
+    html+=`<button class="btn btn-ghost btn-sm" style="background:var(--success-soft);color:var(--success)" onclick="grantCourtesy('${r.id}');closeDrawer()">🎁 Cortesia</button>`;
+  }
+  if(!['canceled'].includes(r.subscription_status)){
+    html+=`<button class="btn btn-ghost btn-sm" style="background:var(--danger-soft);color:var(--danger)" onclick="suspendUser('${r.id}');closeDrawer()">⏸ Suspender</button>`;
+  }
+  if(!r.is_admin){
+    html+=`<button class="btn btn-ghost btn-sm" style="background:var(--danger-soft);color:var(--danger)" onclick="openDeleteDialog('${r.id}');closeDrawer()">🗑 Excluir</button>`;
+  }
+  html+='</div>';
+
+  document.getElementById('drawerBody').innerHTML=html;
+}
+async function extendTrial(id){
+  const days=parseInt(document.getElementById('extendDays')?.value||'7',10);
+  if(!days||days<1||days>90){toast('Dias entre 1 e 90','err');return;}
+  const {error}=await sb.rpc('admin_extend_trial',{p_id:id,p_days:days});
+  if(error){toast(traduz(error),'err');return;}
+  const r=ROWS.find(x=>x.id===id);
+  if(r){
+    const base=r.trial_ends_at&&new Date(r.trial_ends_at)>new Date()?new Date(r.trial_ends_at):new Date();
+    base.setDate(base.getDate()+days);
+    r.trial_ends_at=base.toISOString();
+    r.subscription_status='trial';
+    _loadDrawer(r);
+  }
+  toast('+'+days+' dias de trial','ok');
+  renderTable(); renderStatusChips();
+}
+
+/* ===== Contatos ===== */
+function updateCtBadge(){
+  const pending=CONTACTS.filter(c=>!c.handled_at).length;
+  const badge=document.getElementById('ctNavBadge');
+  if(!badge) return;
+  if(pending>0){badge.textContent=pending;badge.classList.remove('hidden');}
+  else{badge.classList.add('hidden');}
+}
+async function loadContacts(){
+  const {data,error}=await sb.rpc('admin_list_contacts',{p_limit:150});
+  if(error){toast(traduz(error),'err');return;}
+  CONTACTS=data||[];
+  renderContacts();
+  updateCtBadge();
+}
+function setCtFilter(f){
+  CT_FILTER=f;
+  ['All','Pending','Handled'].forEach(k=>{
+    const map={All:'all',Pending:'pending',Handled:'handled'};
+    document.getElementById('ctFilter'+k)?.classList.toggle('on',map[k]===f);
+  });
+  renderContacts();
+}
+function renderContacts(){
+  const pending=CONTACTS.filter(c=>!c.handled_at);
+  const handled=CONTACTS.filter(c=>!!c.handled_at);
+  document.getElementById('ctCountAll').textContent=CONTACTS.length;
+  document.getElementById('ctCountPending').textContent=pending.length;
+  document.getElementById('ctCountHandled').textContent=handled.length;
+  const list=CT_FILTER==='pending'?pending:CT_FILTER==='handled'?handled:CONTACTS;
+  const el=document.getElementById('ctList'); if(!el) return;
+  if(!list.length){el.innerHTML='<div class="empty-msg" style="margin:0;border-radius:16px;padding:28px">Nenhuma mensagem neste filtro.</div>';return;}
+  el.innerHTML=list.map(c=>{
+    const dt=new Date(c.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const phone=c.phone?`<div class="ct-from">📱 ${esc(c.phone)}</div>`:'';
+    const notesHtml=c.notes?`<div style="font-size:12px;color:var(--muted);margin-top:6px;padding:6px 10px;background:var(--gold-soft);border-radius:7px">📝 ${esc(c.notes)}</div>`:'';
+    const srcBadge=`<span style="background:var(--surface-2);padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:600;display:inline-block;margin-top:4px">${esc(c.source||'site')}</span>`;
+    return `<div class="ct-row${c.handled_at?' handled':''}">
+      <div class="ct-meta">
+        <div class="ct-date">${dt}</div>
+        <div class="ct-from"><b>${esc(c.name)}</b></div>
+        <div class="ct-from">${esc(c.email)}</div>
+        ${phone}${srcBadge}
+      </div>
+      <div class="ct-body">
+        <div class="ct-subject">${esc(c.subject)}</div>
+        <div class="ct-msg">${esc(c.message)}</div>
+        ${notesHtml}
+      </div>
+      <div class="ct-acts">
+        <button class="row-btn ${c.handled_at?'':'green'}" onclick="handleContact('${c.id}')">${c.handled_at?'↩ Reabrir':'✓ Respondido'}</button>
+        ${c.email?`<a class="row-btn" href="mailto:${esc(c.email)}?subject=Re: ${esc(c.subject)}" target="_blank">📧 Responder</a>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function handleContact(id){
+  const {error}=await sb.rpc('admin_handle_contact',{p_id:id});
+  if(error){toast(traduz(error),'err');return;}
+  const c=CONTACTS.find(x=>x.id===id);
+  if(c) c.handled_at=c.handled_at?null:new Date().toISOString();
+  toast(c?.handled_at?'Marcado como respondido':'Reaberto','ok');
+  renderContacts(); updateCtBadge();
+}
+
+/* ===== Receita real Asaas ===== */
+async function loadPayEvents(){
+  let data, error;
+  try{
+    const r=await sb.rpc('admin_payment_events_by_month');
+    data=r.data; error=r.error;
+  }catch(e){error=e;}
+  const wrap=document.getElementById('revRealWrap');
+  const log=document.getElementById('payEventsLog');
+  if(error||!data||!data.length){
+    if(wrap) wrap.innerHTML='<div class="rev-empty">Nenhum pagamento registrado ainda.<br><small>Ative a tabela <b>payment_events</b> para ver dados reais aqui.</small></div>';
+    if(log) log.innerHTML='<div class="rev-empty">Sem dados de pagamento.</div>';
+    return;
+  }
+  PAY_EVENTS=data;
+  // Chart
+  if(wrap&&window.Chart){
+    wrap.innerHTML='<canvas id="chRevReal"></canvas>';
+    const months=lastMonths(12);
+    const labels=months.map(ymLabel);
+    const byMonth={};data.forEach(x=>byMonth[x.ym]=x);
+    const vals=months.map(m=>byMonth[m]?Number(byMonth[m].total_brl):0);
+    if(charts.revReal){try{charts.revReal.destroy();}catch(e){}}
+    charts.revReal=new Chart('chRevReal',{type:'bar',
+      data:{labels,datasets:[{label:'Receita R$',data:vals,backgroundColor:C.green,borderRadius:6,maxBarThickness:36}]},
+      options:baseOpts(true,false,true)});
+  }
+  // Log
+  if(log){
+    log.innerHTML=data.slice(-6).reverse().map(x=>{
+      return `<div class="pay-log-row">
+        <div style="min-width:70px;font-family:'Fraunces',serif;font-size:16px;font-weight:600">${ymLabel(x.ym)}</div>
+        <div style="flex:1;font-size:13.5px;color:var(--muted)">${Number(x.count)} pagamento${Number(x.count)===1?'':'s'}</div>
+        <div style="font-weight:700;color:var(--success)">${BRL(Number(x.total_brl))}</div>
+      </div>`;
+    }).join('');
+  }
 }
 
 /* ===== auth ===== */
