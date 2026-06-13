@@ -230,7 +230,7 @@
   .pf-avatar{width:96px;height:96px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:38px;font-weight:600;overflow:hidden;flex-shrink:0;box-shadow:var(--shadow)}
   .pf-avatar img{width:100%;height:100%;object-fit:cover;display:block}
   .container{max-width:960px;margin:0 auto;padding:28px 22px 70px}
-  #appBody{max-width:1080px;margin:0 auto;padding:28px 28px 70px}
+  #appBody{max-width:none;margin:0;padding:28px 36px 70px}
   .page-head{margin-bottom:18px}
   .page-head h1{font-size:26px}.page-head p{color:var(--muted);margin-top:4px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:22px;margin-top:16px}
@@ -268,7 +268,7 @@
   .bk-card-pending{border-color:#e8c87a;background:linear-gradient(180deg,#fffbf2 0%,#ffffff 100%)}
   .bk-ribbon{margin:-16px -16px 14px;padding:8px 16px;background:#f7eed9;color:#8a6d27;font-size:12.5px;font-weight:700;letter-spacing:.02em;border-bottom:1px solid #ecdfbf;border-radius:13px 13px 0 0}
   /* ===== Calendário da Agenda ===== */
-  .cal-wrap{border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--surface);box-shadow:var(--shadow);margin-top:14px;position:relative;overflow:hidden}
+  .cal-wrap{border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--surface);box-shadow:var(--shadow);margin-top:14px;position:relative;overflow:hidden;width:100%;box-sizing:border-box}
   .cal-wrap::before{content:'';position:absolute;bottom:-38px;left:-38px;width:160px;height:130px;background:var(--primary-soft);border-radius:55% 80% 65% 40%/45% 55% 65% 55%;opacity:.75;pointer-events:none;z-index:0}
   .cal-wrap::after{content:'';position:absolute;bottom:-28px;right:-28px;width:130px;height:110px;background:var(--primary-soft);border-radius:70% 35% 50% 65%/60% 45% 55% 45%;opacity:.75;pointer-events:none;z-index:0}
   .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;position:relative;z-index:1}
@@ -462,7 +462,7 @@
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.ok{background:#1f5d4b}.toast.err{background:#9c3a25}
-  @media(max-width:640px){.row2{grid-template-columns:1fr}#appBody{padding:20px 16px 60px}}
+  @media(max-width:640px){.row2{grid-template-columns:1fr}#appBody{padding:20px 16px 60px!important}}
 </style>
 </head>
 <body>
