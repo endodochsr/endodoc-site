@@ -255,6 +255,34 @@
   .pcard p{font-size:13.5px;color:var(--muted);line-height:1.55}
   .pcard.pcard-new{border:2px solid var(--accent);box-shadow:0 10px 28px rgba(242,104,60,.16);background:linear-gradient(180deg,#fff7f0 0%,#ffffff 28%)}
   .pcard-badge{position:absolute;top:-10px;left:16px;background:var(--accent);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.08em;padding:4px 11px;border-radius:99px;box-shadow:0 4px 10px rgba(242,104,60,.32)}
+  /* ===== AI Spotlight ===== */
+  .ai-spotlight{background:linear-gradient(135deg,#093f3e 0%,#0a5d5c 60%,#0d6e6c 100%);border-radius:24px;padding:44px 48px;color:#fff;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;max-width:1080px;margin:0 auto;position:relative;overflow:hidden}
+  .ai-spotlight::before{content:'';position:absolute;top:-80px;right:-80px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(242,104,60,.22) 0%,transparent 70%);pointer-events:none}
+  .ai-spotlight::after{content:'';position:absolute;bottom:-60px;left:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(14,124,123,.35) 0%,transparent 70%);pointer-events:none}
+  .ai-spotlight-text{position:relative;z-index:2}
+  .ai-spotlight-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(242,104,60,.2);border:1px solid rgba(242,104,60,.5);color:#f5a97f;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;padding:5px 13px;border-radius:99px;margin-bottom:18px}
+  .ai-spotlight-badge::before{content:'✦';font-size:10px}
+  .ai-spotlight-text h2{font-family:'Fraunces',serif;font-size:clamp(22px,2.6vw,30px);font-weight:600;color:#fff;line-height:1.2;margin-bottom:14px;letter-spacing:-.015em}
+  .ai-spotlight-text h2 em{font-style:normal;color:#7dd3ca}
+  .ai-spotlight-text p{font-size:15px;color:rgba(255,255,255,.78);line-height:1.6;margin-bottom:22px}
+  .ai-feat-list{display:grid;gap:12px}
+  .ai-feat{display:flex;align-items:flex-start;gap:11px;font-size:14px;color:rgba(255,255,255,.9);line-height:1.45}
+  .ai-feat-ic{flex-shrink:0;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;font-size:13px;margin-top:1px}
+  .ai-mock-wrap{position:relative;z-index:2}
+  .ai-mock{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:20px 22px;backdrop-filter:blur(8px)}
+  .ai-mock-head{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .ai-mock-head span{font-size:12px;font-weight:700;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:.05em}
+  .ai-mock-head small{font-size:11px;color:rgba(255,255,255,.45);margin-left:auto}
+  .ai-mock-urg{display:inline-flex;align-items:center;gap:5px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);color:#fca5a5;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:8px;margin-bottom:13px}
+  .ai-mock-alert{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:9px;padding:7px 11px;font-size:12px;color:#fca5a5;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+  .ai-mock-diag-lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.45);margin:13px 0 6px}
+  .ai-mock-diag{font-size:13px;color:rgba(255,255,255,.9);display:flex;align-items:flex-start;gap:7px;line-height:1.4;margin-bottom:5px}
+  .ai-mock-diag-n{font-weight:700;color:#7dd3ca;flex-shrink:0}
+  .ai-mock-conduta-lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.45);margin:12px 0 6px}
+  .ai-mock-conduta{font-size:12px;color:rgba(255,255,255,.8);display:flex;align-items:flex-start;gap:7px;line-height:1.4;margin-bottom:4px}
+  .ai-mock-conduta-ic{color:#7dd3ca;flex-shrink:0;font-size:14px;line-height:1.3}
+  @media(max-width:860px){.ai-spotlight{grid-template-columns:1fr;padding:32px 28px;gap:28px}}
+  @media(max-width:520px){.ai-spotlight{padding:26px 20px;border-radius:16px}}
   .micro-diffs{display:flex;justify-content:center;flex-wrap:wrap;gap:14px 30px;margin:54px auto 0;max-width:980px;padding:22px 24px;border-top:1px solid var(--border);font-size:14px;color:var(--muted);text-align:center}
   .micro-diffs span{font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
   .micro-diffs .ck{color:var(--accent);font-weight:800}
@@ -316,7 +344,7 @@
         <div>
           <div class="eyebrow">🦷 Feito pra endodontista que atende em vários consultórios</div>
           <h1>Endodontia delivery <span class="hl">sem caos</span>. Em uma semana.</h1>
-          <p class="sub">O consultório agenda pelo seu link, o paciente responde a anamnese no WhatsApp, você dita o prontuário por voz e o relatório vai pro consultório em 30s — sem trocar de app uma vez.</p>
+          <p class="sub">O consultório agenda pelo seu link, o paciente responde a anamnese no WhatsApp, a IA analisa e já entrega hipótese diagnóstica, você dita o prontuário por voz e o relatório vai pro consultório em 30s — sem trocar de app uma vez.</p>
           <div class="cta">
             <a class="btn lg" href="/app">Começar grátis · 14 dias</a>
             <a class="btn outline lg" href="#funcionalidades">Ver como funciona</a>
@@ -402,6 +430,41 @@
           </div>
         </div>
 
+        <!-- ===== AI SPOTLIGHT ===== -->
+        <div class="reveal">
+          <div class="ai-spotlight">
+            <div class="ai-spotlight-text">
+              <div class="ai-spotlight-badge">Inteligência Artificial</div>
+              <h2>A IA lê a anamnese e chega com <em>hipótese diagnóstica pronta</em></h2>
+              <p>Antes mesmo de você encostar no paciente, o EndoDoc analisa automaticamente as respostas da anamnese com IA e entrega um parecer clínico — urgência, hipótese diagnóstica pela classificação AAE e conduta sugerida.</p>
+              <div class="ai-feat-list">
+                <div class="ai-feat"><div class="ai-feat-ic">🚨</div><div><b>Triagem de urgência automática</b> — Eletivo, Prioritário ou Urgência, definido pela IA com base nos sintomas relatados.</div></div>
+                <div class="ai-feat"><div class="ai-feat-ic">🔬</div><div><b>Hipótese diagnóstica pela AAE</b> — Pulpite reversível, necrose, abscesso agudo — em ordem de probabilidade, antes do exame clínico.</div></div>
+                <div class="ai-feat"><div class="ai-feat-ic">📋</div><div><b>Conduta sugerida</b> — cuidados com anestesia, necessidade de antibiótico, tipo de tratamento mais provável.</div></div>
+                <div class="ai-feat"><div class="ai-feat-ic">⚠️</div><div><b>Alertas críticos em destaque</b> — alergias, anticoagulantes, gravidez, imunossupressão — nada passa despercebido.</div></div>
+              </div>
+            </div>
+            <div class="ai-mock-wrap">
+              <div class="ai-mock">
+                <div class="ai-mock-head">
+                  <span>✨ Avaliação clínica — IA</span>
+                  <small>baseada na anamnese</small>
+                </div>
+                <div class="ai-mock-urg">🚨 URGÊNCIA</div>
+                <div class="ai-mock-alert">⚠️ Alergia à dipirona — evitar prescrição</div>
+                <div class="ai-mock-alert">⚠️ Uso de anticoagulante (Varfarina)</div>
+                <div class="ai-mock-diag-lbl">🔬 Hipótese diagnóstica</div>
+                <div class="ai-mock-diag"><span class="ai-mock-diag-n">1.</span> Pulpite irreversível sintomática</div>
+                <div class="ai-mock-diag"><span class="ai-mock-diag-n">2.</span> Necrose pulpar com periodontite apical sintomática</div>
+                <div class="ai-mock-conduta-lbl">📋 Conduta sugerida</div>
+                <div class="ai-mock-conduta"><span class="ai-mock-conduta-ic">›</span> Pulpotomia de urgência — alivio imediato da dor</div>
+                <div class="ai-mock-conduta"><span class="ai-mock-conduta-ic">›</span> Atenção ao anticoagulante: avaliar risco de sangramento</div>
+                <div class="ai-mock-conduta"><span class="ai-mock-conduta-ic">›</span> Evitar AINES — preferir paracetamol</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 02 NO DIA -->
         <div class="phase reveal">
           <div class="phase-head">
@@ -427,10 +490,11 @@
               <h4>Endereço, mapa e caso</h4>
               <p>Cada agendamento traz endereço com mapa, observações do procedimento e documentos anexados. Você abre a agenda e já sabe pra onde ir.</p>
             </div>
-            <div class="pcard">
-              <div class="pico">📋</div>
-              <h4>Anamnese já preenchida</h4>
-              <p>As respostas do paciente ficam disponíveis no card do atendimento. Sem precisar interrogar de novo na cadeira — entra direto na conduta.</p>
+            <div class="pcard pcard-new">
+              <span class="pcard-badge">IA</span>
+              <div class="pico">🧠</div>
+              <h4>Diagnóstico antes de entrar na sala</h4>
+              <p>A IA analisa a anamnese e entrega hipótese diagnóstica (classificação AAE), triagem de urgência e conduta sugerida. Você chega já sabendo o que vai encontrar.</p>
             </div>
           </div>
         </div>
