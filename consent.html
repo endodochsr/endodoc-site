@@ -64,8 +64,7 @@
   <div class="footer"><a href="https://endodoc.com.br">endodoc.com.br</a> · <a href="/privacidade.html">Privacidade</a></div>
 </div>
 <script>
-const SUPA_URL  = 'https://tuolwdniugjwbepujqoy.supabase.co';
-const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1b2x3ZG5pdWdqd2JlcHVqcW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MjUwMTQsImV4cCI6MjA1OTEwMTAxNH0.UNkRUNcSI-f7LTjGhOvVR2KZXD79Rm4E_NeRV8ykjH8';
+const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
 
 const root = document.getElementById('root');
 let consentData = null;
@@ -77,12 +76,9 @@ async function init(){
   if(!token){ showError('Link inválido. Verifique o WhatsApp e tente novamente.'); return; }
 
   try{
-    const r = await fetch(`${SUPA_URL}/rest/v1/consents?token=eq.${token}&select=*,bookings(slot_date,slot_time,office_name,procedure),professionals(name,specialty)`,{
-      headers:{ apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` }
-    });
-    const arr = await r.json();
-    const c = arr?.[0];
-    if(!c){ showError('Consentimento não encontrado. O link pode ter expirado.'); return; }
+    const r = await fetch(`${SUPA_URL}/functions/v1/consent-public?token=${encodeURIComponent(token)}`);
+    const c = await r.json();
+    if(!r.ok || !c || c.error){ showError('Consentimento não encontrado. O link pode ter expirado.'); return; }
     consentData = c;
 
     if(c.signed_at){
@@ -110,8 +106,8 @@ function showAlreadySigned(c){
 }
 
 function showForm(c){
-  const bk = c.bookings || {};
-  const p  = c.professionals || {};
+  const bk = c.booking || {};
+  const p  = c.professional || {};
   const profStr = `${p.name||''}${p.specialty?' · '+p.specialty:''}`;
   const dateStr = bk.slot_date ? formatDate(bk.slot_date, bk.slot_time) : '';
   const proc = bk.procedure || 'Tratamento de canal (endodontia)';
@@ -207,22 +203,20 @@ async function submitConsent(){
 
   try{
     const token = new URLSearchParams(location.search).get('token');
-    const r = await fetch(`${SUPA_URL}/rest/v1/consents?token=eq.${token}`,{
-      method: 'PATCH',
-      headers:{
-        apikey: SUPA_ANON,
-        Authorization: `Bearer ${SUPA_ANON}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal'
-      },
+    const r = await fetch(`${SUPA_URL}/functions/v1/consent-public`,{
+      method: 'POST',
+      headers:{ 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        signed_at:   new Date().toISOString(),
+        token,
         signed_name: name,
         user_agent:  navigator.userAgent.slice(0,300),
       })
     });
-
-    if(!r.ok){ throw new Error('http '+r.status); }
+    const res = await r.json().catch(()=>({}));
+    if(!r.ok || res.error){
+      if(res.error==='already_signed'){ showSuccess(name); return; }
+      throw new Error(res.error||('http '+r.status));
+    }
     showSuccess(name);
   }catch(e){
     console.error(e);
