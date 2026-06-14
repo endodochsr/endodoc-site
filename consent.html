@@ -65,6 +65,7 @@
 </div>
 <script>
 const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
+const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
 
 const root = document.getElementById('root');
 let consentData = null;
@@ -76,7 +77,9 @@ async function init(){
   if(!token){ showError('Link inválido. Verifique o WhatsApp e tente novamente.'); return; }
 
   try{
-    const r = await fetch(`${SUPA_URL}/functions/v1/consent-public?token=${encodeURIComponent(token)}`);
+    const r = await fetch(`${SUPA_URL}/functions/v1/consent-public?token=${encodeURIComponent(token)}`,{
+      headers:{ apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
+    });
     const c = await r.json();
     if(!r.ok || !c || c.error){ showError('Consentimento não encontrado. O link pode ter expirado.'); return; }
     consentData = c;
@@ -205,7 +208,7 @@ async function submitConsent(){
     const token = new URLSearchParams(location.search).get('token');
     const r = await fetch(`${SUPA_URL}/functions/v1/consent-public`,{
       method: 'POST',
-      headers:{ 'Content-Type': 'application/json' },
+      headers:{ 'Content-Type': 'application/json', apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` },
       body: JSON.stringify({
         token,
         signed_name: name,
