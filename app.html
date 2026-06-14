@@ -1979,6 +1979,11 @@ function viewPerfil(){
       </div>
       <p style="font-size:12px;color:var(--muted);margin-top:6px">Digite cada procedimento e pressione <b>Enter</b> para adicionar. Clique no × para remover.</p>
     </div>
+    <div class="field">
+      <label>Link de avaliação Google ⭐</label>
+      <input id="pfGoogleReview" type="url" value="${esc(p.google_review_url||'')}" placeholder="https://g.page/r/SEU_ID/review">
+      <p style="font-size:12px;color:var(--muted);margin-top:4px">Cole o link do seu Google Maps aqui. 9 dias após cada atendimento o paciente recebe automaticamente um WhatsApp pedindo avaliação.</p>
+    </div>
     <button class="btn btn-primary" onclick="saveProfile()">Salvar alterações</button>
   </div>
   <div class="card" style="max-width:560px;margin:0 auto">
@@ -2105,9 +2110,10 @@ async function saveProfile(){
   // Valida: se preencheu um, tem que preencher o outro
   if(cro && !croUf){ toast('Informe a UF do CRO','err'); return; }
   if(croUf && !cro){ toast('Informe o número do CRO','err'); return; }
-  const{error}=await sb.from('professionals').update({name,specialty:spec,phone,bio,procedures:procs,cro,cro_uf:croUf}).eq('id',currentProf.id);
+  const googleReviewUrl = (document.getElementById('pfGoogleReview')?.value||'').trim()||null;
+  const{error}=await sb.from('professionals').update({name,specialty:spec,phone,bio,procedures:procs,cro,cro_uf:croUf,google_review_url:googleReviewUrl}).eq('id',currentProf.id);
   if(error){toast(error.message,'err');return;}
-  currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;currentProf.bio=bio;currentProf.procedures=procs;currentProf.cro=cro;currentProf.cro_uf=croUf;
+  currentProf.name=name;currentProf.specialty=spec;currentProf.phone=phone;currentProf.bio=bio;currentProf.procedures=procs;currentProf.cro=cro;currentProf.cro_uf=croUf;currentProf.google_review_url=googleReviewUrl;
   setAvatar(); toast('Perfil atualizado','ok');
 }
 async function changeSlug(){
@@ -2227,6 +2233,7 @@ function bookingCard(g, opts){
     <div class="bk-notes">📝 ${esc(first.notes||'—')}</div>
     <div class="bk-actions">
       ${!opts.pending && first.patient_phone ? renderAnamnesePill(first.id) : ''}
+      ${!opts.pending && first.patient_phone ? renderConsentPill(first) : ''}
       ${prontuarioPill}
       ${reportPill}
       ${!opts.pending ? (first.consultation_value ? `<button class="pill prontuario-filled" onclick="openValueModal('${first.id}')" title="Editar valor cobrado">💰 R$ ${Number(first.consultation_value).toFixed(2).replace('.',',')}</button>` : `<button class="pill prontuario-empty" onclick="openValueModal('${first.id}')">💰 Valor cobrado</button>`) : ''}
@@ -2245,6 +2252,30 @@ function renderReportPill(bookingId){
 function renderProntuarioPill(bookingId, hasNotes){
   if(hasNotes) return `<button class="pill prontuario-filled" onclick="openProntuario('${bookingId}')">📝 Prontuário ✓</button>`;
   return `<button class="pill prontuario-empty" onclick="openProntuario('${bookingId}')">📝 Prontuário</button>`;
+}
+function renderConsentPill(bk){
+  if(bk.consent_signed_at) return `<button class="pill report-sent" title="Assinado em ${new Date(bk.consent_signed_at).toLocaleString('pt-BR')}">✅ TCLE assinado</button>`;
+  if(bk.consent_sent_at)   return `<button class="pill prontuario-filled" onclick="sendConsent('${bk.id}',true)" title="Enviado em ${new Date(bk.consent_sent_at).toLocaleString('pt-BR')}">📋 TCLE enviado · reenviar</button>`;
+  return `<button class="pill prontuario-empty" onclick="sendConsent('${bk.id}',false)">📋 Enviar TCLE</button>`;
+}
+async function sendConsent(bookingId, resend){
+  const msg = resend ? 'Reenviar o TCLE pro WhatsApp do paciente?' : 'Enviar o Termo de Consentimento (TCLE) pro WhatsApp do paciente?';
+  if(!confirm(msg)) return;
+  toast('Enviando TCLE…','');
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    const tok = session?.access_token||'';
+    const res = await fetch(SUPA_URL+'/functions/v1/send-whatsapp-consent',{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},
+      body: JSON.stringify({ booking_id: bookingId })
+    });
+    if(!res.ok){ const t=await res.text(); throw new Error(t||'http '+res.status); }
+    toast('✓ TCLE enviado pro paciente!','ok');
+    renderAgenda();
+  }catch(e){
+    toast('Erro ao enviar TCLE: '+(e.message||e),'err');
+  }
 }
 
 /* ===== Prontuário com TIMELINE de evoluções por paciente ===== */
@@ -2831,6 +2862,15 @@ async function sendReportToOffice(){
     });
     if(!res.ok){ const t=await res.text(); throw new Error(t||'http '+res.status); }
     toast('✓ Relatório enviado pro consultório!','ok');
+    // Agenda follow-up (dia 7) e pedido de avaliação Google (dia 9)
+    const bkId = window._report?.booking?.id;
+    if(bkId){
+      const now = Date.now();
+      sb.from('bookings').update({
+        followup_send_after: new Date(now + 7*24*60*60*1000).toISOString(),
+        review_send_after:   new Date(now + 9*24*60*60*1000).toISOString(),
+      }).eq('id', bkId).then(({error})=>{ if(error) console.warn('followup schedule:', error.message); });
+    }
     setTimeout(()=>{ closeReport(); renderAgenda(); }, 800);
   }catch(e){
     toast('Erro ao enviar: '+(e.message||e),'err');

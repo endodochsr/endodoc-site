@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Termo de Consentimento — EndoDoc</title>
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/brand/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+<meta name="theme-color" content="#0a5d5c" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f5efe6;--surface:#fff;--ink:#16302f;--muted:#5e706f;--primary:#0e7c7b;--primary-d:#0a5d5c;--primary-soft:#e3f1f0;--accent:#c2a063;--success:#2e7d57;--success-soft:#e4f3ec;--danger:#c0492f;--border:#e4ecec;--shadow:0 6px 30px rgba(16,48,47,.10)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em}
+  .wrap{max-width:680px;margin:0 auto;padding:24px 18px 60px}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+  .top .mark{width:72px;height:72px;display:block;object-fit:contain;margin:-16px -4px}
+  .top .name{font-family:'Fraunces',serif;font-weight:600;font-size:17px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:24px}
+  .card+.card{margin-top:14px}
+  .head{margin-bottom:20px;text-align:center}
+  .head h1{font-size:24px;margin-bottom:6px}
+  .head p{color:var(--muted);font-size:14.5px}
+  .prof-pill{display:inline-flex;align-items:center;gap:8px;background:var(--primary-soft);color:var(--primary-d);padding:8px 14px;border-radius:999px;font-size:13.5px;font-weight:600;margin-top:10px}
+  /* TCLE content */
+  .tcle-section{margin-bottom:20px}
+  .tcle-section h2{font-size:15px;color:var(--primary-d);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .tcle-section p{font-size:14px;color:var(--ink);line-height:1.65;margin-bottom:8px}
+  .tcle-section ul{padding-left:18px;margin-bottom:8px}
+  .tcle-section ul li{font-size:14px;color:var(--ink);line-height:1.6;margin-bottom:4px}
+  /* assinatura */
+  .sign-block{background:#f8fdfc;border:1.5px solid var(--primary-soft);border-radius:14px;padding:20px}
+  .sign-block label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+  .sign-block input[type=text]{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:15px;background:#fff;color:var(--ink)}
+  .sign-block input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+  .check-row{display:flex;gap:12px;align-items:flex-start;margin:16px 0}
+  .check-row input[type=checkbox]{flex:0 0 20px;width:20px;height:20px;accent-color:var(--primary);margin-top:2px;cursor:pointer}
+  .check-row span{font-size:14px;color:var(--ink);line-height:1.5}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:13px;font-weight:700;font-size:15px;border:none;cursor:pointer;font-family:inherit;width:100%}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(14,124,123,.28)}
+  .btn-primary:hover{background:var(--primary-d)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .ok-state,.err-state{text-align:center;padding:30px 20px}
+  .ok-state .icon{width:74px;height:74px;border-radius:50%;background:var(--success-soft);color:var(--success);display:grid;place-items:center;font-size:38px;margin:0 auto 14px}
+  .err-state .icon{width:74px;height:74px;border-radius:50%;background:#fbeae6;color:var(--danger);display:grid;place-items:center;font-size:38px;margin:0 auto 14px}
+  .center{min-height:60vh;display:grid;place-items:center;color:var(--muted);text-align:center;padding:24px}
+  .already-signed{background:var(--success-soft);border:1px solid #a7d9c4;border-radius:14px;padding:18px;text-align:center;color:var(--success);font-weight:600;font-size:14.5px}
+  .footer{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
+  .footer a{color:var(--primary-d);text-decoration:none}
+  .lgpd{background:#fffbf2;border:1px solid #ecdfbf;border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:14px 18px;font-size:13px;color:#3a2f17;margin-bottom:18px;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <img class="mark" src="/brand/favicon.svg" alt="EndoDoc">
+    <div class="name">Endo<span style="color:#0a5d5c;opacity:.65">Doc</span></div>
+  </div>
+  <div id="root"><div class="center"><span style="font-size:32px">🦷</span><p style="margin-top:12px">Carregando…</p></div></div>
+  <div class="footer"><a href="https://endodoc.com.br">endodoc.com.br</a> · <a href="/privacidade.html">Privacidade</a></div>
+</div>
+<script>
+const SUPA_URL  = 'https://tuolwdniugjwbepujqoy.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1b2x3ZG5pdWdqd2JlcHVqcW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MjUwMTQsImV4cCI6MjA1OTEwMTAxNH0.UNkRUNcSI-f7LTjGhOvVR2KZXD79Rm4E_NeRV8ykjH8';
+
+const root = document.getElementById('root');
+let consentData = null;
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+async function init(){
+  const token = new URLSearchParams(location.search).get('token');
+  if(!token){ showError('Link inválido. Verifique o WhatsApp e tente novamente.'); return; }
+
+  try{
+    const r = await fetch(`${SUPA_URL}/rest/v1/consents?token=eq.${token}&select=*,bookings(slot_date,slot_time,office_name,procedure),professionals(name,specialty)`,{
+      headers:{ apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` }
+    });
+    const arr = await r.json();
+    const c = arr?.[0];
+    if(!c){ showError('Consentimento não encontrado. O link pode ter expirado.'); return; }
+    consentData = c;
+
+    if(c.signed_at){
+      showAlreadySigned(c);
+      return;
+    }
+    showForm(c);
+  }catch(e){
+    console.error(e);
+    showError('Erro ao carregar. Tente novamente em instantes.');
+  }
+}
+
+function showError(msg){
+  root.innerHTML=`<div class="card"><div class="err-state"><div class="icon">⚠️</div><h2 style="margin-bottom:8px">Ops!</h2><p style="color:var(--muted)">${esc(msg)}</p></div></div>`;
+}
+
+function showAlreadySigned(c){
+  const dt = new Date(c.signed_at).toLocaleString('pt-BR');
+  root.innerHTML=`<div class="card"><div class="already-signed">
+    <div style="font-size:36px;margin-bottom:10px">✅</div>
+    <div style="font-size:17px;margin-bottom:6px">Termo já assinado</div>
+    <div style="font-size:13px;color:var(--success);font-weight:400">Assinado em ${esc(dt)} por ${esc(c.signed_name||c.patient_name||'—')}</div>
+  </div></div>`;
+}
+
+function showForm(c){
+  const bk = c.bookings || {};
+  const p  = c.professionals || {};
+  const profStr = `${p.name||''}${p.specialty?' · '+p.specialty:''}`;
+  const dateStr = bk.slot_date ? formatDate(bk.slot_date, bk.slot_time) : '';
+  const proc = bk.procedure || 'Tratamento de canal (endodontia)';
+  const office = bk.office_name || 'consultório';
+
+  root.innerHTML=`
+  <div class="card">
+    <div class="head">
+      <h1>📋 Termo de Consentimento</h1>
+      <p>Leia com atenção antes de assinar</p>
+      ${profStr ? `<div class="prof-pill">🦷 ${esc(profStr)}</div>` : ''}
+      ${dateStr ? `<div style="font-size:12.5px;color:var(--muted);margin-top:6px">${esc(dateStr)} · ${esc(office)}</div>` : ''}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lgpd">
+      🔒 Este documento é eletrônico e tem validade legal. Sua assinatura digital (nome + data/hora + IP) é armazenada com segurança pela EndoDoc.
+    </div>
+
+    <div class="tcle-section">
+      <h2>1. Identificação do Procedimento</h2>
+      <p>Você está sendo informado sobre o procedimento de <strong>${esc(proc)}</strong>, a ser realizado pelo(a) <strong>${esc(p.name||'profissional')}</strong>, endodontista.</p>
+    </div>
+
+    <div class="tcle-section">
+      <h2>2. O que é o tratamento endodôntico?</h2>
+      <p>O tratamento endodôntico (popularmente chamado de "tratamento de canal") consiste na remoção da polpa dental infectada ou comprometida, limpeza, modelagem e obturação do sistema de canais radiculares. O objetivo é eliminar a infecção, aliviar a dor e preservar o dente natural.</p>
+    </div>
+
+    <div class="tcle-section">
+      <h2>3. Riscos e possíveis complicações</h2>
+      <p>Como em qualquer procedimento clínico, existem riscos, incluindo:</p>
+      <ul>
+        <li>Dor ou desconforto pós-operatório, geralmente transitório (1 a 7 dias)</li>
+        <li>Inchaço ou sensibilidade na região tratada</li>
+        <li>Fratura de instrumento no interior do canal (raro, pode requerer procedimento adicional)</li>
+        <li>Perfuração radicular (rara)</li>
+        <li>Reação alérgica a materiais ou anestésicos (informar alergias ao profissional)</li>
+        <li>Necessidade de retreatamento endodôntico em casos de falha</li>
+        <li>Em casos de infecção grave, pode ser necessário tratamento complementar com antibióticos</li>
+      </ul>
+    </div>
+
+    <div class="tcle-section">
+      <h2>4. Alternativas ao tratamento</h2>
+      <p>A principal alternativa ao tratamento de canal é a extração do dente. O não tratamento pode levar à progressão da infecção, comprometendo dentes adjacentes e estruturas de suporte.</p>
+    </div>
+
+    <div class="tcle-section">
+      <h2>5. Seus direitos como paciente</h2>
+      <ul>
+        <li>Você pode fazer perguntas ao profissional antes, durante e após o procedimento</li>
+        <li>Você pode retirar este consentimento a qualquer momento antes do início do procedimento</li>
+        <li>Você tem direito a receber informações claras sobre seu diagnóstico e plano de tratamento</li>
+        <li>Suas informações de saúde são confidenciais (Lei 13.709/2018 — LGPD)</li>
+      </ul>
+    </div>
+
+    <div class="tcle-section">
+      <h2>6. Declaração de entendimento</h2>
+      <p>Declaro que li e compreendi as informações acima, que tive a oportunidade de esclarecer minhas dúvidas e que consinto livremente com a realização do procedimento descrito.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sign-block">
+      <label>Seu nome completo (para assinar)</label>
+      <input type="text" id="signedName" placeholder="Digite seu nome completo" autocomplete="name" value="${esc(c.patient_name||'')}">
+
+      <div class="check-row">
+        <input type="checkbox" id="agreedCheck">
+        <span>Declaro que li e compreendi este Termo de Consentimento e autorizo a realização do procedimento endodôntico.</span>
+      </div>
+
+      <button class="btn btn-primary" id="signBtn" onclick="submitConsent()" style="margin-top:8px">
+        ✍️ Assinar e enviar
+      </button>
+    </div>
+  </div>`;
+}
+
+async function submitConsent(){
+  const name = (document.getElementById('signedName').value||'').trim();
+  const agreed = document.getElementById('agreedCheck').checked;
+  const btn = document.getElementById('signBtn');
+
+  if(!name){ alert('Por favor, informe seu nome completo para assinar.'); return; }
+  if(!agreed){ alert('Você precisa marcar a caixa de concordância para assinar.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try{
+    const token = new URLSearchParams(location.search).get('token');
+    const r = await fetch(`${SUPA_URL}/rest/v1/consents?token=eq.${token}`,{
+      method: 'PATCH',
+      headers:{
+        apikey: SUPA_ANON,
+        Authorization: `Bearer ${SUPA_ANON}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({
+        signed_at:   new Date().toISOString(),
+        signed_name: name,
+        user_agent:  navigator.userAgent.slice(0,300),
+      })
+    });
+
+    if(!r.ok){ throw new Error('http '+r.status); }
+    showSuccess(name);
+  }catch(e){
+    console.error(e);
+    btn.disabled=false;
+    btn.textContent='✍️ Assinar e enviar';
+    alert('Erro ao registrar assinatura. Tente novamente.');
+  }
+}
+
+function showSuccess(name){
+  root.innerHTML=`<div class="card"><div class="ok-state">
+    <div class="icon">✅</div>
+    <h2 style="margin-bottom:8px">Termo assinado!</h2>
+    <p style="color:var(--muted);margin-bottom:14px">Obrigado, <strong>${esc(name)}</strong>. Seu consentimento foi registrado com data e hora.</p>
+    <p style="color:var(--muted);font-size:13.5px">O profissional recebeu a confirmação. Você pode fechar essa janela.</p>
+  </div></div>`;
+}
+
+function formatDate(dateStr, timeStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  const DOW=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+  const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const t = (timeStr||'').slice(0,5);
+  return `${DOW[dt.getDay()]}, ${d}/${MES[m-1]}${t?' às '+t:''}`;
+}
+
+init();
+</script>
+</body>
+</html>
