@@ -3608,29 +3608,74 @@ async function viewAnamnese(anamId){
 }
 
 function _renderAiAnalysis(r){
-  const alertas = (r.alertas||[]);
-  const dor = (r.dor||[]);
-  const meds = (r.medicacoes||[]);
-  const resumo = r.resumo||'';
+  const alertas  = (r.alertas||[]);
+  const dor      = (r.dor||[]);
+  const meds     = (r.medicacoes||[]);
+  const resumo   = r.resumo||'';
+  const diag     = (r.diagnostico_provavel||[]);
+  const conduta  = (r.conduta_sugerida||[]);
+  const urgencia = r.urgencia||'eletiva';
+
+  const urgMap = {
+    eletiva:    {label:'Eletivo',          color:'#166534', bg:'#dcfce7', border:'#86efac'},
+    prioritaria:{label:'Prioritário',      color:'#92400e', bg:'#fef3c7', border:'#fcd34d'},
+    urgencia:   {label:'URGÊNCIA',         color:'#991b1b', bg:'#fee2e2', border:'#fca5a5'},
+  };
+  const urg = urgMap[urgencia] || urgMap.eletiva;
 
   let html = `<div class="ai-analysis">
     <div class="ai-analysis-head">
-      <span>✨ Análise clínica — IA</span>
-      <small>Resumo automático · confira sempre as respostas abaixo</small>
+      <span>✨ Avaliação clínica — IA</span>
+      <small>Hipótese baseada na anamnese · confirmar com exame clínico/radiográfico</small>
     </div>`;
 
+  // Urgência badge
+  html += `<div style="display:inline-flex;align-items:center;gap:6px;background:${urg.bg};border:1px solid ${urg.border};color:${urg.color};border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;margin-bottom:12px">
+    <span style="font-size:13px">${urgencia==='urgencia'?'🚨':urgencia==='prioritaria'?'⚡':'🟢'}</span>${urg.label}
+  </div>`;
+
+  // Alertas clínicos
   if(alertas.length){
     html += `<div class="ai-alerts">${alertas.map(a=>`<div class="ai-alert">${esc(a)}</div>`).join('')}</div>`;
   }
+
+  // Diagnóstico provável
+  if(diag.length){
+    html += `<div class="ai-section"><div class="ai-section-lbl">🔬 Hipótese diagnóstica</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${diag.map((d,i)=>`<div style="display:flex;align-items:flex-start;gap:8px;font-size:13.5px;color:var(--ink);line-height:1.4">
+          <span style="flex-shrink:0;font-weight:700;color:var(--primary-d);min-width:18px">${i+1}.</span>${esc(d)}
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Conduta sugerida
+  if(conduta.length){
+    html += `<div class="ai-section"><div class="ai-section-lbl">📋 Conduta sugerida</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${conduta.map(c=>`<div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--ink);line-height:1.4">
+          <span style="flex-shrink:0;color:var(--primary);font-size:15px;line-height:1.2">›</span>${esc(c)}
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Saúde geral
   if(resumo){
     html += `<div class="ai-section"><div class="ai-section-lbl">Saúde geral</div><div class="ai-resumo">${esc(resumo)}</div></div>`;
   }
+
+  // Queixa/dor
   if(dor.length){
     html += `<div class="ai-section"><div class="ai-section-lbl">Queixa / dor</div><div class="ai-pills">${dor.map(d=>`<span class="ai-pill">${esc(d)}</span>`).join('')}</div></div>`;
   }
+
+  // Medicações
   if(meds.length){
     html += `<div class="ai-section"><div class="ai-section-lbl">Medicações</div><div class="ai-pills">${meds.map(m=>`<span class="ai-pill med">${esc(m)}</span>`).join('')}</div></div>`;
   }
+
   html += `</div>`;
   return html;
 }
