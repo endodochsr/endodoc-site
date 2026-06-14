@@ -2254,7 +2254,7 @@ function renderProntuarioPill(bookingId, hasNotes){
   return `<button class="pill prontuario-empty" onclick="openProntuario('${bookingId}')">📝 Prontuário</button>`;
 }
 function renderConsentPill(bk){
-  if(bk.consent_signed_at) return `<button class="pill report-sent" title="Assinado em ${new Date(bk.consent_signed_at).toLocaleString('pt-BR')}">✅ TCLE assinado</button>`;
+  if(bk.consent_signed_at) return `<button class="pill report-sent" onclick="openConsentView('${bk.id}')" title="Assinado em ${new Date(bk.consent_signed_at).toLocaleString('pt-BR')} · clique para ver">✅ TCLE assinado</button>`;
   if(bk.consent_sent_at)   return `<button class="pill prontuario-filled" onclick="sendConsent('${bk.id}',true)" title="Enviado em ${new Date(bk.consent_sent_at).toLocaleString('pt-BR')}">📋 TCLE enviado · reenviar</button>`;
   return `<button class="pill prontuario-empty" onclick="sendConsent('${bk.id}',false)">📋 Enviar TCLE</button>`;
 }
@@ -2275,6 +2275,111 @@ async function sendConsent(bookingId, resend){
     renderAgenda();
   }catch(e){
     toast('Erro ao enviar TCLE: '+(e.message||e),'err');
+  }
+}
+async function openConsentView(bookingId){
+  showModal('<div style="color:var(--muted);padding:20px;text-align:center">Carregando termo…</div>');
+  const { data:c, error } = await sb.from('consents')
+    .select('*,bookings(slot_date,slot_time,office_name,procedure,patient_name)')
+    .eq('booking_id', bookingId).maybeSingle();
+  if(error || !c){ showModal('<div style="color:var(--danger);padding:20px">Não foi possível carregar o termo.</div>'); return; }
+  window._lastConsent = c;
+  const b = c.bookings || {};
+  const pname = c.signed_name || c.patient_name || b.patient_name || 'Paciente';
+  const signedStr = c.signed_at ? new Date(c.signed_at).toLocaleString('pt-BR') : '—';
+  const dataConsulta = b.slot_date ? new Date(b.slot_date+'T12:00:00').toLocaleDateString('pt-BR') : '';
+  const hora = b.slot_time ? b.slot_time.slice(0,5) : '';
+  const proc = b.procedure || 'Tratamento de canal (endodontia)';
+  const html = `<h3 style="font-family:'Fraunces',serif">📋 Termo de Consentimento assinado</h3>
+    <p class="sub">${esc(b.office_name||'')}${dataConsulta?' · '+dataConsulta+(hora?' '+hora:''):''}</p>
+    <div style="background:var(--success-soft,#e4f3ec);border:1px solid #a7d9c4;border-radius:12px;padding:14px 16px;margin:14px 0;display:flex;gap:12px;align-items:flex-start">
+      <span style="font-size:22px;line-height:1">✅</span>
+      <div style="font-size:13.5px;line-height:1.6;color:#0f5d5b">
+        <b>Assinado digitalmente</b><br>
+        Por: <b>${esc(pname)}</b><br>
+        Em: ${esc(signedStr)}<br>
+        ${c.ip_address?`IP: ${esc(c.ip_address)}`:''}
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--muted);background:var(--bg,#f5efe6);border-radius:10px;padding:12px 14px;line-height:1.6;max-height:200px;overflow-y:auto">
+      <b>Procedimento:</b> ${esc(proc)}<br><br>
+      O paciente declarou ter lido e compreendido o Termo de Consentimento Livre e Esclarecido, incluindo a descrição do tratamento endodôntico, seus riscos, alternativas e direitos do paciente, e autorizou a realização do procedimento.
+    </div>
+    <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Fechar</button>
+      <button class="btn btn-primary btn-sm" onclick="exportConsentPDF()">📥 Baixar PDF</button>
+    </div>`;
+  showModal(html);
+}
+async function exportConsentPDF(){
+  const c = window._lastConsent;
+  if(!c){ toast('Erro: dados não encontrados','err'); return; }
+  const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  if(!jsPDFCtor){ toast('Aguarde a página carregar','err'); return; }
+  const b = c.bookings || {};
+  const pname = c.signed_name || c.patient_name || b.patient_name || 'Paciente';
+  const profName = (currentProf && currentProf.name) || '';
+  const profSpec = (currentProf && currentProf.specialty) || 'Endodontia';
+  const signedStr = c.signed_at ? new Date(c.signed_at).toLocaleString('pt-BR') : '—';
+  const dataConsulta = b.slot_date ? new Date(b.slot_date+'T12:00:00').toLocaleDateString('pt-BR') : '';
+  const hora = b.slot_time ? b.slot_time.slice(0,5) : '';
+  const proc = b.procedure || 'Tratamento de canal (endodontia)';
+  const docGenerated = new Date().toLocaleString('pt-BR');
+  toast('Gerando PDF…','');
+  try{
+    const doc = new jsPDFCtor({ unit:'mm', format:'a4', orientation:'portrait' });
+    const pageW = 210, mL = 18, mR = 18, contentW = pageW - mL - mR;
+    let y = 16;
+    // Cabeçalho
+    const logoData = await (typeof getEndoLogoDataURL==='function' ? getEndoLogoDataURL() : Promise.resolve(null));
+    if(logoData){ doc.addImage(logoData,'PNG',mL,y-2,16,16); }
+    doc.setTextColor(10,93,92); doc.setFont('helvetica','bold'); doc.setFontSize(17);
+    doc.text('endodoc', mL+18, y+6.5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(94,112,111);
+    doc.text('TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO', mL+18, y+10.5);
+    doc.setTextColor(22,48,47); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text(profName, pageW-mR, y+5, {align:'right'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(94,112,111);
+    doc.text(profSpec, pageW-mR, y+10, {align:'right'});
+    y += 16; doc.setDrawColor(10,93,92); doc.setLineWidth(0.5); doc.line(mL,y,pageW-mR,y); y += 10;
+    // Dados
+    doc.setTextColor(22,48,47); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Identificação', mL, y); y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40);
+    const lines1 = [
+      `Paciente: ${pname}`,
+      `Procedimento: ${proc}`,
+      dataConsulta ? `Data da consulta: ${dataConsulta}${hora?' às '+hora:''}` : '',
+      b.office_name ? `Clínica: ${b.office_name}` : '',
+    ].filter(Boolean);
+    lines1.forEach(l=>{ doc.text(l, mL, y); y += 6; });
+    y += 4;
+    // Texto do termo
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(22,48,47);
+    doc.text('Declaração de consentimento', mL, y); y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
+    const termo = 'Declaro que fui informado(a) de forma clara sobre o procedimento de tratamento endodôntico (tratamento de canal), que consiste na remoção da polpa dental comprometida, limpeza, modelagem e obturação do sistema de canais radiculares. Fui esclarecido(a) sobre os possíveis riscos e complicações (dor ou desconforto pós-operatório, inchaço, fratura de instrumento, perfuração radicular, reações alérgicas e eventual necessidade de retratamento), bem como sobre as alternativas ao tratamento, incluindo a extração do dente. Tive a oportunidade de esclarecer minhas dúvidas e autorizo livremente a realização do procedimento. Estou ciente de que minhas informações de saúde são confidenciais, conforme a Lei 13.709/2018 (LGPD).';
+    const wrapped = doc.splitTextToSize(termo, contentW);
+    doc.text(wrapped, mL, y); y += wrapped.length*5 + 8;
+    // Bloco de assinatura
+    doc.setDrawColor(167,217,196); doc.setFillColor(228,243,236);
+    const boxH = 30; doc.roundedRect(mL, y, contentW, boxH, 3, 3, 'FD');
+    doc.setTextColor(15,93,91); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('Assinatura digital', mL+6, y+8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(40,40,40);
+    doc.text(`Assinado por: ${pname}`, mL+6, y+15);
+    doc.text(`Data/hora: ${signedStr}`, mL+6, y+21);
+    if(c.ip_address) doc.text(`IP: ${c.ip_address}`, mL+6, y+27);
+    y += boxH + 10;
+    // Rodapé
+    doc.setFontSize(7.5); doc.setTextColor(140,140,140);
+    doc.text(`Documento gerado eletronicamente pelo EndoDoc em ${docGenerated}. Assinatura registrada com data, hora e IP — validade conforme MP 2.200-2/2001.`, mL, 285, {maxWidth:contentW});
+    const safe = (pname||'paciente').replace(/[^a-z0-9]/gi,'_').toLowerCase();
+    doc.save(`TCLE_${safe}.pdf`);
+    toast('PDF gerado','ok');
+  }catch(e){
+    console.error(e);
+    toast('Erro ao gerar PDF: '+(e.message||e),'err');
   }
 }
 
