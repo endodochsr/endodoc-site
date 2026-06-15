@@ -8,7 +8,7 @@
 //   3. Tratar clique nas notificações (abre /app)
 // ============================================================
 
-const VERSION = 'endodoc-v1';
+const VERSION = 'endodoc-v2';
 const CACHE_STATIC = [
   '/app',
   '/brand/favicon.svg',
