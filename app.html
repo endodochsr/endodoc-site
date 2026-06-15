@@ -2328,9 +2328,37 @@ async function exportConsentPDF(){
   toast('Gerando PDF…','');
   try{
     const doc = new jsPDFCtor({ unit:'mm', format:'a4', orientation:'portrait' });
-    const pageW = 210, mL = 18, mR = 18, contentW = pageW - mL - mR;
+    const pageW = 210, pageH = 297, mL = 18, mR = 18, mB = 20, contentW = pageW - mL - mR;
     let y = 16;
-    // Cabeçalho
+
+    // helper: quebra de página automática
+    function ensure(space){
+      if(y + space > pageH - mB){ doc.addPage(); y = 18; }
+    }
+    // helper: parágrafo
+    function para(text, size=9.8, color=[45,45,45], lh=5){
+      doc.setFont('helvetica','normal'); doc.setFontSize(size); doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(text, contentW);
+      lines.forEach(line=>{ ensure(lh); doc.text(line, mL, y); y += lh; });
+    }
+    // helper: título de seção
+    function sectionTitle(text){
+      ensure(10); y += 3;
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(10,93,92);
+      doc.text(text, mL, y); y += 6;
+    }
+    // helper: bullet
+    function bullet(text){
+      doc.setFont('helvetica','normal'); doc.setFontSize(9.8); doc.setTextColor(45,45,45);
+      const lines = doc.splitTextToSize(text, contentW - 6);
+      lines.forEach((line,i)=>{
+        ensure(5);
+        if(i===0){ doc.setTextColor(10,93,92); doc.text('•', mL, y); doc.setTextColor(45,45,45); }
+        doc.text(line, mL+5, y); y += 5;
+      });
+    }
+
+    // ===== Cabeçalho =====
     const logoData = await (typeof getEndoLogoDataURL==='function' ? getEndoLogoDataURL() : Promise.resolve(null));
     if(logoData){ doc.addImage(logoData,'PNG',mL,y-2,16,16); }
     doc.setTextColor(10,93,92); doc.setFont('helvetica','bold'); doc.setFontSize(17);
@@ -2341,39 +2369,73 @@ async function exportConsentPDF(){
     doc.text(profName, pageW-mR, y+5, {align:'right'});
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(94,112,111);
     doc.text(profSpec, pageW-mR, y+10, {align:'right'});
-    y += 16; doc.setDrawColor(10,93,92); doc.setLineWidth(0.5); doc.line(mL,y,pageW-mR,y); y += 10;
-    // Dados
-    doc.setTextColor(22,48,47); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    y += 16; doc.setDrawColor(10,93,92); doc.setLineWidth(0.5); doc.line(mL,y,pageW-mR,y); y += 9;
+
+    // ===== Identificação =====
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(22,48,47);
     doc.text('Identificação', mL, y); y += 6;
     doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40);
-    const lines1 = [
+    [
       `Paciente: ${pname}`,
       `Procedimento: ${proc}`,
       dataConsulta ? `Data da consulta: ${dataConsulta}${hora?' às '+hora:''}` : '',
       b.office_name ? `Clínica: ${b.office_name}` : '',
-    ].filter(Boolean);
-    lines1.forEach(l=>{ doc.text(l, mL, y); y += 6; });
-    y += 4;
-    // Texto do termo
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(22,48,47);
-    doc.text('Declaração de consentimento', mL, y); y += 6;
-    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(40,40,40);
-    const termo = 'Declaro que fui informado(a) de forma clara sobre o procedimento de tratamento endodôntico (tratamento de canal), que consiste na remoção da polpa dental comprometida, limpeza, modelagem e obturação do sistema de canais radiculares. Fui esclarecido(a) sobre os possíveis riscos e complicações (dor ou desconforto pós-operatório, inchaço, fratura de instrumento, perfuração radicular, reações alérgicas e eventual necessidade de retratamento), bem como sobre as alternativas ao tratamento, incluindo a extração do dente. Tive a oportunidade de esclarecer minhas dúvidas e autorizo livremente a realização do procedimento. Estou ciente de que minhas informações de saúde são confidenciais, conforme a Lei 13.709/2018 (LGPD).';
-    const wrapped = doc.splitTextToSize(termo, contentW);
-    doc.text(wrapped, mL, y); y += wrapped.length*5 + 8;
-    // Bloco de assinatura
+    ].filter(Boolean).forEach(l=>{ ensure(6); doc.text(l, mL, y); y += 6; });
+
+    // ===== Termo completo (igual à página do paciente) =====
+    sectionTitle('1. Identificação do Procedimento');
+    para(`Você está sendo informado sobre o procedimento de ${proc}, a ser realizado pelo(a) ${profName||'profissional'}, endodontista.`);
+
+    sectionTitle('2. O que é o tratamento endodôntico?');
+    para('O tratamento endodôntico (popularmente chamado de "tratamento de canal") consiste na remoção da polpa dental infectada ou comprometida, limpeza, modelagem e obturação do sistema de canais radiculares. O objetivo é eliminar a infecção, aliviar a dor e preservar o dente natural.');
+
+    sectionTitle('3. Riscos e possíveis complicações');
+    para('Como em qualquer procedimento clínico, existem riscos, incluindo:');
+    [
+      'Dor ou desconforto pós-operatório, geralmente transitório (1 a 7 dias)',
+      'Inchaço ou sensibilidade na região tratada',
+      'Fratura de instrumento no interior do canal (raro, pode requerer procedimento adicional)',
+      'Perfuração radicular (rara)',
+      'Reação alérgica a materiais ou anestésicos (informar alergias ao profissional)',
+      'Necessidade de retreatamento endodôntico em casos de falha',
+      'Em casos de infecção grave, pode ser necessário tratamento complementar com antibióticos',
+    ].forEach(bullet);
+
+    sectionTitle('4. Alternativas ao tratamento');
+    para('A principal alternativa ao tratamento de canal é a extração do dente. O não tratamento pode levar à progressão da infecção, comprometendo dentes adjacentes e estruturas de suporte.');
+
+    sectionTitle('5. Seus direitos como paciente');
+    [
+      'Você pode fazer perguntas ao profissional antes, durante e após o procedimento',
+      'Você pode retirar este consentimento a qualquer momento antes do início do procedimento',
+      'Você tem direito a receber informações claras sobre seu diagnóstico e plano de tratamento',
+      'Suas informações de saúde são confidenciais (Lei 13.709/2018 — LGPD)',
+    ].forEach(bullet);
+
+    sectionTitle('6. Declaração de entendimento');
+    para('Declaro que li e compreendi as informações acima, que tive a oportunidade de esclarecer minhas dúvidas e que consinto livremente com a realização do procedimento descrito.');
+
+    // ===== Bloco de assinatura =====
+    y += 4; ensure(34);
     doc.setDrawColor(167,217,196); doc.setFillColor(228,243,236);
     const boxH = 30; doc.roundedRect(mL, y, contentW, boxH, 3, 3, 'FD');
     doc.setTextColor(15,93,91); doc.setFont('helvetica','bold'); doc.setFontSize(10);
-    doc.text('Assinatura digital', mL+6, y+8);
+    doc.text('Assinatura digital do paciente', mL+6, y+8);
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(40,40,40);
     doc.text(`Assinado por: ${pname}`, mL+6, y+15);
     doc.text(`Data/hora: ${signedStr}`, mL+6, y+21);
-    if(c.ip_address) doc.text(`IP: ${c.ip_address}`, mL+6, y+27);
-    y += boxH + 10;
-    // Rodapé
-    doc.setFontSize(7.5); doc.setTextColor(140,140,140);
-    doc.text(`Documento gerado eletronicamente pelo EndoDoc em ${docGenerated}. Assinatura registrada com data, hora e IP — validade conforme MP 2.200-2/2001.`, mL, 285, {maxWidth:contentW});
+    if(c.ip_address) doc.text(`IP de origem: ${c.ip_address}`, mL+6, y+27);
+    y += boxH + 8;
+
+    // ===== Rodapé (em todas as páginas) =====
+    const totalPages = doc.internal.getNumberOfPages();
+    for(let i=1;i<=totalPages;i++){
+      doc.setPage(i);
+      doc.setFontSize(7.5); doc.setTextColor(140,140,140);
+      doc.text(`Documento gerado eletronicamente pelo EndoDoc em ${docGenerated}. Assinatura registrada com data, hora e IP — validade conforme MP 2.200-2/2001.`, mL, pageH-12, {maxWidth:contentW});
+      doc.text(`Página ${i} de ${totalPages}`, pageW-mR, pageH-12, {align:'right'});
+    }
+
     const safe = (pname||'paciente').replace(/[^a-z0-9]/gi,'_').toLowerCase();
     doc.save(`TCLE_${safe}.pdf`);
     toast('PDF gerado','ok');
