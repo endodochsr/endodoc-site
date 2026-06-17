@@ -2445,6 +2445,105 @@ async function exportConsentPDF(){
   }
 }
 
+/* ===== Novo agendamento manual (pelo dentista) ===== */
+function openNewBooking(){
+  const hourOpts = SLOTS.map(s=>`<option value="${s}"${s==='09:00'?' selected':''}>${s}</option>`).join('');
+  const html = `<h3 style="font-family:'Fraunces',serif">＋ Nova consulta</h3>
+    <p class="sub">Você marca direto, já confirmada. O paciente recebe a anamnese e os lembretes no WhatsApp automaticamente.</p>
+    <form id="nbForm" onsubmit="event.preventDefault();saveNewBooking()" style="margin-top:10px">
+      <div class="section-title" style="margin-top:4px">Paciente</div>
+      <div class="row2">
+        <div class="field"><label>Nome do paciente *</label><input id="nbPatientName" required placeholder="Ex.: João da Silva"></div>
+        <div class="field"><label>WhatsApp do paciente *</label><input id="nbPatientPhone" required placeholder="(11) 90000-0000" inputmode="tel"></div>
+      </div>
+
+      <div class="section-title">Consultório</div>
+      <div class="row2">
+        <div class="field"><label>Nome da clínica *</label><input id="nbOfficeName" required placeholder="Ex.: Clínica Sorriso"></div>
+        <div class="field"><label>Telefone da clínica</label><input id="nbOfficePhone" placeholder="(11) 90000-0000" inputmode="tel"></div>
+      </div>
+      <div class="field"><label>Endereço (opcional)</label><input id="nbOfficeAddress" placeholder="Rua, número, bairro, cidade"></div>
+
+      <div class="section-title">Atendimento</div>
+      <div class="field"><label>Procedimento *</label><input id="nbProcedure" required value="Tratamento de canal" placeholder="Ex.: Tratamento de canal"></div>
+      <div class="row2">
+        <div class="field"><label>Data *</label><input type="date" id="nbDate" required min="${todayISO()}" value="${todayISO()}"></div>
+        <div class="field"><label>Horário de início *</label><select id="nbTime">${hourOpts}</select></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Duração</label>
+          <select id="nbDuration">
+            <option value="1" selected>1 hora</option>
+            <option value="2">2 horas</option>
+            <option value="3">3 horas</option>
+            <option value="4">4 horas</option>
+          </select>
+        </div>
+        <div class="field"><label>&nbsp;</label><div style="font-size:12px;color:var(--muted);padding-top:10px">Consultas longas reservam horários seguidos.</div></div>
+      </div>
+      <div class="field"><label>Observações (opcional)</label><textarea id="nbNotes" rows="2" placeholder="Anotações sobre o caso, retorno, etc."></textarea></div>
+
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="nbSaveBtn">Criar consulta</button>
+      </div>
+    </form>`;
+  showModal(html);
+}
+async function saveNewBooking(){
+  const name   = val('nbPatientName');
+  const phone  = val('nbPatientPhone');
+  const office = val('nbOfficeName');
+  const proc   = val('nbProcedure');
+  const date   = val('nbDate');
+  const time   = document.getElementById('nbTime').value;
+  const dur    = parseInt(document.getElementById('nbDuration').value,10) || 1;
+  const officePhone = val('nbOfficePhone');
+  const officeAddr  = val('nbOfficeAddress');
+  const notes  = val('nbNotes');
+
+  if(!name){ toast('Informe o nome do paciente','err'); return; }
+  if(phone.replace(/\D/g,'').length < 10){ toast('Telefone do paciente inválido','err'); return; }
+  if(!office){ toast('Informe o nome da clínica','err'); return; }
+  if(!proc){ toast('Informe o procedimento','err'); return; }
+  if(!date){ toast('Informe a data','err'); return; }
+
+  // monta horários consecutivos a partir do início
+  const startIdx = SLOTS.indexOf(time);
+  if(startIdx < 0){ toast('Horário inválido','err'); return; }
+  if(startIdx + dur > SLOTS.length){ toast('A consulta ultrapassa o último horário do dia','err'); return; }
+  const times = [];
+  for(let i=0;i<dur;i++) times.push(SLOTS[startIdx+i]+':00');
+
+  const btn = document.getElementById('nbSaveBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Criando…'; }
+  toast('Criando consulta…','');
+  try{
+    const { error } = await sb.rpc('create_booking_manual', {
+      p_date: date,
+      p_times: times,
+      p_office_name: office,
+      p_office_phone: officePhone || null,
+      p_procedure: proc,
+      p_patient_name: name,
+      p_patient_phone: phone,
+      p_office_responsible: null,
+      p_office_email: null,
+      p_notes: notes || null,
+      p_office_address: officeAddr || null,
+      p_office_lat: null,
+      p_office_lng: null,
+    });
+    if(error) throw error;
+    toast('✓ Consulta criada! Anamnese e lembretes enviados.','ok');
+    closeModal();
+    renderAgenda();
+  }catch(e){
+    if(btn){ btn.disabled = false; btn.textContent = 'Criar consulta'; }
+    toast('Erro: '+(e.message||e),'err');
+  }
+}
+
 /* ===== Prontuário com TIMELINE de evoluções por paciente ===== */
 async function openProntuario(bookingId){
   toast('Carregando…','');
@@ -3504,7 +3603,10 @@ function renderAgendaView(){
   const body = document.getElementById('appBody');
   const { month, selected, pending, active, totalEmpty } = window._agenda;
 
-  let html = `<div class="page-head"><h1>Agenda</h1><p>${active.length} confirmada(s)${pending.length?` · ${pending.length} aguardando sua confirmação`:''}.</p></div>`;
+  let html = `<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+    <div><h1>Agenda</h1><p>${active.length} confirmada(s)${pending.length?` · ${pending.length} aguardando sua confirmação`:''}.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="openNewBooking()" style="flex-shrink:0">+ Nova consulta</button>
+  </div>`;
 
   // estado vazio total: sem calendário, só CTA
   if(totalEmpty){
