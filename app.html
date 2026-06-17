@@ -2631,9 +2631,24 @@ async function openHistoryDetail(bookingId){
     sb.from('anamneses').select('id,sent_at,filled_at,answers,filled_at').eq('booking_id',bookingId).maybeSingle(),
     sb.from('consultation_reports').select('*').eq('booking_id',bookingId).maybeSingle(),
   ]);
-  const anam = anamRes.data;
+  let anam = anamRes.data;
   const rep = repRes.data;
   window._hdBk = bk;
+
+  // Fallback: atendimentos multi-slot (ex.: canal de 2h) têm a anamnese vinculada
+  // a apenas um dos slots. Se este booking não tem anamnese preenchida, procura
+  // entre os outros atendimentos do mesmo paciente na mesma data.
+  if((!anam || !anam.filled_at) && bk.patient_phone){
+    const { data:sameDay } = await sb.from('bookings')
+      .select('id').eq('patient_phone', bk.patient_phone).eq('slot_date', bk.slot_date);
+    const otherIds = (sameDay||[]).map(x=>x.id).filter(id=>id!==bookingId);
+    if(otherIds.length){
+      const { data:alt } = await sb.from('anamneses')
+        .select('id,sent_at,filled_at').in('booking_id', otherIds)
+        .not('filled_at','is',null).order('filled_at',{ascending:false}).limit(1);
+      if(alt && alt[0]) anam = alt[0];
+    }
+  }
 
   const dt = new Date(bk.slot_date+'T12:00:00');
   const dtStr = dt.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
