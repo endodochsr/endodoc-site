@@ -2628,7 +2628,7 @@ async function openHistoryDetail(bookingId){
   if(error || !bk){ toast('Erro ao carregar','err'); return; }
   // anamnese e relatório em paralelo
   const [anamRes, repRes] = await Promise.all([
-    sb.from('anamneses').select('id,sent_at,filled_at,answers,filled_at').eq('booking_id',bookingId).maybeSingle(),
+    sb.from('anamneses').select('id,sent_at,filled_at').eq('booking_id',bookingId).maybeSingle(),
     sb.from('consultation_reports').select('*').eq('booking_id',bookingId).maybeSingle(),
   ]);
   let anam = anamRes.data;
