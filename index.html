@@ -108,7 +108,16 @@
   .nav-cta .btn{padding:11px 22px;font-size:14.5px}
   .nav-cta .enter{color:rgba(255,255,255,.85);font-weight:600;font-size:14.5px;padding:11px 6px}
   .burger{display:none;background:none;border:none;font-size:26px;cursor:pointer;color:#fff}
-  @media(max-width:900px){.nav-links{display:none}.nav-cta .enter{display:none}}
+  .entrar-mob{display:none}
+  @media(max-width:900px){
+    .nav-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;background:rgba(6,38,42,.98);backdrop-filter:blur(16px);padding:8px 24px 16px;border-top:1px solid rgba(255,255,255,.1);box-shadow:0 24px 50px rgba(0,0,0,.4)}
+    .nav-links.mobopen{display:flex}
+    .nav-links a{padding:15px 4px;font-size:16px;border-bottom:1px solid rgba(255,255,255,.07)}
+    .nav-links a:last-child{border-bottom:none}
+    .entrar-mob{display:block;color:var(--cyan)!important;font-weight:700}
+    .nav-cta .enter{display:none}
+    .burger{display:block}
+  }
 
   /* ===== HERO ===== */
   .hero{background:var(--deep);color:#fff;position:relative;overflow:hidden;padding:34px 0 110px;margin-top:-78px;padding-top:120px}
@@ -351,6 +360,7 @@
       <a href="#ganhos">Seus ganhos</a>
       <a href="#planos">Planos</a>
       <a href="#duvidas">Dúvidas</a>
+      <a href="/app" class="entrar-mob">Entrar →</a>
     </div>
     <div class="nav-cta">
       <a href="/app" class="enter">Entrar</a>
@@ -704,6 +714,11 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
 }, { threshold:.12 });
 document.querySelectorAll('.rv').forEach(el => io.observe(el));
+
+// fecha o menu mobile ao clicar num link
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => document.querySelector('.nav-links').classList.remove('mobopen'));
+});
 
 document.querySelectorAll('.demo-tab').forEach(tab => {
   tab.addEventListener('click', () => {
