@@ -282,6 +282,30 @@
   .price-band .btn:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,0,0,.24)}
   .price-band .mini{font-size:13px;opacity:.92;margin-top:18px;position:relative;z-index:1}
 
+  /* ===== planos ===== */
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:stretch;max-width:1000px;margin:0 auto}
+  .plan{background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:32px 28px;box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative;transition:.22s}
+  .plan:hover{transform:translateY(-6px);box-shadow:0 26px 56px rgba(16,48,47,.16)}
+  .plan.pop{border:2px solid var(--accent);box-shadow:0 24px 56px rgba(255,122,71,.22);transform:scale(1.03)}
+  .plan.pop:hover{transform:scale(1.03) translateY(-6px)}
+  .plan .tag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--accent),var(--accent-d));color:#fff;font-size:12px;font-weight:800;letter-spacing:.04em;padding:6px 16px;border-radius:99px;white-space:nowrap;box-shadow:0 8px 20px rgba(255,122,71,.4)}
+  .plan .pname{font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:6px}
+  .plan .price{display:flex;align-items:baseline;gap:5px;margin-bottom:4px}
+  .plan .price .v{font-family:'Fraunces',serif;font-size:42px;font-weight:600;color:var(--ink)}
+  .plan .price .per{font-size:14.5px;color:var(--muted);font-weight:500}
+  .plan .permonth{font-size:13px;color:var(--muted);margin-bottom:10px}
+  .plan .save{display:inline-block;background:var(--accent-soft);color:var(--accent-d);font-weight:700;font-size:12px;padding:4px 12px;border-radius:99px;margin-bottom:14px;align-self:flex-start}
+  .plan .pnote{font-size:12.5px;color:var(--muted);margin:auto 0 18px}
+  .plan .btn{width:100%}
+  .plan .btn.soft{background:var(--primary-soft);color:var(--primary-d);box-shadow:none}
+  .plan .btn.soft:hover{background:#d3ebe9;transform:translateY(-2px)}
+  .included{max-width:760px;margin:34px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:28px 32px}
+  .inc-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin-bottom:18px;text-align:center}
+  .inc-list{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .inc-list li{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink2)}
+  .inc-list li .ck{flex-shrink:0;color:var(--primary);font-weight:800;margin-top:1px}
+  .price-foot{text-align:center;color:var(--muted);font-size:13.5px;margin-top:28px}
+  @media(max-width:860px){.plans{grid-template-columns:1fr;max-width:420px}.plan.pop{transform:none}.plan.pop:hover{transform:translateY(-6px)}.inc-list{grid-template-columns:1fr}}
   /* ===== faq ===== */
   .faq{max-width:800px;margin:0 auto;display:grid;gap:12px}
   details{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2px 24px;box-shadow:var(--shadow);transition:.2s}
@@ -325,6 +349,7 @@
       <a href="#como">Como funciona</a>
       <a href="#recursos">Recursos</a>
       <a href="#ganhos">Seus ganhos</a>
+      <a href="#planos">Planos</a>
       <a href="#duvidas">Dúvidas</a>
     </div>
     <div class="nav-cta">
@@ -572,15 +597,55 @@
   </div>
 </section>
 
-<!-- PRICING -->
-<section class="sec" style="background:var(--bg)">
+<!-- PLANOS -->
+<section class="sec" id="planos" style="background:var(--bg)">
   <div class="wrap">
-    <div class="price-band rv">
-      <h2>Comece hoje, pague só se gostar</h2>
-      <p>14 dias grátis, sem cartão de crédito. Configure seu link, receba os primeiros agendamentos e veja o EndoDoc trabalhar por você.</p>
-      <a href="/app" class="btn lg">Criar minha conta grátis</a>
-      <div class="mini">Sem fidelidade · cancele quando quiser · suporte de verdade</div>
+    <div class="sec-head rv">
+      <span class="eyebrow dark">Planos</span>
+      <h2>Um plano, do seu jeito</h2>
+      <p>Todos os recursos incluídos. Escolha como pagar — quanto maior o período, mais você economiza.</p>
     </div>
+    <div class="plans rv rv-d1">
+      <div class="plan">
+        <div class="pname">Mensal</div>
+        <div class="price"><span class="v">R$ 59</span><span class="per">/mês</span></div>
+        <div class="pnote">14 dias grátis, sem cartão</div>
+        <a class="btn soft" href="/app">Começar grátis</a>
+      </div>
+      <div class="plan pop">
+        <div class="tag">Mais popular</div>
+        <div class="pname">Anual</div>
+        <div class="price"><span class="v">R$ 566</span><span class="per">/ano</span></div>
+        <div class="permonth">equivale a R$ 47/mês</div>
+        <div class="save">Economize 20%</div>
+        <div class="pnote">14 dias grátis, sem cartão</div>
+        <a class="btn btn-primary" href="/app">Começar grátis</a>
+      </div>
+      <div class="plan">
+        <div class="pname">Semestral</div>
+        <div class="price"><span class="v">R$ 319</span><span class="per">/semestre</span></div>
+        <div class="permonth">equivale a R$ 53/mês</div>
+        <div class="save">Economize 10%</div>
+        <div class="pnote">14 dias grátis, sem cartão</div>
+        <a class="btn soft" href="/app">Começar grátis</a>
+      </div>
+    </div>
+    <div class="included rv rv-d1">
+      <div class="inc-title">Tudo incluído, em qualquer período</div>
+      <ul class="inc-list">
+        <li><span class="ck">✓</span> Link próprio de agendamento</li>
+        <li><span class="ck">✓</span> Anamnese no WhatsApp com análise por IA</li>
+        <li><span class="ck">✓</span> Relatório em PDF no WhatsApp em 30s</li>
+        <li><span class="ck">✓</span> Cobrança via PIX, sem taxa</li>
+        <li><span class="ck">✓</span> Consentimento digital (TCLE)</li>
+        <li><span class="ck">✓</span> Prontuário por voz com IA</li>
+        <li><span class="ck">✓</span> Financeiro por clínica</li>
+        <li><span class="ck">✓</span> Sincronização com Google Calendar</li>
+        <li><span class="ck">✓</span> Lembretes automáticos e follow-up</li>
+        <li><span class="ck">✓</span> Programa de indicação · 30 dias grátis por indicado</li>
+      </ul>
+    </div>
+    <p class="price-foot rv">Todos os períodos incluem 14 dias de teste grátis, sem cartão. Cobrança via Pix, cartão ou boleto.</p>
   </div>
 </section>
 
