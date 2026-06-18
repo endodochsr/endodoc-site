@@ -100,7 +100,7 @@
   nav.scrolled{background:rgba(6,38,42,.72);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08)}
   .logo{display:flex;align-items:center;gap:9px;font-family:'Fraunces',serif;font-weight:600;font-size:21px;color:#fff}
   .logo img{width:44px;height:44px;margin:-9px -4px}
-  .logo span{color:var(--cyan)}
+  .logo .lname{display:inline}.logo .lname b{color:var(--cyan);font-weight:inherit}
   .nav-links{display:flex;gap:30px;align-items:center}
   .nav-links a{font-size:14.5px;font-weight:600;color:rgba(255,255,255,.78);transition:.15s}
   .nav-links a:hover{color:#fff}
@@ -301,7 +301,7 @@
   /* footer */
   footer{background:var(--deeper);color:rgba(255,255,255,.66);padding:54px 0 32px;font-size:14px}
   .foot{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:flex-start}
-  .foot .logo{color:#fff;font-size:22px}.foot .logo span{color:var(--cyan)}
+  .foot .logo{color:#fff;font-size:22px}.foot .logo .lname b{color:var(--cyan)}
   .foot a{color:rgba(255,255,255,.66)}.foot a:hover{color:#fff}
   .foot-col h5{color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:13px;font-family:'Inter',sans-serif;font-weight:700}
   .foot-col a{display:block;margin-bottom:9px}
@@ -320,7 +320,7 @@
 <!-- NAV -->
 <nav id="nav">
   <div class="nav-in">
-    <a href="#topo" class="logo"><img src="/brand/favicon.svg" alt="EndoDoc">Endo<span>Doc</span></a>
+    <a href="#topo" class="logo"><img src="/brand/favicon.svg" alt="EndoDoc"><span class="lname">Endo<b>Doc</b></span></a>
     <div class="nav-links">
       <a href="#como">Como funciona</a>
       <a href="#recursos">Recursos</a>
@@ -616,7 +616,7 @@
 <footer>
   <div class="wrap foot">
     <div style="max-width:290px">
-      <a href="#topo" class="logo">Endo<span>Doc</span></a>
+      <a href="#topo" class="logo"><span class="lname">Endo<b>Doc</b></span></a>
       <p style="margin-top:13px;font-size:13.5px;line-height:1.6">O sistema completo pra quem faz endodontia delivery: agenda, anamnese com IA, relatório, cobrança e financeiro num app só.</p>
     </div>
     <div class="foot-col"><h5>Produto</h5><a href="#como">Como funciona</a><a href="#recursos">Recursos</a><a href="#ganhos">Seus ganhos</a><a href="/app">Entrar</a></div>
