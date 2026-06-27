@@ -1,20 +1,28 @@
 /* ============================================================
-   EndoDoc — Meta Pixel + Cookie Consent (LGPD)
+   EndoDoc — Meta Pixel + GA4 + Cookie Consent (LGPD)
    ------------------------------------------------------------
    Único script que cuida de:
-   - Banner de cookies (aceitar/rejeitar/configurar)
+   - Banner de cookies (aceitar/rejeitar)
    - Persistência da escolha em localStorage
-   - Carregamento condicional do Meta Pixel (só após consentimento)
-   - Exposição de window.fbqTrack() pra disparar eventos do app
+   - Google Consent Mode v2:
+       • GA4 carrega SEMPRE, mas sem cookies até o aceite.
+         Sem consentimento, envia pings anônimos (cookieless) que o
+         Google usa pra MODELAR as visitas — recupera tráfego de
+         anúncios que sai sem aceitar cookies, de forma compatível
+         com a LGPD.
+       • Ao aceitar, o consentimento é atualizado pra "granted" e
+         o GA passa a usar cookies (medição completa).
+   - Meta Pixel: carrega só após consentimento.
+   - Exposição de window.fbqTrack() / gaTrack() / trackEvent().
 
    Como usar:
    Inclua em todas as páginas, ANTES do </body>:
      <script src="/js/meta-pixel-cookies.js" defer></script>
 
    Pra disparar eventos depois do carregamento:
-     window.fbqTrack('Lead');
-     window.fbqTrack('CompleteRegistration', { value: 0 });
-     window.fbqTrack('Subscribe', { value: 59, currency: 'BRL' });
+     window.trackEvent('Lead');
+     window.trackEvent('CompleteRegistration', { value: 0 });
+     window.trackEvent('Subscribe', { value: 59, currency: 'BRL' });
 ============================================================ */
 
 (function(){
@@ -26,6 +34,10 @@
 
   const STORAGE_KEY = 'endodoc-cookie-consent-v1';
 
+  // ===== gtag disponível desde já (necessário pro Consent Mode) =====
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function(){ window.dataLayer.push(arguments); };
+
   // ===== Estado: lê escolha salva =====
   function getConsent(){
     try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)); }
@@ -35,7 +47,53 @@
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(value)); }catch(e){}
   }
 
-  // ===== Carrega o Pixel da Meta =====
+  // ===== Consent Mode v2: define o estado padrão ANTES de carregar tags =====
+  function initConsentMode(){
+    const consent = getConsent();
+    const granted = !!(consent && consent.marketing);
+    const state = granted ? 'granted' : 'denied';
+    gtag('consent', 'default', {
+      ad_storage:            state,
+      ad_user_data:          state,
+      ad_personalization:    state,
+      analytics_storage:     state,
+      functionality_storage: 'granted',
+      security_storage:      'granted'
+    });
+    // Mantém a atribuição funcionando mesmo sem cookies
+    gtag('set', 'url_passthrough', true);
+    gtag('set', 'ads_data_redaction', true);
+  }
+
+  // ===== GA4 — carrega SEMPRE (Consent Mode envia pings anônimos sem cookie) =====
+  function loadGA4(){
+    if(window._ga4Loaded) return;
+    if(!GA4_ID || GA4_ID === '__GA4_ID_PLACEHOLDER__'){
+      console.warn('GA4 Measurement ID não configurado ainda');
+      return;
+    }
+    window._ga4Loaded = true;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
+    document.head.appendChild(s);
+    gtag('js', new Date());
+    gtag('config', GA4_ID, {
+      anonymize_ip: true,             // LGPD: anonimiza último octeto do IP
+      allow_google_signals: false,    // Não compartilha com Google Ads sem consent explícito
+      send_page_view: true            // Dispara PageView automático
+    });
+
+    // Disparar eventos que foram enfileirados
+    if(window._ga4Queue && Array.isArray(window._ga4Queue)){
+      for(const ev of window._ga4Queue){
+        try{ gtag('event', ev.event, ev.params || {}); }catch(_){}
+      }
+      window._ga4Queue = [];
+    }
+  }
+
+  // ===== Carrega o Pixel da Meta (só após consentimento) =====
   function loadPixel(){
     if(window._pixelLoaded) return;
     if(!PIXEL_ID || PIXEL_ID === '__PIXEL_ID_PLACEHOLDER__'){
@@ -62,40 +120,8 @@
     }
   }
 
-  // ===== Carrega o Google Analytics 4 =====
-  function loadGA4(){
-    if(window._ga4Loaded) return;
-    if(!GA4_ID || GA4_ID === '__GA4_ID_PLACEHOLDER__'){
-      console.warn('GA4 Measurement ID não configurado ainda');
-      return;
-    }
-    window._ga4Loaded = true;
-    // gtag.js — script oficial do GA4
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
-    document.head.appendChild(s);
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function(){ window.dataLayer.push(arguments); };
-    gtag('js', new Date());
-    gtag('config', GA4_ID, {
-      anonymize_ip: true,             // LGPD: anonimiza último octeto do IP
-      allow_google_signals: false,    // Não compartilha com Google Ads sem consent explícito
-      send_page_view: true            // Dispara PageView automático
-    });
-
-    // Disparar eventos que foram enfileirados
-    if(window._ga4Queue && Array.isArray(window._ga4Queue)){
-      for(const ev of window._ga4Queue){
-        try{ gtag('event', ev.event, ev.params || {}); }catch(_){}
-      }
-      window._ga4Queue = [];
-    }
-  }
-
-  // Função pública pra disparar eventos
+  // Função pública pra disparar eventos no Meta Pixel
   window.fbqTrack = function(event, params){
-    // Se Pixel não carregou ainda (sem consentimento ou ID), enfileira
     if(typeof fbq === 'undefined'){
       window._pixelQueue = window._pixelQueue || [];
       window._pixelQueue.push({ event, params: params || {} });
@@ -106,7 +132,7 @@
 
   // Função pública pra disparar eventos no Google Analytics
   window.gaTrack = function(event, params){
-    if(typeof gtag === 'undefined'){
+    if(!window._ga4Loaded){
       window._ga4Queue = window._ga4Queue || [];
       window._ga4Queue.push({ event, params: params || {} });
       return;
@@ -114,7 +140,7 @@
     try{ gtag('event', event, params || {}); }catch(e){}
   };
 
-  // Helper: dispara o evento NOS DOIS (Meta + Google) — usa quando faz sentido pra ambos
+  // Helper: dispara o evento NOS DOIS (Meta + Google)
   window.trackEvent = function(event, params){
     if(window.fbqTrack) window.fbqTrack(event, params);
     if(window.gaTrack) window.gaTrack(event, params);
@@ -171,13 +197,25 @@
   window._cookieAccept = function(){
     setConsent({ marketing: true, ts: Date.now() });
     hideBanner();
+    // Consent Mode: libera cookies/medição completa
+    gtag('consent', 'update', {
+      ad_storage:         'granted',
+      ad_user_data:       'granted',
+      ad_personalization: 'granted',
+      analytics_storage:  'granted'
+    });
     loadPixel();
-    loadGA4();
   };
   window._cookieReject = function(){
     setConsent({ marketing: false, ts: Date.now() });
     hideBanner();
-    // não carrega Pixel nem GA4
+    // Consent Mode: mantém negado (GA segue só com pings anônimos; Pixel não carrega)
+    gtag('consent', 'update', {
+      ad_storage:         'denied',
+      ad_user_data:       'denied',
+      ad_personalization: 'denied',
+      analytics_storage:  'denied'
+    });
   };
   // Função pública pra reabrir o banner (link no footer)
   window.openCookieSettings = function(){
@@ -187,16 +225,18 @@
 
   // ===== Boot =====
   function boot(){
+    initConsentMode();   // define o estado de consentimento (default)
+    loadGA4();           // GA4 carrega SEMPRE (com ou sem cookies)
+
     const consent = getConsent();
     if(consent === null){
-      // primeira visita — mostra banner
+      // primeira visita — mostra banner (GA já roda em modo anônimo)
       renderBanner();
     } else if(consent.marketing){
-      // já aceitou — carrega Pixel + GA4 direto
+      // já aceitou antes — carrega o Pixel também
       loadPixel();
-      loadGA4();
     }
-    // se rejeitou, não faz nada
+    // se rejeitou: GA segue em modo anônimo, Pixel não carrega
   }
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', boot);
