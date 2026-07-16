@@ -140,6 +140,49 @@
     .slot-dot{font-size:8.5px;line-height:1;white-space:nowrap}
     .legend{justify-content:center;font-size:12px}
   }
+  /* ===== Redesign (mockup) ===== */
+  .pub-banner{display:none}
+  .pub-top{display:none}
+  .pub-hero{padding:0 24px 44px}
+  .pub-hero-bar{position:relative;z-index:3;max-width:760px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:22px 0 30px}
+  .pub-hero-bar .logo{color:#fff;font-size:20px;gap:6px}
+  .pub-hero-bar .logo .mark{width:50px;height:50px;margin:-12px -4px}
+  .pub-hero-bar .logo .lg-doc{color:var(--accent)}
+  .pub-secure{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:rgba(255,255,255,.82);font-weight:500}
+  .pub-secure svg{width:17px;height:17px;stroke:var(--accent)}
+  .pub-tooth-wm{position:absolute;right:-30px;top:60px;width:300px;height:300px;opacity:.07;z-index:1;pointer-events:none;color:#fff}
+  .pub-tooth-wm svg{width:100%;height:100%}
+  .pub-hero-inner{align-items:center;gap:30px}
+  .pub-name{font-size:38px}
+  .pub-specialty{background:transparent;border:none;border-bottom:2px solid var(--accent);border-radius:0;padding:0 0 8px;margin-top:8px;color:var(--accent);font-size:13.5px;letter-spacing:.09em;font-weight:700}
+  .pub-desc{font-size:15px;color:rgba(255,255,255,.82);margin-top:16px;line-height:1.55;max-width:440px}
+  .pub-tagline{display:none}
+  /* Como funciona — cards teal */
+  .pub-howit{gap:16px}
+  .pub-step{background:var(--primary-d);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px 18px;text-align:left;display:flex;gap:14px;align-items:flex-start;box-shadow:0 10px 26px rgba(8,48,48,.14)}
+  .pub-step .stico{flex-shrink:0;color:var(--accent);width:30px;height:30px}
+  .pub-step .stico svg{width:30px;height:30px}
+  .pub-step .sthead{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .pub-step .num{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--primary-d);font-family:'Fraunces',serif;font-weight:700;font-size:13px;margin:0;flex-shrink:0}
+  .pub-step .t{font-size:15px;font-weight:700;color:#fff;margin:0}
+  .pub-step .s{font-size:12.5px;color:rgba(255,255,255,.62);line-height:1.45}
+  .pub-section-head h3{font-size:22px}
+  /* Calendário — legenda no topo */
+  .cal-head{align-items:flex-start}
+  .cal-head-left{display:flex;flex-direction:column;gap:8px}
+  .cal-legend-top{display:flex;gap:14px;flex-wrap:wrap}
+  .cal-legend-top span{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .cal-legend-top i{width:12px;height:12px;border-radius:4px;display:inline-block}
+  .cal-cell.avail .num{color:var(--primary-d)}
+  .cal-cell.sel{background:var(--primary-d)!important;color:#fff!important;border-color:var(--primary-d)!important}
+  .cal-cell.sel .num,.cal-cell.sel .slot-dot{color:#fff!important}
+  @media(max-width:560px){
+    .pub-hero-bar{padding:16px 0 22px}
+    .pub-name{font-size:27px}
+    .pub-desc{margin-left:auto;margin-right:auto}
+    .pub-step{padding:16px 14px}
+    .pub-tooth-wm{display:none}
+  }
 </style>
 <style>
   /* Modo embed (?embed=1): esconde cabeçalho fixo para incorporar só a agenda */
@@ -223,19 +266,22 @@ function render(){
   const fotoHtml = prof.avatar_url
     ? `<img src="${esc(prof.avatar_url)}" alt="">`
     : esc(av);
-  const heroHtml = `<div class="pub-hero"><div class="pub-hero-inner">
-    <div class="pub-photo-wrap"><div class="pub-photo">${fotoHtml}</div></div>
-    <div>
-      <div class="pub-name">${esc(prof.name||'')}</div>
-      <div class="pub-specialty">${esc(prof.specialty||'Endodontia')}${prof.cro&&prof.cro_uf?` · CRO ${esc(prof.cro)}/${esc(prof.cro_uf)}`:''}</div>
-      <div class="pub-tagline">Atendimento no seu consultório, com agendamento online.</div>
+  const heroHtml = `<div class="pub-hero">
+    <div class="pub-tooth-wm"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C9 2 8 4 6 4S3 3 3 6c0 4 1.5 6 2 9 .4 2.4.6 5 2 5s1.5-3 2-5c.3-1.2.5-2 3-2s2.7.8 3 2c.5 2 .8 5 2 5s1.6-2.6 2-5c.5-3 2-5 2-9 0-3-1-2-3-2s-3-2-6-2Z"/></svg></div>
+    <div class="pub-hero-bar">
+      <div class="logo"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><span>Endo<span class="lg-doc">Doc</span></span></div>
+      <span class="pub-secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Agendamento seguro</span>
     </div>
-  </div></div>`;
-  const badgesHtml = `<div class="pub-badges">
-    <div class="pub-badge"><div class="ico">🦷</div><div class="t">Atendimento delivery</div><div class="s">Vou até o seu consultório</div></div>
-    <div class="pub-badge"><div class="ico">📅</div><div class="t">Agenda online</div><div class="s">Sem WhatsApp, sem espera</div></div>
-    <div class="pub-badge"><div class="ico">✓</div><div class="t">Confirmação automática</div><div class="s">Pelo Google Agenda</div></div>
+    <div class="pub-hero-inner">
+      <div class="pub-photo-wrap"><div class="pub-photo">${fotoHtml}</div></div>
+      <div>
+        <div class="pub-name">${esc(prof.name||'')}</div>
+        <div class="pub-specialty">${esc((prof.specialty||'Endodontia').toUpperCase())}${prof.cro&&prof.cro_uf?` · CRO ${esc(prof.cro)}/${esc(prof.cro_uf)}`:''}</div>
+        <div class="pub-desc">Atendimento endodôntico especializado no seu consultório, com agendamento online.</div>
+      </div>
+    </div>
   </div>`;
+  const badgesHtml = '';
   const bioHtml = prof.bio && prof.bio.trim()
     ? `<div class="pub-bio"><div class="pub-bio-inner">${esc(prof.bio)}</div></div>`
     : '';
@@ -246,12 +292,15 @@ function render(){
          <div class="pub-proc-pills">${procs.map(p=>`<span class="pub-proc-pill">${esc(p)}</span>`).join('')}</div>
        </div>`
     : '';
+  const icoCal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>';
+  const icoClip = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>';
+  const icoCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
   const howHtml = `<div class="pub-section">
     <div class="pub-section-head"><span class="dot"></span><h3>Como funciona</h3></div>
     <div class="pub-howit">
-      <div class="pub-step"><div class="num">1</div><div class="t">Escolha o dia</div><div class="s">Veja os horários livres no calendário abaixo</div></div>
-      <div class="pub-step"><div class="num">2</div><div class="t">Preencha o consultório</div><div class="s">Nome, endereço e o procedimento</div></div>
-      <div class="pub-step"><div class="num">3</div><div class="t">Confirmação na hora</div><div class="s">O profissional recebe e sincroniza na agenda</div></div>
+      <div class="pub-step"><div class="stico">${icoCal}</div><div class="stbody"><div class="sthead"><span class="num">1</span><span class="t">Escolha o dia</span></div><div class="s">Veja os horários livres no calendário abaixo.</div></div></div>
+      <div class="pub-step"><div class="stico">${icoClip}</div><div class="stbody"><div class="sthead"><span class="num">2</span><span class="t">Preencha o consultório</span></div><div class="s">Informe o nome, endereço e os procedimentos desejados.</div></div></div>
+      <div class="pub-step"><div class="stico">${icoCheck}</div><div class="stbody"><div class="sthead"><span class="num">3</span><span class="t">Confirmação na hora</span></div><div class="s">Você recebe a confirmação e sincronizamos com sua agenda.</div></div></div>
     </div>
   </div>`;
   const body = (prof.accepting_bookings===false)
@@ -299,11 +348,13 @@ function calendarHTML(){
   const total = start + days;
   const pad = (7 - (total % 7)) % 7;
   for(let i=0;i<pad;i++) cells+='<div class="cal-cell empty"></div>';
-  return `<div class="cal-head"><div class="cal-month">${MES[m]} ${y}</div>
-    <div class="cal-nav"><button onclick="moveMonth(-1)">‹</button><button onclick="moveMonth(1)">›</button></div></div>
+  return `<div class="cal-head">
+      <div class="cal-head-left"><div class="cal-nav"><button onclick="moveMonth(-1)">‹</button><button onclick="moveMonth(1)">›</button></div></div>
+      <div class="cal-month">${MES[m]} ${y}</div>
+      <div class="cal-legend-top"><span><i style="background:var(--primary-soft)"></i> Disponível</span><span><i style="background:#fafcfc;border:1px solid var(--border)"></i> Indisponível</span></div>
+    </div>
     <div class="cal-grid">${DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('')}</div>
-    <div class="cal-grid" style="margin-top:7px">${cells}</div>
-    <div class="legend"><span><i style="background:var(--primary-soft)"></i> Disponível</span><span><i style="background:#fafcfc;border:1px solid var(--border)"></i> Indisponível</span></div>`;
+    <div class="cal-grid" style="margin-top:7px">${cells}</div>`;
 }
 function moveMonth(n){calRef.setMonth(calRef.getMonth()+n);render();}
 
