@@ -2973,7 +2973,7 @@ function formatPhone(d){
 }
 function renderAnamnesePill(bookingId){
   const a = (window._anamMap||{})[bookingId];
-  if(!a) return '<span class="pill anam-wait">⏳ Anamnese: aguardando envio</span>';
+  if(!a) return `<button class="pill anam-wait" onclick="sendAnamneseNow('${bookingId}')" title="Clique para enviar a anamnese pro WhatsApp do paciente">📤 Enviar anamnese</button>`;
   if(a.filled_at){
     return `<button class="pill anam-done" onclick="viewAnamnese('${a.id}')">📋 Ver anamnese</button>`;
   }
@@ -2981,7 +2981,7 @@ function renderAnamnesePill(bookingId){
     return `<span class="pill anam-sent">📤 Anamnese enviada</span>
             <button class="pill" onclick="resendAnamnese('${bookingId}')">Reenviar</button>`;
   }
-  return '<span class="pill anam-wait">⏳ Anamnese: aguardando envio</span>';
+  return `<button class="pill anam-wait" onclick="sendAnamneseNow('${bookingId}')" title="Clique para enviar a anamnese pro WhatsApp do paciente">📤 Enviar anamnese</button>`;
 }
 
 /* ===== Marcar como realizado ===== */
@@ -4258,6 +4258,15 @@ async function resendAnamnese(bookingId){
   const { error } = await sb.rpc('request_anamnese_resend',{p_booking_id:bookingId});
   if(error){ toast('Erro: '+error.message,'err'); return; }
   toast('Mensagem reenviada!','ok');
+}
+// Envia a anamnese na hora (cria se ainda não existe — usado no estado "aguardando")
+async function sendAnamneseNow(bookingId){
+  if(!confirm('Enviar a anamnese pro WhatsApp do paciente agora?')) return;
+  toast('Enviando anamnese…','');
+  const { error } = await sb.rpc('send_anamnese_now',{p_booking_id:bookingId});
+  if(error){ toast('Erro: '+(error.message||error),'err'); return; }
+  toast('✓ Anamnese enviada pro paciente!','ok');
+  setTimeout(()=>renderAgenda(), 800);
 }
 
 /* ===== histórico ===== */
