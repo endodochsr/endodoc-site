@@ -143,7 +143,18 @@
   /* ===== Redesign (mockup) ===== */
   .pub-banner{display:none}
   .pub-top{display:none}
-  .pub-hero{padding:0 24px 44px}
+  .pub-hero{padding:0 24px 44px;background:#06262a}
+  /* Fundo escuro + aurora animada (igual à home) */
+  .pub-hero .aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+  .pub-hero .aurora::before,.pub-hero .aurora::after{content:"";position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+  .pub-hero .aurora::before{width:600px;height:600px;background:radial-gradient(circle,#13a89e,transparent 60%);top:-200px;right:-120px;animation:drift1 16s ease-in-out infinite}
+  .pub-hero .aurora::after{width:520px;height:520px;background:radial-gradient(circle,#ff7a47,transparent 62%);bottom:-200px;left:-100px;animation:drift2 19s ease-in-out infinite}
+  .pub-hero .aurora .blob3{position:absolute;width:440px;height:440px;border-radius:50%;filter:blur(100px);opacity:.4;background:radial-gradient(circle,#5fe3c8,transparent 60%);top:20%;left:40%;animation:drift1 22s ease-in-out infinite reverse}
+  @keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(-60px,50px)}}
+  @keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(70px,-40px)}}
+  .pub-hero .grid-ov{position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:54px 54px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 20%,#000 40%,transparent 80%);mask-image:radial-gradient(ellipse 80% 70% at 50% 20%,#000 40%,transparent 80%)}
+  @media(prefers-reduced-motion:reduce){.pub-hero .aurora::before,.pub-hero .aurora::after,.pub-hero .aurora .blob3{animation:none}}
+  .pub-hero::before{display:none}
   .pub-hero-bar{position:relative;z-index:3;max-width:760px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:22px 0 30px}
   .pub-hero-bar .logo{color:#fff;font-size:20px;gap:6px}
   .pub-hero-bar .logo .mark{width:50px;height:50px;margin:-12px -4px}
@@ -267,6 +278,8 @@ function render(){
     ? `<img src="${esc(prof.avatar_url)}" alt="">`
     : esc(av);
   const heroHtml = `<div class="pub-hero">
+    <div class="aurora"><div class="blob3"></div></div>
+    <div class="grid-ov"></div>
     <div class="pub-tooth-wm"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C9 2 8 4 6 4S3 3 3 6c0 4 1.5 6 2 9 .4 2.4.6 5 2 5s1.5-3 2-5c.3-1.2.5-2 3-2s2.7.8 3 2c.5 2 .8 5 2 5s1.6-2.6 2-5c.5-3 2-5 2-9 0-3-1-2-3-2s-3-2-6-2Z"/></svg></div>
     <div class="pub-hero-bar">
       <div class="logo"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><span>Endo<span class="lg-doc">Doc</span></span></div>
