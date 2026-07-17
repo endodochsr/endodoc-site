@@ -148,7 +148,7 @@
   .pub-hero .aurora{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   .pub-hero .aurora::before,.pub-hero .aurora::after{content:"";position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
   .pub-hero .aurora::before{width:600px;height:600px;background:radial-gradient(circle,#13a89e,transparent 60%);top:-200px;right:-120px;animation:drift1 16s ease-in-out infinite}
-  .pub-hero .aurora::after{width:520px;height:520px;background:radial-gradient(circle,#ff7a47,transparent 62%);bottom:-200px;left:-100px;animation:drift2 19s ease-in-out infinite}
+  .pub-hero .aurora::after{width:520px;height:520px;background:radial-gradient(circle,#0e9d92,transparent 62%);bottom:-200px;left:-100px;animation:drift2 19s ease-in-out infinite}
   .pub-hero .aurora .blob3{position:absolute;width:440px;height:440px;border-radius:50%;filter:blur(100px);opacity:.4;background:radial-gradient(circle,#5fe3c8,transparent 60%);top:20%;left:40%;animation:drift1 22s ease-in-out infinite reverse}
   @keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(-60px,50px)}}
   @keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(70px,-40px)}}
@@ -161,8 +161,9 @@
   .pub-hero-bar .logo .lg-doc{color:var(--accent)}
   .pub-secure{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:rgba(255,255,255,.82);font-weight:500}
   .pub-secure svg{width:17px;height:17px;stroke:var(--accent)}
-  .pub-tooth-wm{position:absolute;right:-30px;top:60px;width:300px;height:300px;opacity:.07;z-index:1;pointer-events:none;color:#fff}
+  .pub-tooth-wm{position:absolute;right:-10px;top:40px;width:250px;height:300px;opacity:.10;z-index:1;pointer-events:none;color:#fff}
   .pub-tooth-wm svg{width:100%;height:100%}
+  .pub-tooth-wm img{width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1)}
   .pub-hero-inner{align-items:center;gap:30px}
   .pub-name{font-size:38px}
   .pub-specialty{background:transparent;border:none;border-bottom:2px solid var(--accent);border-radius:0;padding:0 0 8px;margin-top:8px;color:var(--accent);font-size:13.5px;letter-spacing:.09em;font-weight:700}
@@ -279,8 +280,7 @@ function render(){
     : esc(av);
   const heroHtml = `<div class="pub-hero">
     <div class="aurora"><div class="blob3"></div></div>
-    <div class="grid-ov"></div>
-    <div class="pub-tooth-wm"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C9 2 8 4 6 4S3 3 3 6c0 4 1.5 6 2 9 .4 2.4.6 5 2 5s1.5-3 2-5c.3-1.2.5-2 3-2s2.7.8 3 2c.5 2 .8 5 2 5s1.6-2.6 2-5c.5-3 2-5 2-9 0-3-1-2-3-2s-3-2-6-2Z"/></svg></div>
+    <div class="pub-tooth-wm"><img src="/dente1.png" alt="" onerror="this.parentNode.style.display='none'"></div>
     <div class="pub-hero-bar">
       <div class="logo"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><span>Endo<span class="lg-doc">Doc</span></span></div>
       <span class="pub-secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Agendamento seguro</span>
