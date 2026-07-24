@@ -3120,6 +3120,7 @@ function showReportModal(){
         <div class="rep-grid-2" style="margin-top:10px">
           <div class="rep-field"><label>Retorno sugerido</label><input name="retorno" value="${esc(r.retorno||'')}" placeholder="Ex: 12 meses"></div>
         </div>
+        <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="criarLembreteRetorno()" title="Abre o Google Agenda com o lembrete de retorno pré-preenchido">📅 Criar lembrete de retorno no Google Agenda</button>
       </div>
 
       <div class="rep-section">
@@ -3329,6 +3330,43 @@ function updatePhotoLegenda(type, idx, val){
   while(arr.length <= idx) arr.push('');
   arr[idx] = val;
   r[key] = arr;
+}
+/* Abre o Google Agenda com o lembrete de retorno do paciente pré-preenchido */
+function criarLembreteRetorno(){
+  const data = readReportForm() || window._report;
+  const bk = (window._report && window._report.booking) || {};
+  const paciente = bk.patient_name || 'Paciente';
+  const dente = (data.dente||'').trim();
+  const retorno = (data.retorno||'').trim();
+  // calcula a data a partir do "retorno sugerido" (ex.: "8 meses", "1 ano")
+  const d = new Date(); d.setHours(9,0,0,0);
+  const m = retorno.match(/(\d+)\s*(ano|anos|m[eê]s|meses|semana|semanas|dia|dias)/i);
+  if(m){
+    const n = parseInt(m[1],10);
+    if(/ano/i.test(m[2])) d.setFullYear(d.getFullYear()+n);
+    else if(/semana/i.test(m[2])) d.setDate(d.getDate()+n*7);
+    else if(/dia/i.test(m[2])) d.setDate(d.getDate()+n);
+    else d.setMonth(d.getMonth()+n);
+  } else {
+    d.setMonth(d.getMonth()+6); // padrão: 6 meses
+  }
+  const ymd = dt=>dt.getFullYear()+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getDate()).padStart(2,'0');
+  const dFim = new Date(d); dFim.setDate(dFim.getDate()+1);
+  const titulo = `Retorno endodôntico — ${paciente}${dente?' (dente '+dente+')':''}`;
+  const detalhes = [
+    dente?`Dente: ${dente}`:'',
+    data.diagnostico?`Diagnóstico: ${data.diagnostico}`:'',
+    bk.office_name?`Clínica: ${bk.office_name}`:'',
+    bk.patient_phone?`WhatsApp: ${bk.patient_phone}`:'',
+    retorno?`Retorno sugerido: ${retorno}`:'',
+    '— Lembrete gerado pelo EndoDoc'
+  ].filter(Boolean).join('\n');
+  const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    + '&text=' + encodeURIComponent(titulo)
+    + '&dates=' + ymd(d) + '/' + ymd(dFim)
+    + '&details=' + encodeURIComponent(detalhes);
+  window.open(url, '_blank');
+  toast('Abrindo o Google Agenda…','ok');
 }
 function compressImage(file, maxDim, quality){
   return new Promise((resolve,reject)=>{
@@ -3619,6 +3657,11 @@ async function buildReportPDF(){
       const ctaMM = ctaCanvas.height * pageW / ctaCanvas.width;
       if(lastEndMM > pageH - ctaMM - 4){ pdf.addPage(); fillCream(); }
       pdf.addImage(ctaCanvas.toDataURL('image/jpeg',0.92), 'JPEG', 0, pageH - ctaMM, pageW, ctaMM);
+      // "Agendar consulta" clicável → página pública de agendamento do dentista
+      const slug = (prof && prof.slug) || '';
+      if(slug){
+        try{ pdf.link(0, pageH - ctaMM, pageW, ctaMM, { url: 'https://endodoc.com.br/'+slug }); }catch(_){}
+      }
     }
     return pdf;
   } catch(e){
