@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
   :root{--bg:#eef4f3;--surface:#fff;--surface-2:#f0f5f4;--ink:#16302f;--muted:#5e706f;--primary:#0e7c7b;--primary-v:#13a89e;--primary-d:#0a5d5c;--deep:#06262a;--cyan:#5fe3c8;--primary-soft:#e3f1f0;--accent:#c2a063;--success:#2e7d57;--success-soft:#e4f3ec;--danger:#c0492f;--danger-soft:#fbeae6;--border:#e7eeed;--shadow:0 1px 2px rgba(16,48,47,.04),0 10px 30px rgba(16,48,47,.07);--shadow-lg:0 20px 50px rgba(16,48,47,.18)}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -620,6 +621,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 /* ===== CONFIG (chaves públicas) ===== */
 const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
@@ -3090,6 +3092,9 @@ function showReportModal(){
           <div class="rep-field"><label>Sistema</label><input name="sistema" value="${esc(r.sistema||'')}" placeholder="Ex: Univy Sense"></div>
           <div class="rep-field"><label>Cimento</label><input name="cimento" value="${esc(r.cimento||'')}" placeholder="Ex: Sealer Plus"></div>
         </div>
+        <div class="rep-grid-3" style="margin-top:10px">
+          <div class="rep-field"><label>Odontometria</label><input name="odontometria" value="${esc(r.odontometria||'')}" placeholder="Ex: 23 mm"></div>
+        </div>
         <label class="rep-toggle" style="margin-top:12px">
           <input type="checkbox" name="intercorrencia" ${r.intercorrencia?'checked':''} onchange="document.getElementById('intercDesc').style.display=this.checked?'block':'none'">
           <span>Houve intercorrência durante o atendimento?</span>
@@ -3163,6 +3168,7 @@ function readReportForm(){
     irrigacao: get('irrigacao') || null,
     sistema: get('sistema') || null,
     cimento: get('cimento') || null,
+    odontometria: get('odontometria') || null,
     intercorrencia: !!f.elements['intercorrencia']?.checked,
     intercorrencia_descricao: get('intercorrencia_descricao') || null,
     dente: get('dente'),
@@ -3181,7 +3187,7 @@ async function saveReportDraft(silent){
     indicador: data.indicador, data_inicio: data.data_inicio, data_finalizacao: data.data_finalizacao,
     diagnostico: data.diagnostico, sugestao_reabilitacao: data.sugestao_reabilitacao,
     procedimento_realizado: data.procedimento_realizado, irrigacao: data.irrigacao,
-    sistema: data.sistema, cimento: data.cimento, intercorrencia: data.intercorrencia,
+    sistema: data.sistema, cimento: data.cimento, odontometria: data.odontometria, intercorrencia: data.intercorrencia,
     intercorrencia_descricao: data.intercorrencia_descricao, dente: data.dente,
     procedimento_detalhado: data.procedimento_detalhado, relato_caso: data.relato_caso,
     retorno: data.retorno, radiografias: data.radiografias||[], galeria: data.galeria||[],
@@ -3367,7 +3373,201 @@ async function getEndoLogoDataURL(){
     return null;
   }
 }
+/* ===== NOVO RELATÓRIO — template HTML (spec handoff) ===== */
+function _repFmtDate(iso){
+  if(!iso) return '—';
+  const [y,m,d] = String(iso).slice(0,10).split('-');
+  if(!y||!m||!d) return '—';
+  return `${d}/${m}/${y}`;
+}
+function _repPhotoUrl(path){
+  try{ return sb.storage.from('consultation-reports').getPublicUrl(path).data.publicUrl; }catch(_){ return ''; }
+}
+function buildReportHTML(data, bk, prof, logoUrl){
+  const paciente = esc(bk.patient_name || 'Paciente');
+  const profNome = esc(prof.name || '');
+  const profEsp  = esc(prof.specialty || 'Endodontia');
+  const slug = esc(prof.slug || '');
+  const interc = !!data.intercorrencia;
+  const intercTxt = interc ? 'Sim' : 'Não';
+  const intercColor = interc ? '#B23A3A' : '#1E7167';
+
+  const techCell = (label, val) => `<div class="rp-tc"><div class="rp-tl">${esc(label)}</div><div class="rp-tv">${esc(val||'—')}</div></div>`;
+  const techCellInterc = `<div class="rp-tc"><div class="rp-tl">INTERCORRÊNCIA</div><div class="rp-tv" style="color:${intercColor};font-weight:600">${intercTxt}</div></div>`;
+
+  const rxArr = Array.isArray(data.radiografias) ? data.radiografias.filter(Boolean) : [];
+  const galArr = Array.isArray(data.galeria) ? data.galeria.filter(Boolean) : [];
+  const rxCells = rxArr.map((p,i)=>`<div class="rp-imgcard"><div class="rp-imgwrap"><img src="${esc(_repPhotoUrl(p))}" crossorigin="anonymous" alt=""></div><div class="rp-imgcap"><span>Radiografia</span><b>${String(i+1).padStart(2,'0')}</b></div></div>`).join('');
+  const galCells = galArr.map((p,i)=>`<div class="rp-imgcard rp-fotocard"><div class="rp-imgwrap rp-fotowrap"><img src="${esc(_repPhotoUrl(p))}" crossorigin="anonymous" alt=""></div><div class="rp-imgcap"><span>Foto</span><b>${String(i+1).padStart(2,'0')}</b></div></div>`).join('');
+
+  const procRealizado = esc(data.procedimento_detalhado || data.procedimento_realizado || '').replace(/\n/g,'<br>');
+  const relatoLinhas = String(data.relato_caso||'').split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  const relatoHtml = relatoLinhas.length
+    ? `<ul class="rp-bullets">${relatoLinhas.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`
+    : '';
+
+  const calloutHtml = (interc && (data.intercorrencia_descricao||'').trim())
+    ? `<div class="rp-callout"><div class="rp-callout-lbl">ACOMPANHAR</div><div>${esc(data.intercorrencia_descricao)}</div></div>`
+    : '';
+
+  const retornoHtml = (data.retorno||'').trim()
+    ? `<div class="rp-section"><div class="rp-retorno"><div><div class="rp-eyebrow" style="margin-bottom:4px">RETORNO SUGERIDO</div><div class="rp-retorno-val">${esc(data.retorno)}</div></div></div></div>`
+    : '';
+
+  return `<div class="rp-page">
+    <style>
+      .rp-page{--t900:#0E3634;--t700:#14514D;--t500:#1E7167;--t100:#DCEAE6;--cream:#FAF6EC;--card:#FFFFFF;--sand:#B99457;--pool:#0EC7C7;--ink:#22302E;--inks:#5B6B67;--line:#E2DCCB;--abg:#FBF1E0;--abd:#D9A94E;--atx:#7A5A17;
+        width:800px;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.5;box-sizing:border-box}
+      .rp-page *{box-sizing:border-box;margin:0;padding:0}
+      .rp-serif{font-family:'Cormorant Garamond',Georgia,serif}
+      .rp-eyebrow{font-size:11px;font-weight:700;letter-spacing:.11em;color:var(--sand);text-transform:uppercase}
+      .rp-head{background:var(--t900);color:#fff;padding:28px 44px;display:flex;justify-content:space-between;align-items:center}
+      .rp-logo{display:flex;align-items:center;gap:10px}
+      .rp-logo img{width:27px;height:39px;object-fit:contain}
+      .rp-logo .wm{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;color:#fff;line-height:1}
+      .rp-logo .wm span{color:var(--pool)}
+      .rp-logo .sub{font-size:9px;letter-spacing:.14em;color:var(--t100);text-transform:uppercase;margin-top:3px}
+      .rp-head-right{text-align:right}
+      .rp-head-right .n{font-size:14px;font-weight:500}
+      .rp-head-right .e{font-size:12px;color:var(--t100)}
+      .rp-title{padding:22px 44px 16px}
+      .rp-title .pn{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--t900);line-height:1.1}
+      .rp-ind{display:inline-block;background:var(--t100);color:var(--t700);padding:4px 12px;border-radius:5px;font-size:12px;font-weight:500;margin-top:8px}
+      .rp-dates{display:flex;gap:24px;margin-top:12px}
+      .rp-dates .d .l{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--sand);text-transform:uppercase;margin-bottom:2px}
+      .rp-dates .d .v{font-size:13px;color:var(--ink)}
+      .rp-section{padding:26px 44px;border-top:1px solid var(--line)}
+      .rp-cards2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+      .rp-card{padding:11px 14px;border-radius:8px}
+      .rp-card .cl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+      .rp-card .cv{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;line-height:1.2}
+      .rp-card-diag{background:var(--t900);color:#fff}
+      .rp-card-diag .cl{color:rgba(255,255,255,.65)}
+      .rp-card-reab{background:var(--sand);color:#fff}
+      .rp-card-reab .cl{color:rgba(255,255,255,.8)}
+      .rp-tech{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:16px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+      .rp-tc{padding:12px 14px;border-right:1px solid var(--line);border-top:1px solid var(--line)}
+      .rp-tech .rp-tc:nth-child(-n+3){border-top:none}
+      .rp-tech .rp-tc:nth-child(3n){border-right:none}
+      .rp-tl{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--t700);text-transform:uppercase;margin-bottom:4px}
+      .rp-tv{font-size:13px;color:var(--ink)}
+      .rp-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+      .rp-imgcard{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+      .rp-imgwrap{width:100%;aspect-ratio:1.39/1;background:#0c0c0c;overflow:hidden}
+      .rp-fotowrap{aspect-ratio:4/3;background:#e9e4d6}
+      .rp-imgwrap img{width:100%;height:100%;object-fit:cover;display:block}
+      .rp-imgcap{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;font-size:11px;color:var(--inks)}
+      .rp-imgcap b{color:var(--ink)}
+      .rp-body-txt{margin-top:12px;font-size:13px;color:var(--ink);line-height:1.65}
+      .rp-bullets{margin-top:12px;list-style:none}
+      .rp-bullets li{position:relative;padding-left:18px;margin-bottom:8px;font-size:13px;line-height:1.55}
+      .rp-bullets li::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;background:var(--t500)}
+      .rp-callout{background:var(--abg);border-left:3px solid var(--abd);border-radius:0 8px 8px 0;padding:14px 18px;margin-top:16px;color:var(--atx);font-size:13px;line-height:1.55}
+      .rp-callout-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;color:var(--sand)}
+      .rp-retorno{background:var(--t100);border-radius:6px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+      .rp-retorno-val{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--t700)}
+      .rp-cta{background:var(--t900);color:#fff;padding:32px 44px;text-align:center}
+      .rp-cta .lead{font-size:14px;color:var(--t100)}
+      .rp-cta .btn{display:inline-block;background:var(--sand);color:var(--t900);font-weight:700;font-size:13px;padding:11px 22px;border-radius:8px;margin-top:14px}
+      .rp-cta .sig{font-family:'Cormorant Garamond',serif;font-size:15px;color:#fff;margin-top:18px}
+      .rp-cta .url{font-size:11px;color:var(--t100);margin-top:2px}
+    </style>
+
+    <div class="rp-head">
+      <div class="rp-logo">
+        ${logoUrl?`<img src="${logoUrl}" alt="">`:''}
+        <div><div class="wm">Endo<span>Doc</span></div><div class="sub">Relatório de consulta endodôntica</div></div>
+      </div>
+      <div class="rp-head-right"><div class="n">${profNome}</div><div class="e">${profEsp}</div></div>
+    </div>
+
+    <div class="rp-title">
+      <div class="pn">${paciente}</div>
+      ${data.indicador?`<div class="rp-ind">Indicador: ${esc(data.indicador)}</div>`:''}
+      <div class="rp-dates">
+        <div class="d"><div class="l">Data de início</div><div class="v">${_repFmtDate(data.data_inicio)}</div></div>
+        <div class="d"><div class="l">Data de finalização</div><div class="v">${_repFmtDate(data.data_finalizacao)}</div></div>
+        <div class="d"><div class="l">Dente</div><div class="v">${esc(data.dente||'—')}</div></div>
+      </div>
+    </div>
+
+    <div class="rp-section">
+      <div class="rp-eyebrow">Diagnóstico e conduta</div>
+      <div class="rp-cards2">
+        <div class="rp-card rp-card-diag"><div class="cl">Diagnóstico</div><div class="cv">${esc(data.diagnostico||'—')}</div></div>
+        <div class="rp-card rp-card-reab"><div class="cl">Sugestão de reabilitação</div><div class="cv">${esc(data.sugestao_reabilitacao||'—')}</div></div>
+      </div>
+      <div class="rp-tech">
+        ${techCell('Procedimento', data.procedimento_realizado)}
+        ${techCell('Irrigação', data.irrigacao)}
+        ${techCell('Cimento obturador', data.cimento)}
+        ${techCell('Sistema rotatório', data.sistema)}
+        ${techCell('Odontometria', data.odontometria)}
+        ${techCellInterc}
+      </div>
+    </div>
+
+    ${rxCells?`<div class="rp-section"><div class="rp-eyebrow">Radiografias</div><div class="rp-grid3">${rxCells}</div></div>`:''}
+    ${galCells?`<div class="rp-section"><div class="rp-eyebrow">Fotos intrabucais</div><div class="rp-grid3">${galCells}</div></div>`:''}
+
+    ${procRealizado?`<div class="rp-section"><div class="rp-eyebrow">Procedimento realizado</div><div class="rp-body-txt">${procRealizado}</div></div>`:''}
+
+    ${relatoHtml?`<div class="rp-section"><div class="rp-eyebrow">Relato do caso</div>${relatoHtml}${calloutHtml}</div>`:(calloutHtml?`<div class="rp-section">${calloutHtml}</div>`:'')}
+
+    ${retornoHtml}
+
+    <div class="rp-cta">
+      <div class="lead">Agende a próxima consulta com ${profNome}</div>
+      <div class="btn">Agendar consulta ↗</div>
+      <div class="sig">${profNome}</div>
+      <div class="url">endodoc.com.br${slug?'/'+slug:''}</div>
+    </div>
+  </div>`;
+}
+function _repWaitImages(root){
+  const imgs = [...root.querySelectorAll('img')];
+  return Promise.all(imgs.map(im => (im.complete && im.naturalWidth) ? Promise.resolve()
+    : new Promise(res=>{ im.onload=res; im.onerror=res; setTimeout(res,4000); })));
+}
 async function buildReportPDF(){
+  const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  if(!jsPDFCtor || !window.html2canvas){ toast('Aguarde a página carregar','err'); return null; }
+  const data = readReportForm() || window._report;
+  const bk = window._report.booking;
+  const prof = currentProf || {};
+  const logoUrl = await getEndoLogoDataURL();
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;left:-11000px;top:0;width:800px;background:#FAF6EC;z-index:-1';
+  holder.innerHTML = buildReportHTML(data, bk, prof, logoUrl);
+  document.body.appendChild(holder);
+  try{
+    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(_){} }
+    await _repWaitImages(holder);
+    await new Promise(r=>setTimeout(r,120));
+    const canvas = await html2canvas(holder.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#FAF6EC', logging:false, windowWidth:800 });
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const pdf = new jsPDFCtor({ unit:'mm', format:'a4', orientation:'portrait' });
+    const pageW = 210, pageH = 297;
+    const imgH = canvas.height * pageW / canvas.width;
+    let heightLeft = imgH, position = 0;
+    pdf.addImage(imgData, 'JPEG', 0, position, pageW, imgH);
+    heightLeft -= pageH;
+    while(heightLeft > 0){
+      position -= pageH;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, pageW, imgH);
+      heightLeft -= pageH;
+    }
+    return pdf;
+  } catch(e){
+    console.error('buildReportPDF', e);
+    toast('Erro ao gerar PDF: '+(e.message||e),'err');
+    return null;
+  } finally {
+    document.body.removeChild(holder);
+  }
+}
+async function buildReportPDF_LEGACY(){
   const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
   if(!jsPDFCtor){ return null; }
   const data = readReportForm() || window._report;
