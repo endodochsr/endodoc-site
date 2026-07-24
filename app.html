@@ -3191,6 +3191,7 @@ async function saveReportDraft(silent){
     intercorrencia_descricao: data.intercorrencia_descricao, dente: data.dente,
     procedimento_detalhado: data.procedimento_detalhado, relato_caso: data.relato_caso,
     retorno: data.retorno, radiografias: data.radiografias||[], galeria: data.galeria||[],
+    radiografias_legendas: data.radiografias_legendas||[], galeria_legendas: data.galeria_legendas||[],
   };
   let result;
   if(data.id){
@@ -3258,9 +3259,14 @@ function renderPhotoGrid(type, paths){
   const count = (paths||[]).length;
   const atLimit = count >= REPORT_PHOTO_MAX;
   const counter = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-align:right;font-weight:600">${count} / ${REPORT_PHOTO_MAX} fotos</div>`;
+  const legs = (window._report && window._report[type+'_legendas']) || [];
+  const legPh = type==='radiografias' ? 'Ex: Inicial, Odontometria…' : 'Ex: Acesso, Isolamento…';
   const items = (paths||[]).map((p,i)=>{
     const url = sb.storage.from('consultation-reports').getPublicUrl(p).data.publicUrl;
-    return `<div class="photo-thumb"><img src="${esc(url)}" alt=""><button type="button" class="ph-rm" onclick="removeReportPhoto('${type}',${i})" title="Remover">✕</button></div>`;
+    return `<div style="display:flex;flex-direction:column;gap:6px">
+      <div class="photo-thumb"><img src="${esc(url)}" alt=""><button type="button" class="ph-rm" onclick="removeReportPhoto('${type}',${i})" title="Remover">✕</button></div>
+      <input type="text" value="${esc(legs[i]||'')}" placeholder="${legPh}" oninput="updatePhotoLegenda('${type}',${i},this.value)" style="width:100%;padding:6px 9px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;background:var(--surface);color:var(--ink)">
+    </div>`;
   }).join('');
   const addBtn = atLimit ? '' : `<label class="photo-add" title="Adicionar foto">+
     <input type="file" accept="image/*" multiple style="display:none" onchange="handleReportPhotos('${type}',this.files)">
@@ -3311,8 +3317,18 @@ async function removeReportPhoto(type, idx){
   if(!confirm('Remover essa foto do relatório?')) return;
   try{ await sb.storage.from('consultation-reports').remove([path]); }catch(_){}
   r[type] = r[type].filter((_,i)=>i!==idx);
+  const lk = type+'_legendas';
+  if(Array.isArray(r[lk])) r[lk] = r[lk].filter((_,i)=>i!==idx);
   const area = type==='radiografias' ? document.getElementById('phAreaRx') : document.getElementById('phAreaGal');
   if(area) area.innerHTML = renderPhotoGrid(type, r[type]||[]);
+}
+function updatePhotoLegenda(type, idx, val){
+  const r = window._report; if(!r) return;
+  const key = type+'_legendas';
+  const arr = [...(r[key]||[])];
+  while(arr.length <= idx) arr.push('');
+  arr[idx] = val;
+  r[key] = arr;
 }
 function compressImage(file, maxDim, quality){
   return new Promise((resolve,reject)=>{
@@ -3391,14 +3407,17 @@ function buildReportHTML(data, bk, prof, logoUrl){
   const interc = !!data.intercorrencia;
   const intercTxt = interc ? 'Sim' : 'Não';
   const intercColor = interc ? '#B23A3A' : '#1E7167';
+  const croStr = (prof.cro && prof.cro_uf) ? ` · CRO ${esc(prof.cro)}/${esc(prof.cro_uf)}` : '';
 
   const techCell = (label, val) => `<div class="rp-tc"><div class="rp-tl">${esc(label)}</div><div class="rp-tv">${esc(val||'—')}</div></div>`;
   const techCellInterc = `<div class="rp-tc"><div class="rp-tl">INTERCORRÊNCIA</div><div class="rp-tv" style="color:${intercColor};font-weight:600">${intercTxt}</div></div>`;
 
   const rxArr = Array.isArray(data.radiografias) ? data.radiografias.filter(Boolean) : [];
   const galArr = Array.isArray(data.galeria) ? data.galeria.filter(Boolean) : [];
-  const rxCells = rxArr.map((p,i)=>`<div class="rp-imgcard"><div class="rp-imgwrap"><img src="${esc(_repPhotoUrl(p))}" crossorigin="anonymous" alt=""></div><div class="rp-imgcap"><span>Radiografia</span><b>${String(i+1).padStart(2,'0')}</b></div></div>`).join('');
-  const galCells = galArr.map((p,i)=>`<div class="rp-imgcard rp-fotocard"><div class="rp-imgwrap rp-fotowrap"><img src="${esc(_repPhotoUrl(p))}" crossorigin="anonymous" alt=""></div><div class="rp-imgcap"><span>Foto</span><b>${String(i+1).padStart(2,'0')}</b></div></div>`).join('');
+  const rxLeg = Array.isArray(data.radiografias_legendas) ? data.radiografias_legendas : [];
+  const galLeg = Array.isArray(data.galeria_legendas) ? data.galeria_legendas : [];
+  const rxCells = rxArr.map((p,i)=>`<div class="rp-imgcard"><div class="rp-imgwrap"><img src="${esc(_repPhotoUrl(p))}" crossorigin="anonymous" alt=""></div><div class="rp-imgcap"><span>${esc((rxLeg[i]||'').trim()||'Radiografia')}</span><b>${String(i+1).padStart(2,'0')}</b></div></div>`).join('');
+  const galCells = galArr.map((p,i)=>`<div class="rp-imgcard rp-fotocard"><div class="rp-imgwrap rp-fotowrap"><img src="${esc(_repPhotoUrl(p))}" crossorigin="anonymous" alt=""></div><div class="rp-imgcap"><span>${esc((galLeg[i]||'').trim()||'Foto')}</span><b>${String(i+1).padStart(2,'0')}</b></div></div>`).join('');
 
   const procRealizado = esc(data.procedimento_detalhado || data.procedimento_realizado || '').replace(/\n/g,'<br>');
   const relatoLinhas = String(data.relato_caso||'').split(/\n+/).map(s=>s.trim()).filter(Boolean);
@@ -3423,7 +3442,7 @@ function buildReportHTML(data, bk, prof, logoUrl){
       .rp-eyebrow{font-size:11px;font-weight:700;letter-spacing:.11em;color:var(--sand);text-transform:uppercase}
       .rp-head{background:var(--t900);color:#fff;padding:28px 44px;display:flex;justify-content:space-between;align-items:center}
       .rp-logo{display:flex;align-items:center;gap:10px}
-      .rp-logo img{width:27px;height:39px;object-fit:contain}
+      .rp-logo img{width:40px;height:40px;object-fit:contain;display:block}
       .rp-logo .wm{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;color:#fff;line-height:1}
       .rp-logo .wm span{color:var(--pool)}
       .rp-logo .sub{font-size:9px;letter-spacing:.14em;color:var(--t100);text-transform:uppercase;margin-top:3px}
@@ -3453,8 +3472,8 @@ function buildReportHTML(data, bk, prof, logoUrl){
       .rp-tv{font-size:13px;color:var(--ink)}
       .rp-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
       .rp-imgcard{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
-      .rp-imgwrap{width:100%;aspect-ratio:1.39/1;background:#0c0c0c;overflow:hidden}
-      .rp-fotowrap{aspect-ratio:4/3;background:#e9e4d6}
+      .rp-imgwrap{width:100%;aspect-ratio:1.62/1;background:#0c0c0c;overflow:hidden}
+      .rp-fotowrap{aspect-ratio:1.5/1;background:#e9e4d6}
       .rp-imgwrap img{width:100%;height:100%;object-fit:cover;display:block}
       .rp-imgcap{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;font-size:11px;color:var(--inks)}
       .rp-imgcap b{color:var(--ink)}
@@ -3473,15 +3492,15 @@ function buildReportHTML(data, bk, prof, logoUrl){
       .rp-cta .url{font-size:11px;color:var(--t100);margin-top:2px}
     </style>
 
-    <div class="rp-head">
+    <div class="rp-head rp-block">
       <div class="rp-logo">
         ${logoUrl?`<img src="${logoUrl}" alt="">`:''}
         <div><div class="wm">Endo<span>Doc</span></div><div class="sub">Relatório de consulta endodôntica</div></div>
       </div>
-      <div class="rp-head-right"><div class="n">${profNome}</div><div class="e">${profEsp}</div></div>
+      <div class="rp-head-right"><div class="n">${profNome}</div><div class="e">${profEsp}${croStr}</div></div>
     </div>
 
-    <div class="rp-title">
+    <div class="rp-title rp-block">
       <div class="pn">${paciente}</div>
       ${data.indicador?`<div class="rp-ind">Indicador: ${esc(data.indicador)}</div>`:''}
       <div class="rp-dates">
@@ -3491,7 +3510,7 @@ function buildReportHTML(data, bk, prof, logoUrl){
       </div>
     </div>
 
-    <div class="rp-section">
+    <div class="rp-section rp-block">
       <div class="rp-eyebrow">Diagnóstico e conduta</div>
       <div class="rp-cards2">
         <div class="rp-card rp-card-diag"><div class="cl">Diagnóstico</div><div class="cv">${esc(data.diagnostico||'—')}</div></div>
@@ -3516,7 +3535,7 @@ function buildReportHTML(data, bk, prof, logoUrl){
 
     ${retornoHtml}
 
-    <div class="rp-cta">
+    <div class="rp-cta rp-block">
       <div class="lead">Agende a próxima consulta com ${profNome}</div>
       <div class="btn">Agendar consulta ↗</div>
       <div class="sig">${profNome}</div>
@@ -3544,19 +3563,62 @@ async function buildReportPDF(){
     if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(_){} }
     await _repWaitImages(holder);
     await new Promise(r=>setTimeout(r,120));
-    const canvas = await html2canvas(holder.firstElementChild, { scale:2, useCORS:true, backgroundColor:'#FAF6EC', logging:false, windowWidth:800 });
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const page = holder.firstElementChild;
+    const cta = page.querySelector('.rp-cta');
+    const scale = 2;
+    const contentBottom = cta ? cta.offsetTop : page.offsetHeight; // px DOM (sem o rodapé)
+
+    // pontos seguros de corte: topo de cada bloco + início de cada linha de fotos
+    const bset = new Set([0, contentBottom]);
+    page.querySelectorAll('.rp-block').forEach(el=>{ if(el!==cta && el.offsetTop < contentBottom) bset.add(el.offsetTop); });
+    const cards = [...page.querySelectorAll('.rp-imgcard')];
+    if(cards.length){
+      const minLeft = Math.min(...cards.map(c=>c.offsetLeft));
+      cards.forEach(c=>{ if(Math.abs(c.offsetLeft-minLeft)<2 && c.offsetTop < contentBottom) bset.add(c.offsetTop); });
+    }
+    const bounds = [...bset].sort((a,b)=>a-b);
+
+    // renderiza o conteúdo (sem o rodapé) e o rodapé separadamente
+    const full = await html2canvas(page, { scale, useCORS:true, backgroundColor:'#FAF6EC', logging:false, windowWidth:800, height:contentBottom });
+    let ctaCanvas = null;
+    if(cta) ctaCanvas = await html2canvas(cta, { scale, useCORS:true, backgroundColor:'#0E3634', logging:false, windowWidth:800 });
+
     const pdf = new jsPDFCtor({ unit:'mm', format:'a4', orientation:'portrait' });
     const pageW = 210, pageH = 297;
-    const imgH = canvas.height * pageW / canvas.width;
-    let heightLeft = imgH, position = 0;
-    pdf.addImage(imgData, 'JPEG', 0, position, pageW, imgH);
-    heightLeft -= pageH;
-    while(heightLeft > 0){
-      position -= pageH;
-      pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, position, pageW, imgH);
-      heightLeft -= pageH;
+    const pxPerPage = pageH * (800/pageW); // px DOM que cabem numa página A4
+    const fillCream = ()=>{ pdf.setFillColor(250,246,236); pdf.rect(0,0,pageW,pageH,'F'); };
+
+    // paginação gulosa nos boundaries
+    const slices = [];
+    let start = 0;
+    while(start < contentBottom - 1){
+      let end = start;
+      for(const b of bounds){ if(b > start && (b - start) <= pxPerPage) end = b; }
+      if(end <= start) end = Math.min(start + pxPerPage, contentBottom); // bloco maior que a página
+      slices.push([start, end]);
+      start = end;
+    }
+    if(!slices.length) slices.push([0, contentBottom]);
+
+    let lastEndMM = 0;
+    slices.forEach((sl,idx)=>{
+      if(idx>0) pdf.addPage();
+      fillCream();
+      const [s,e] = sl;
+      const sY = Math.round(s*scale), hPx = Math.max(1, Math.round((e-s)*scale));
+      const tmp = document.createElement('canvas');
+      tmp.width = full.width; tmp.height = hPx;
+      tmp.getContext('2d').drawImage(full, 0, sY, full.width, hPx, 0, 0, full.width, hPx);
+      const hMM = (e-s) * (pageW/800);
+      pdf.addImage(tmp.toDataURL('image/jpeg',0.92), 'JPEG', 0, 0, pageW, hMM);
+      lastEndMM = hMM;
+    });
+
+    // rodapé sempre no fim da última página
+    if(ctaCanvas){
+      const ctaMM = ctaCanvas.height * pageW / ctaCanvas.width;
+      if(lastEndMM > pageH - ctaMM - 4){ pdf.addPage(); fillCream(); }
+      pdf.addImage(ctaCanvas.toDataURL('image/jpeg',0.92), 'JPEG', 0, pageH - ctaMM, pageW, ctaMM);
     }
     return pdf;
   } catch(e){
