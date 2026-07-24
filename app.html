@@ -3469,7 +3469,7 @@ function buildReportHTML(data, bk, prof, logoUrl){
     : '';
 
   const retornoHtml = (data.retorno||'').trim()
-    ? `<div class="rp-section"><div class="rp-retorno"><div><div class="rp-eyebrow" style="margin-bottom:4px">RETORNO SUGERIDO</div><div class="rp-retorno-val">${esc(data.retorno)}</div></div></div></div>`
+    ? `<div class="rp-section rp-block"><div class="rp-retorno"><div><div class="rp-eyebrow" style="margin-bottom:4px">RETORNO SUGERIDO</div><div class="rp-retorno-val">${esc(data.retorno)}</div></div></div></div>`
     : '';
 
   return `<div class="rp-page">
@@ -3511,6 +3511,7 @@ function buildReportHTML(data, bk, prof, logoUrl){
       .rp-tv{font-size:13px;color:var(--ink)}
       .rp-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
       .rp-grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:14px}
+      .rp-gridfoto{display:grid;grid-template-columns:repeat(3,minmax(0,185px));justify-content:center;gap:12px;margin-top:14px}
       .rp-imgcard{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
       .rp-imgwrap{width:100%;aspect-ratio:1.5/1;background:#0c0c0c;overflow:hidden}
       .rp-fotowrap{aspect-ratio:3/4;background:#e9e4d6}
@@ -3568,11 +3569,12 @@ function buildReportHTML(data, bk, prof, logoUrl){
     </div>
 
     ${rxCells?`<div class="rp-section rp-block"><div class="rp-eyebrow">Radiografias</div><div class="rp-grid4">${rxCells}</div></div>`:''}
-    ${galCells?`<div class="rp-section rp-block"><div class="rp-eyebrow">Fotos intrabucais</div><div class="rp-grid3">${galCells}</div></div>`:''}
 
-    ${procRealizado?`<div class="rp-section"><div class="rp-eyebrow">Procedimento realizado</div><div class="rp-body-txt">${procRealizado}</div></div>`:''}
+    ${procRealizado?`<div class="rp-section rp-block"><div class="rp-eyebrow">Procedimento realizado</div><div class="rp-body-txt">${procRealizado}</div></div>`:''}
 
-    ${relatoHtml?`<div class="rp-section"><div class="rp-eyebrow">Relato do caso</div>${relatoHtml}${calloutHtml}</div>`:(calloutHtml?`<div class="rp-section">${calloutHtml}</div>`:'')}
+    ${relatoHtml?`<div class="rp-section rp-block"><div class="rp-eyebrow">Relato do caso</div>${relatoHtml}${calloutHtml}</div>`:(calloutHtml?`<div class="rp-section rp-block">${calloutHtml}</div>`:'')}
+
+    ${galCells?`<div class="rp-section rp-block"><div class="rp-eyebrow">Fotos intrabucais</div><div class="rp-gridfoto">${galCells}</div></div>`:''}
 
     ${retornoHtml}
 
@@ -3607,58 +3609,64 @@ async function buildReportPDF(){
     const page = holder.firstElementChild;
     const cta = page.querySelector('.rp-cta');
     const scale = 2;
+    const header = page.querySelector('.rp-head');
     const contentBottom = cta ? cta.offsetTop : page.offsetHeight; // px DOM (sem o rodapé)
+    const headerBottom = header ? (header.offsetTop + header.offsetHeight) : 0;
 
-    // pontos seguros de corte: topo de cada bloco + início de cada linha de fotos
-    const bset = new Set([0, contentBottom]);
-    page.querySelectorAll('.rp-block').forEach(el=>{ if(el!==cta && el.offsetTop < contentBottom) bset.add(el.offsetTop); });
+    // pontos seguros de corte: só o corpo (depois do cabeçalho)
+    const bset = new Set([headerBottom, contentBottom]);
+    page.querySelectorAll('.rp-block').forEach(el=>{ if(el!==cta && el!==header && el.offsetTop > headerBottom-1 && el.offsetTop < contentBottom) bset.add(el.offsetTop); });
     const cards = [...page.querySelectorAll('.rp-imgcard')];
     if(cards.length){
       const minLeft = Math.min(...cards.map(c=>c.offsetLeft));
-      cards.forEach(c=>{ if(Math.abs(c.offsetLeft-minLeft)<2 && c.offsetTop < contentBottom) bset.add(c.offsetTop); });
+      cards.forEach(c=>{ if(Math.abs(c.offsetLeft-minLeft)<2 && c.offsetTop > headerBottom-1 && c.offsetTop < contentBottom) bset.add(c.offsetTop); });
     }
     const bounds = [...bset].sort((a,b)=>a-b);
 
-    // renderiza o conteúdo (sem o rodapé) e o rodapé separadamente
+    // renderiza conteúdo, cabeçalho e rodapé separadamente
     const full = await html2canvas(page, { scale, useCORS:true, backgroundColor:'#FAF6EC', logging:false, windowWidth:800, height:contentBottom });
-    let ctaCanvas = null;
-    if(cta) ctaCanvas = await html2canvas(cta, { scale, useCORS:true, backgroundColor:'#0E3634', logging:false, windowWidth:800 });
+    let headerCanvas = null, ctaCanvas = null;
+    if(header) headerCanvas = await html2canvas(header, { scale, useCORS:true, backgroundColor:'#0E3634', logging:false, windowWidth:800 });
+    if(cta)    ctaCanvas    = await html2canvas(cta,    { scale, useCORS:true, backgroundColor:'#0E3634', logging:false, windowWidth:800 });
 
     const pdf = new jsPDFCtor({ unit:'mm', format:'a4', orientation:'portrait' });
     const pageW = 210, pageH = 297, mX = 9, mY = 11;
-    const contentW = pageW - 2*mX;       // largura útil (com margem)
-    const usableH  = pageH - 2*mY;       // altura útil por página
-    const mmPerPx  = contentW / 800;     // 800px DOM = contentW mm
-    const pxPerPage = usableH / mmPerPx; // px DOM que cabem numa página
+    const contentW = pageW - 2*mX;   // largura útil do corpo (com margem)
+    const mmPerPx  = contentW / 800; // 800px DOM = contentW mm
+    const headerMM = headerCanvas ? (headerCanvas.height * pageW / headerCanvas.width) : 0; // cabeçalho full-bleed
     const fillCream = ()=>{ pdf.setFillColor(250,246,236); pdf.rect(0,0,pageW,pageH,'F'); };
 
-    // paginação gulosa nos boundaries
+    // paginação: a página 1 tem menos altura útil por causa do cabeçalho
     const slices = [];
-    let start = 0;
+    let start = headerBottom, pageIdx = 0;
     while(start < contentBottom - 1){
+      const yTop = pageIdx===0 ? headerMM : mY;
+      const usablePx = (pageH - yTop - mY) / mmPerPx;
       let end = start;
-      for(const b of bounds){ if(b > start && (b - start) <= pxPerPage) end = b; }
-      if(end <= start) end = Math.min(start + pxPerPage, contentBottom); // bloco maior que a página
-      slices.push([start, end]);
-      start = end;
+      for(const b of bounds){ if(b > start && (b - start) <= usablePx) end = b; }
+      if(end <= start) end = Math.min(start + usablePx, contentBottom);
+      slices.push({ s:start, e:end, yTop });
+      start = end; pageIdx++;
     }
-    if(!slices.length) slices.push([0, contentBottom]);
+    if(!slices.length) slices.push({ s:headerBottom, e:contentBottom, yTop:headerMM });
 
     let lastEndMM = mY;
     slices.forEach((sl,idx)=>{
       if(idx>0) pdf.addPage();
       fillCream();
-      const [s,e] = sl;
-      const sY = Math.round(s*scale), hPx = Math.max(1, Math.round((e-s)*scale));
+      if(idx===0 && headerCanvas){
+        pdf.addImage(headerCanvas.toDataURL('image/jpeg',0.92), 'JPEG', 0, 0, pageW, headerMM); // topo, sem margem
+      }
+      const hPx = Math.max(1, Math.round((sl.e - sl.s)*scale));
       const tmp = document.createElement('canvas');
       tmp.width = full.width; tmp.height = hPx;
-      tmp.getContext('2d').drawImage(full, 0, sY, full.width, hPx, 0, 0, full.width, hPx);
-      const hMM = (e-s) * mmPerPx;
-      pdf.addImage(tmp.toDataURL('image/jpeg',0.92), 'JPEG', mX, mY, contentW, hMM);
-      lastEndMM = mY + hMM;
+      tmp.getContext('2d').drawImage(full, 0, Math.round(sl.s*scale), full.width, hPx, 0, 0, full.width, hPx);
+      const hMM = (sl.e - sl.s) * mmPerPx;
+      pdf.addImage(tmp.toDataURL('image/jpeg',0.92), 'JPEG', mX, sl.yTop, contentW, hMM);
+      lastEndMM = sl.yTop + hMM;
     });
 
-    // rodapé sempre no fim da última página (respeitando a margem)
+    // rodapé sempre no fim da última página (com margem)
     if(ctaCanvas){
       const ctaMM = ctaCanvas.height * contentW / ctaCanvas.width;
       if(lastEndMM > pageH - mY - ctaMM - 3){ pdf.addPage(); fillCream(); }
