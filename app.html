@@ -3132,6 +3132,7 @@ function showReportModal(){
 
       <div class="rep-section">
         <h4>🦷 Galeria (fotos do procedimento)</h4>
+        <p style="font-size:12px;color:var(--muted);margin:-6px 0 10px">📐 Use fotos no formato <b>3x4 (retrato / vertical)</b> pra ficarem no padrão do relatório.</p>
         <div class="photo-area" id="phAreaGal">
           ${renderPhotoGrid('galeria', r.galeria||[])}
         </div>
@@ -3480,7 +3481,7 @@ function buildReportHTML(data, bk, prof, logoUrl){
       .rp-eyebrow{font-size:11px;font-weight:700;letter-spacing:.11em;color:var(--sand);text-transform:uppercase}
       .rp-head{background:var(--t900);color:#fff;padding:28px 44px;display:flex;justify-content:space-between;align-items:center}
       .rp-logo{display:flex;align-items:center;gap:10px}
-      .rp-logo img{width:40px;height:40px;object-fit:contain;display:block}
+      .rp-logo img{width:50px;height:50px;object-fit:contain;display:block}
       .rp-logo .wm{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:22px;color:#fff;line-height:1}
       .rp-logo .wm span{color:var(--pool)}
       .rp-logo .sub{font-size:9px;letter-spacing:.14em;color:var(--t100);text-transform:uppercase;margin-top:3px}
@@ -3509,9 +3510,11 @@ function buildReportHTML(data, bk, prof, logoUrl){
       .rp-tl{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--t700);text-transform:uppercase;margin-bottom:4px}
       .rp-tv{font-size:13px;color:var(--ink)}
       .rp-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+      .rp-grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:14px}
       .rp-imgcard{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
-      .rp-imgwrap{width:100%;aspect-ratio:1.62/1;background:#0c0c0c;overflow:hidden}
-      .rp-fotowrap{aspect-ratio:1.5/1;background:#e9e4d6}
+      .rp-imgwrap{width:100%;aspect-ratio:1.5/1;background:#0c0c0c;overflow:hidden}
+      .rp-fotowrap{aspect-ratio:3/4;background:#e9e4d6}
+      .rp-grid4 .rp-imgcap{padding:6px 8px;font-size:10px}
       .rp-imgwrap img{width:100%;height:100%;object-fit:cover;display:block}
       .rp-imgcap{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;font-size:11px;color:var(--inks)}
       .rp-imgcap b{color:var(--ink)}
@@ -3564,8 +3567,8 @@ function buildReportHTML(data, bk, prof, logoUrl){
       </div>
     </div>
 
-    ${rxCells?`<div class="rp-section"><div class="rp-eyebrow">Radiografias</div><div class="rp-grid3">${rxCells}</div></div>`:''}
-    ${galCells?`<div class="rp-section"><div class="rp-eyebrow">Fotos intrabucais</div><div class="rp-grid3">${galCells}</div></div>`:''}
+    ${rxCells?`<div class="rp-section rp-block"><div class="rp-eyebrow">Radiografias</div><div class="rp-grid4">${rxCells}</div></div>`:''}
+    ${galCells?`<div class="rp-section rp-block"><div class="rp-eyebrow">Fotos intrabucais</div><div class="rp-grid3">${galCells}</div></div>`:''}
 
     ${procRealizado?`<div class="rp-section"><div class="rp-eyebrow">Procedimento realizado</div><div class="rp-body-txt">${procRealizado}</div></div>`:''}
 
@@ -3622,8 +3625,11 @@ async function buildReportPDF(){
     if(cta) ctaCanvas = await html2canvas(cta, { scale, useCORS:true, backgroundColor:'#0E3634', logging:false, windowWidth:800 });
 
     const pdf = new jsPDFCtor({ unit:'mm', format:'a4', orientation:'portrait' });
-    const pageW = 210, pageH = 297;
-    const pxPerPage = pageH * (800/pageW); // px DOM que cabem numa página A4
+    const pageW = 210, pageH = 297, mX = 9, mY = 11;
+    const contentW = pageW - 2*mX;       // largura útil (com margem)
+    const usableH  = pageH - 2*mY;       // altura útil por página
+    const mmPerPx  = contentW / 800;     // 800px DOM = contentW mm
+    const pxPerPage = usableH / mmPerPx; // px DOM que cabem numa página
     const fillCream = ()=>{ pdf.setFillColor(250,246,236); pdf.rect(0,0,pageW,pageH,'F'); };
 
     // paginação gulosa nos boundaries
@@ -3638,7 +3644,7 @@ async function buildReportPDF(){
     }
     if(!slices.length) slices.push([0, contentBottom]);
 
-    let lastEndMM = 0;
+    let lastEndMM = mY;
     slices.forEach((sl,idx)=>{
       if(idx>0) pdf.addPage();
       fillCream();
@@ -3647,21 +3653,19 @@ async function buildReportPDF(){
       const tmp = document.createElement('canvas');
       tmp.width = full.width; tmp.height = hPx;
       tmp.getContext('2d').drawImage(full, 0, sY, full.width, hPx, 0, 0, full.width, hPx);
-      const hMM = (e-s) * (pageW/800);
-      pdf.addImage(tmp.toDataURL('image/jpeg',0.92), 'JPEG', 0, 0, pageW, hMM);
-      lastEndMM = hMM;
+      const hMM = (e-s) * mmPerPx;
+      pdf.addImage(tmp.toDataURL('image/jpeg',0.92), 'JPEG', mX, mY, contentW, hMM);
+      lastEndMM = mY + hMM;
     });
 
-    // rodapé sempre no fim da última página
+    // rodapé sempre no fim da última página (respeitando a margem)
     if(ctaCanvas){
-      const ctaMM = ctaCanvas.height * pageW / ctaCanvas.width;
-      if(lastEndMM > pageH - ctaMM - 4){ pdf.addPage(); fillCream(); }
-      pdf.addImage(ctaCanvas.toDataURL('image/jpeg',0.92), 'JPEG', 0, pageH - ctaMM, pageW, ctaMM);
-      // "Agendar consulta" clicável → página pública de agendamento do dentista
+      const ctaMM = ctaCanvas.height * contentW / ctaCanvas.width;
+      if(lastEndMM > pageH - mY - ctaMM - 3){ pdf.addPage(); fillCream(); }
+      const ctaY = pageH - mY - ctaMM;
+      pdf.addImage(ctaCanvas.toDataURL('image/jpeg',0.92), 'JPEG', mX, ctaY, contentW, ctaMM);
       const slug = (prof && prof.slug) || '';
-      if(slug){
-        try{ pdf.link(0, pageH - ctaMM, pageW, ctaMM, { url: 'https://endodoc.com.br/'+slug }); }catch(_){}
-      }
+      if(slug){ try{ pdf.link(mX, ctaY, contentW, ctaMM, { url: 'https://endodoc.com.br/'+slug }); }catch(_){} }
     }
     return pdf;
   } catch(e){
