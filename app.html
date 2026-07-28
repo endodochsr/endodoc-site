@@ -3994,18 +3994,42 @@ async function renderAgenda(){
   refreshPendingBadge();
 }
 
+/* ===== AGENDA — time-grid estilo calendário (dia/semana/mês) ===== */
+const AG_START=8, AG_END=21, AG_HH=48, AG_DAYHEAD=36;
+const AG_MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const AG_MESABR=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const AG_DOW=['dom','seg','ter','qua','qui','sex','sáb'];
+function _agFmt(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
+function agWeekDays(iso){
+  const [y,m,d]=iso.split('-').map(Number); const dt=new Date(y,m-1,d);
+  const off=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-off);
+  const out=[]; for(let i=0;i<7;i++){ const x=new Date(dt); x.setDate(dt.getDate()+i); out.push(_agFmt(x)); } return out;
+}
+function agSetView(v){ window._agenda.view=v; renderAgendaView(); }
+function agToday(){ window._agenda.selected=todayISO(); window._agenda.month=window._agenda.selected.slice(0,7); renderAgendaView(); }
+function agNav(dir){
+  const ag=window._agenda; const [y,m,d]=ag.selected.split('-').map(Number); const dt=new Date(y,m-1,d);
+  if(ag.view==='dia') dt.setDate(dt.getDate()+dir);
+  else if(ag.view==='mes') dt.setMonth(dt.getMonth()+dir);
+  else dt.setDate(dt.getDate()+7*dir);
+  ag.selected=_agFmt(dt); ag.month=ag.selected.slice(0,7); renderAgendaView();
+}
+function agDayFromMonth(iso){ window._agenda.selected=iso; window._agenda.view='dia'; renderAgendaView(); }
+
 function renderAgendaView(){
   const body = document.getElementById('appBody');
-  const { month, selected, pending, active, totalEmpty } = window._agenda;
+  const ag = window._agenda;
+  if(!ag.view) ag.view='semana';
+  if(!ag.selected) ag.selected=todayISO();
+  const active=ag.active||[], pending=ag.pending||[], totalEmpty=ag.totalEmpty;
 
-  let html = `<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-    <div><h1>Agenda</h1><p>${active.length} confirmada(s)${pending.length?` · ${pending.length} aguardando sua confirmação`:''}.</p></div>
+  const head = `<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+    <div><h1>Agenda</h1><p>${active.length} confirmada(s)${pending.length?` · ${pending.length} aguardando confirmação`:''}.</p></div>
     <button class="btn btn-primary btn-sm" onclick="openNewBooking()" style="flex-shrink:0">+ Nova consulta</button>
   </div>`;
 
-  // estado vazio total: sem calendário, só CTA
   if(totalEmpty){
-    html += `<div class="card empty-state">
+    body.innerHTML = head + `<div class="card empty-state">
       <div class="empty-ico">📅</div>
       <h3>Sua agenda está limpa</h3>
       <p>Compartilhe seu link com consultórios e veja as reservas chegarem aqui automaticamente.</p>
@@ -4014,34 +4038,189 @@ function renderAgendaView(){
         <button class="btn btn-ghost btn-sm" onclick="go('dispo')">Definir horários →</button>
       </div>
     </div>`;
-    body.innerHTML = html;
     return;
   }
 
-  // pendentes sempre no topo (alta prioridade)
-  if(pending.length){
-    const gPending = groupBookings(pending);
-    html += `<div class="section-title" style="margin-top:18px;color:#8a6d27">🔔 Solicitações pendentes</div>`;
-    html += gPending.map(g => bookingCard(g, {pending:true})).join('');
+  const all=[...active, ...pending];
+  // rótulo da barra
+  const [sy,sm,sd]=ag.selected.split('-').map(Number);
+  let label;
+  if(ag.view==='dia') label = `${AG_DOW[new Date(sy,sm-1,sd).getDay()]}, ${sd} ${AG_MESABR[sm-1]} ${sy}`;
+  else label = `${AG_MES[sm-1].charAt(0).toUpperCase()+AG_MES[sm-1].slice(1)} ${sy}`;
+
+  const subbar = `<div class="tg-subbar">
+    <div class="tg-sub-center">
+      <button class="tg-arrow" onclick="agNav(-1)">‹</button>
+      <span class="tg-monthlabel">${label}</span>
+      <button class="tg-arrow" onclick="agNav(1)">›</button>
+    </div>
+    <div class="tg-sub-right">
+      <button class="tg-ghost" onclick="agToday()">Hoje</button>
+      <div class="tg-seg">
+        <button class="${ag.view==='dia'?'active':''}" onclick="agSetView('dia')">Dia</button>
+        <button class="${ag.view==='semana'?'active':''}" onclick="agSetView('semana')">Semana</button>
+        <button class="${ag.view==='mes'?'active':''}" onclick="agSetView('mes')">Mês</button>
+      </div>
+    </div>
+  </div>`;
+
+  const inner = ag.view==='mes' ? agMonthGrid(all) : agTimeGrid(ag.view==='dia'?[ag.selected]:agWeekDays(ag.selected), all);
+
+  body.innerHTML = agStyles() + head + subbar + inner;
+}
+
+function agTimeGrid(days, all){
+  const hours=[]; for(let h=AG_START;h<AG_END;h++) hours.push(h);
+  const todayStr=todayISO();
+  const hourCol = `<div class="tg-hourcol"><div class="tg-headspacer"></div>`+
+    hours.map(h=>`<div class="tg-hourcell">${h}h</div>`).join('')+`</div>`;
+  const cols = days.map(iso=>{
+    const [yy,mm,dd]=iso.split('-').map(Number); const dt=new Date(yy,mm-1,dd);
+    const isToday=iso===todayStr;
+    const head=`<div class="tg-dayhead${isToday?' today':''}">${AG_DOW[dt.getDay()]} ${dd}</div>`;
+    const lines=hours.map(()=>`<div class="tg-hourline"></div>`).join('');
+    const dayList=all.filter(b=>b.slot_date===iso).sort((a,b)=>(a.slot_time||'').localeCompare(b.slot_time||''));
+    const groups=groupBookings(dayList);
+    const appts=groups.map(g=>{
+      const b=g.bookings[0];
+      const [h,mi]=(b.slot_time||'08:00').split(':').map(Number);
+      const top=(h+(mi||0)/60-AG_START)*AG_HH;
+      const dur=g.bookings.length;
+      const height=Math.max(AG_HH-3, dur*AG_HH-3);
+      const isEval=/avalia/i.test(b.procedure||'');
+      const isPend=b.status==='pending';
+      const cls=['tg-appt',isEval?'eval':'',isPend?'pend':''].filter(Boolean).join(' ');
+      const tEnd=String(h+dur).padStart(2,'0')+':00';
+      return `<div class="${cls}" style="top:${top}px;height:${height}px" onclick="agOpenPop(event,'${b.id}')">
+        <div class="tg-a-time">${(b.slot_time||'').slice(0,5)} - ${tEnd}</div>
+        <div class="tg-a-name">${esc(b.patient_name||'—')}</div>
+        ${b.office_responsible?`<div class="tg-a-ind">${esc(b.office_responsible)}</div>`:''}
+        ${b.office_address?`<div class="tg-a-addr">${esc(b.office_address)}</div>`:''}
+      </div>`;
+    }).join('');
+    return `<div class="tg-daycol">${head}<div class="tg-daybody" style="height:${hours.length*AG_HH}px">${lines}${appts}</div></div>`;
+  }).join('');
+  return `<div class="tg-wrap"><div class="tg-scroll">${hourCol}<div class="tg-days" style="grid-template-columns:repeat(${days.length},minmax(0,1fr))">${cols}</div></div></div>`;
+}
+
+function agMonthGrid(all){
+  const [y,m]=window._agenda.selected.split('-').map(Number);
+  const first=new Date(y,m-1,1); const startOff=(first.getDay()+6)%7;
+  const days=new Date(y,m,0).getDate(); const todayStr=todayISO();
+  const dow=['seg','ter','qua','qui','sex','sáb','dom'];
+  let cells='';
+  for(let i=0;i<startOff;i++) cells+=`<div class="tg-mcell empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const iso=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const list=all.filter(b=>b.slot_date===iso).sort((a,b)=>(a.slot_time||'').localeCompare(b.slot_time||''));
+    const chips=list.slice(0,3).map(b=>{
+      const isPend=b.status==='pending';
+      return `<div class="tg-mchip${isPend?' pend':''}" onclick="agOpenPop(event,'${b.id}')">${(b.slot_time||'').slice(0,5)} ${esc((b.patient_name||'').split(' ')[0])}</div>`;
+    }).join('');
+    const more=list.length>3?`<div class="tg-mmore" onclick="agDayFromMonth('${iso}')">+${list.length-3} mais</div>`:'';
+    cells+=`<div class="tg-mcell${iso===todayStr?' today':''}"><div class="tg-mnum" onclick="agDayFromMonth('${iso}')">${d}</div>${chips}${more}</div>`;
   }
+  return `<div class="tg-month"><div class="tg-mhead">${dow.map(x=>`<div>${x}</div>`).join('')}</div><div class="tg-mgrid">${cells}</div></div>`;
+}
 
-  // mapa data → contagem de bookings por status
-  const counts = {};
-  for(const b of [...active, ...pending]){
-    if(!counts[b.slot_date]) counts[b.slot_date] = { active:0, pending:0 };
-    counts[b.slot_date][b.status]++;
-  }
+function agClosePop(){ const p=document.getElementById('agPop'); if(p) p.remove(); }
+function agOpenPop(ev, id){
+  ev.stopPropagation();
+  agClosePop();
+  const all=[...(window._agenda.active||[]),...(window._agenda.pending||[])];
+  const b=all.find(x=>x.id===id); if(!b) return;
+  const initial=((b.patient_name||'P').trim()[0]||'P').toUpperCase();
+  const [h]=(b.slot_time||'08:00').split(':').map(Number);
+  const dur=all.filter(x=>x.slot_date===b.slot_date&&(x.patient_name||'')===(b.patient_name||'')&&(x.office_name||'')===(b.office_name||'')).length||1;
+  const timeStr=(b.slot_time||'').slice(0,5)+' – '+String(h+dur).padStart(2,'0')+':00';
+  const dt=b.slot_date?new Date(b.slot_date+'T12:00:00'):null;
+  const dateStr=dt?`${AG_DOW[dt.getDay()]}, ${dt.getDate()} ${AG_MESABR[dt.getMonth()]} ${dt.getFullYear()}`:'';
+  const status=b.status==='pending'?'Aguardando confirmação':(b.completed_at?'Finalizada':'Confirmada');
+  const statusColor=b.status==='pending'?'#8a6d27':(b.completed_at?'#2e7d57':'#14514D');
+  const pop=document.createElement('div');
+  pop.id='agPop'; pop.className='agpop';
+  pop.innerHTML=`
+    <button class="agpop-close" onclick="agClosePop()">✕</button>
+    <div class="agpop-head"><div class="agpop-av">${esc(initial)}</div><div><div class="agpop-name">${esc(b.patient_name||'Paciente')}</div>${b.patient_phone?`<div class="agpop-phone">📱 ${esc(formatPhone(b.patient_phone))}</div>`:''}</div></div>
+    <div class="agpop-meta">
+      <div class="row">📅 ${esc(dateStr)}</div>
+      <div class="row">🕐 ${esc(timeStr)}</div>
+      ${b.office_responsible?`<div class="row">👤 Indicação: ${esc(b.office_responsible)}</div>`:''}
+    </div>
+    ${b.office_name||b.office_address?`<div class="agpop-addr">📍 ${esc(b.office_name||'')}${b.office_address?' · '+esc(b.office_address):''}</div>`:''}
+    ${b.procedure?`<div class="agpop-proclbl">Procedimento</div><div class="agpop-proc">${esc(b.procedure)}</div>`:''}
+    <div class="agpop-status"><span style="color:${statusColor}">● ${esc(status)}</span></div>
+    <button class="agpop-btn" onclick="agClosePop();openHistoryDetail('${b.id}')">Ver detalhes e ações</button>
+  `;
+  document.body.appendChild(pop);
+  // posiciona perto do clique, dentro da tela
+  const pw=290, ph=pop.offsetHeight||320;
+  let left=ev.clientX+12, top=ev.clientY-10;
+  if(left+pw>window.innerWidth-8) left=ev.clientX-pw-12;
+  if(top+ph>window.innerHeight-8) top=Math.max(8, window.innerHeight-ph-8);
+  if(left<8) left=8;
+  pop.style.left=left+'px'; pop.style.top=top+'px';
+  pop.addEventListener('click', e=>e.stopPropagation());
+  setTimeout(()=>document.addEventListener('click', agClosePop, {once:true}), 0);
+}
 
-  const [y, m] = month.split('-').map(Number);
-  html += renderCalendar(y, m, selected, counts);
-  html += renderSelectedDay(selected, active, pending);
-
-  body.innerHTML = html;
-
-  // trajeto entre atendimentos consecutivos do dia
-  const dayActive = active.filter(b => b.slot_date === selected);
-  const gDayActive = groupBookings(dayActive);
-  enrichTravelTimesGrouped(gDayActive);
+function agStyles(){
+  return `<style>
+    .tg-subbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:6px 0 14px}
+    .tg-sub-center{display:flex;align-items:center;gap:12px}
+    .tg-monthlabel{font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--primary-d)}
+    .tg-arrow{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--primary-d);cursor:pointer;font-size:14px}
+    .tg-arrow:hover{background:var(--primary-soft)}
+    .tg-sub-right{display:flex;align-items:center;gap:8px}
+    .tg-ghost{background:#fff;border:1px solid var(--border);padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;color:var(--primary-d);cursor:pointer}
+    .tg-seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+    .tg-seg button{border:none;background:#fff;padding:7px 15px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
+    .tg-seg button.active{background:var(--primary-d);color:#fff}
+    .tg-wrap{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+    .tg-scroll{display:flex;overflow-x:auto}
+    .tg-hourcol{width:52px;flex:none;padding-top:${AG_DAYHEAD}px}
+    .tg-headspacer{height:0}
+    .tg-hourcell{height:${AG_HH}px;text-align:right;padding-right:8px;font-size:10.5px;color:var(--muted);position:relative;top:-6px}
+    .tg-days{flex:1;display:grid;min-width:0}
+    .tg-daycol{border-left:1px solid var(--border);position:relative;min-width:120px}
+    .tg-dayhead{height:${AG_DAYHEAD}px;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);text-transform:capitalize}
+    .tg-dayhead.today{color:#fff;background:var(--primary-d)}
+    .tg-daybody{position:relative}
+    .tg-hourline{height:${AG_HH}px;border-bottom:1px dashed var(--border)}
+    .tg-appt{position:absolute;left:3px;right:3px;background:var(--primary-soft);border-left:3px solid var(--primary);border-radius:7px;padding:5px 7px;overflow:hidden;cursor:pointer;transition:filter .12s}
+    .tg-appt:hover{filter:brightness(.97)}
+    .tg-appt.eval{border-left-color:var(--accent,#c2a063)}
+    .tg-appt.pend{background:repeating-linear-gradient(45deg,#fdf3df,#fdf3df 7px,#f7ead0 7px,#f7ead0 14px);border-left-color:#c9a227}
+    .tg-a-time{font-size:9px;color:var(--primary-d);font-weight:700}
+    .tg-a-name{font-size:11px;font-weight:700;color:var(--primary-d);line-height:1.2;margin-top:1px}
+    .tg-a-ind{font-size:9.5px;color:var(--primary);margin-top:1px}
+    .tg-a-addr{font-size:9px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tg-month{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+    .tg-mhead{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border)}
+    .tg-mhead div{padding:9px 0;text-align:center;font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+    .tg-mgrid{display:grid;grid-template-columns:repeat(7,1fr)}
+    .tg-mcell{min-height:96px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px 6px 8px}
+    .tg-mcell:nth-child(7n){border-right:none}
+    .tg-mcell.empty{background:#fafcfc}
+    .tg-mcell.today .tg-mnum{background:var(--primary-d);color:#fff}
+    .tg-mnum{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:50%;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:4px;cursor:pointer}
+    .tg-mchip{font-size:10.5px;background:var(--primary-soft);color:var(--primary-d);border-radius:5px;padding:2px 6px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-weight:600}
+    .tg-mchip.pend{background:#fdf3df;color:#8a6d27}
+    .tg-mmore{font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
+    @media(max-width:640px){.tg-daycol{min-width:96px}}
+    .agpop{position:fixed;width:290px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:16px;z-index:200;max-height:86vh;overflow-y:auto}
+    .agpop-close{position:absolute;top:10px;right:12px;border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer}
+    .agpop-head{display:flex;gap:10px;align-items:center}
+    .agpop-av{width:38px;height:38px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+    .agpop-name{font-size:14px;font-weight:700;color:var(--primary-d)}
+    .agpop-phone{font-size:11.5px;color:var(--muted);margin-top:2px}
+    .agpop-meta{margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink);background:var(--primary-soft);border-radius:9px;padding:9px 11px}
+    .agpop-addr{font-size:12px;color:var(--ink);margin-top:10px;line-height:1.4}
+    .agpop-proclbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-top:12px;margin-bottom:4px}
+    .agpop-proc{font-size:12.5px;font-weight:600;color:var(--ink)}
+    .agpop-status{margin-top:12px;font-size:12.5px;font-weight:700}
+    .agpop-btn{width:100%;margin-top:12px;background:var(--primary-d);color:#fff;border:none;padding:10px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+  </style>`;
 }
 
 function renderCalendar(y, m, selectedISO, counts){
