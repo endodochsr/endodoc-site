@@ -149,6 +149,7 @@
   .mic-btn:hover{background:var(--surface-2);color:var(--ink)}
   .mic-btn.recording{background:#fee2e2;border-color:#fca5a5;color:#dc2626;animation:mic-pulse 1s ease-in-out infinite}
   .mic-btn.loading{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-d);cursor:default}
+  .eico{width:1em;height:1em;vertical-align:-0.14em;display:inline-block;flex:none}
   @keyframes mic-pulse{0%,100%{opacity:1}50%{opacity:.6}}
   .mic-label{font-size:12.5px;color:var(--muted)}
   .stats-card{padding:22px}
@@ -598,7 +599,7 @@
       <!-- Sino de notificações -->
       <div style="position:relative;margin-left:auto">
         <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" title="Notificações em tempo real">
-          🔔<span class="notif-dot" id="notifDot"></span>
+          <svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="notif-dot" id="notifDot"></span>
         </button>
         <div class="notif-panel" id="notifPanel">
           <div class="notif-head">
@@ -718,7 +719,7 @@ function handleNewBooking(b){
   if(NOTIFS.length > 40) NOTIFS.length = 40;
   _renderNotifList();
   _showDot();
-  toast('📅 Novo agendamento: '+(b.office_name||'Consultório')+' · '+when, 'ok', 5000);
+  toast('Novo agendamento: '+(b.office_name||'Consultório')+' · '+when, 'ok', 5000);
   _playPing();
   refreshPendingBadge();
   if(appView === 'agenda') renderAgenda();
@@ -734,7 +735,7 @@ function handleBookingUpdate(newRow, oldRow){
     if(NOTIFS.length > 40) NOTIFS.length = 40;
     _renderNotifList();
     _showDot();
-    toast('❌ Cancelado: '+(newRow.office_name||'Consultório')+' · '+when, 'err', 4500);
+    toast('Cancelado: '+(newRow.office_name||'Consultório')+' · '+when, 'err', 4500);
     refreshPendingBadge();
     if(appView === 'agenda') renderAgenda();
     else if(appView === 'historico') renderHistorico();
@@ -773,7 +774,7 @@ function _renderNotifList(){
   if(!NOTIFS.length){ el.innerHTML = '<div class="notif-empty">Tudo tranquilo por aqui.</div>'; return; }
   el.innerHTML = NOTIFS.map(n => {
     const dt = n.time.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    const icon = n.type === 'new' ? '📅' : '❌';
+    const icon = n.type === 'new' ? '<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>' : '<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>';
     const cls  = n.type === 'new' ? 'new-bk' : 'cancel-bk';
     return `<div class="notif-item ${n.read?'':'unread'}" onclick="toggleNotifPanel();go('agenda')">
       <div class="notif-icon ${cls}">${icon}</div>
@@ -879,7 +880,7 @@ async function requestPushPermission(){
   }
   const sub = await _ensurePushSubscription();
   if(sub){
-    toast('✅ Notificações push ativadas!','ok');
+    toast('Notificações push ativadas!','ok');
   }
   _updatePushBtn();
 }
@@ -970,16 +971,16 @@ async function toggleVoiceRecord(bookingId){
     _mediaRec = new MediaRecorder(stream, mimeType ? { mimeType } : {});
     _mediaRec.ondataavailable = e => { if(e.data.size > 0) _audioChunks.push(e.data); };
     _mediaRec.onstart = () => {
-      if(btn){ btn.textContent = '⏹️ Parar gravação'; btn.className = 'mic-btn recording'; }
+      if(btn){ btn.innerHTML = '<svg class="eico" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Parar gravação'; btn.className = 'mic-btn recording'; }
       if(label) label.textContent = 'Gravando…';
     };
     _mediaRec.onstop = async () => {
       // Para todas as tracks do microfone
       stream.getTracks().forEach(t => t.stop());
-      if(btn){ btn.textContent = '⏳ Transcrevendo…'; btn.className = 'mic-btn loading'; }
+      if(btn){ btn.innerHTML = '<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> Transcrevendo…'; btn.className = 'mic-btn loading'; }
       if(label) label.textContent = '';
       await _transcribeAndInsert(bookingId, _audioChunks, _mediaRec.mimeType || 'audio/webm');
-      if(btn){ btn.textContent = '🎙️ Ditado por voz'; btn.className = 'mic-btn'; }
+      if(btn){ btn.innerHTML = '<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></svg> Ditado por voz'; btn.className = 'mic-btn'; }
       _mediaRec = null; _audioChunks = []; _recBookingId = null;
     };
     _mediaRec.start();
@@ -1029,7 +1030,7 @@ async function _transcribeAndInsert(bookingId, chunks, mimeType){
     ta.value = existing + separator + result.text;
     ta.focus();
     ta.setSelectionRange(ta.value.length, ta.value.length);
-    toast('✅ Transcrição inserida!','ok');
+    toast('Transcrição inserida!','ok');
 
   }catch(e){
     console.warn('[whisper] fetch error:', e);
@@ -1236,7 +1237,7 @@ function go(v){
   else if(v==='dispo'){ body.innerHTML=dispoShell(); loadDispoSlots(); setTimeout(updateRecPreview,0); }
   else if(v==='historico'){ body.innerHTML='<div class="page-head"><h1>Histórico</h1><p>Carregando…</p></div>'; renderHistorico(); }
   else if(v==='financeiro'){ body.innerHTML='<div class="page-head"><h1>Financeiro</h1><p>Carregando…</p></div>'; renderFinanceiro(); }
-  else if(v==='indique'){ body.innerHTML='<div class="page-head"><h1>🎁 Indique e ganhe</h1><p>Carregando seu código…</p></div>'; renderIndique(); }
+  else if(v==='indique'){ body.innerHTML='<div class="page-head"><h1><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg> Indique e ganhe</h1><p>Carregando seu código…</p></div>'; renderIndique(); }
 }
 function hasAccess(p){
   if(!p) return false;
@@ -1250,7 +1251,7 @@ function lockedView(v){
   const titulo = v==='agenda' ? 'Agenda' : 'Disponibilidade';
   return `<div class="page-head"><h1>${titulo}</h1></div>
     <div class="card" style="text-align:center;padding:30px 22px">
-      <div style="font-size:34px;line-height:1;margin-bottom:10px">🔒</div>
+      <div style="font-size:34px;line-height:1;margin-bottom:10px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
       <h2 style="font-family:'Fraunces',serif;font-size:20px;margin-bottom:8px">Acesso bloqueado</h2>
       <p style="color:var(--muted);font-size:14.5px;margin-bottom:14px">
         Seu teste/assinatura está fora do prazo. Assine para liberar a ${titulo.toLowerCase()} e voltar a receber agendamentos.
@@ -1274,16 +1275,16 @@ function accessInfo(p){
     return { hint:`<div class="hint gold">⚠ Pagamento em atraso. Regularize abaixo para não perder o acesso.</div>`, showSubscribe:true };
   }
   if(st==='canceled' || (trialEnd && trialDays===0 && st!=='active')){
-    return { hint:`<div class="hint gold">⏳ Seu acesso expirou. Assine para continuar.</div>`, showSubscribe:true };
+    return { hint:`<div class="hint gold"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> Seu acesso expirou. Assine para continuar.</div>`, showSubscribe:true };
   }
   // trial em andamento
-  return { hint:`<div class="hint gold">⏳ Teste grátis — faltam <b>${trialDays} dia(s)</b>.</div>`, showSubscribe:true };
+  return { hint:`<div class="hint gold"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> Teste grátis — faltam <b>${trialDays} dia(s)</b>.</div>`, showSubscribe:true };
 }
 function viewVisao(){
   const p=currentProf||{};
   const link='endodoc.com.br/'+(p.slug||'');
   const a=accessInfo(p);
-  return `<div class="page-head"><h1>Olá, ${esc(p.name||'')} 👋</h1><p>Bem-vindo(a) ao seu painel.</p></div>
+  return `<div class="page-head"><h1>Olá, ${esc(p.name||'')} <svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8a8 8 0 0 0 8 8h0a8 8 0 0 0 8-8v-3a2 2 0 0 0-4 0"/></svg></h1><p>Bem-vindo(a) ao seu painel.</p></div>
     <div style="margin-top:14px">${a.hint}</div>
     <div id="onboardingCard"></div>
     <div id="statsCard" class="card stats-card">
@@ -1291,7 +1292,7 @@ function viewVisao(){
     </div>
     <div class="card">
       <div class="section-title">Seu link de agendamento</div>
-      <div class="linkbox"><span style="flex:1">🔗 ${link}</span>
+      <div class="linkbox"><span style="flex:1"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> ${link}</span>
         <button class="btn btn-ghost btn-sm" onclick="copyLink('${link}')">Copiar</button></div>
       <p style="font-size:13px;color:var(--muted);margin-top:10px">Defina seus horários na aba <b>Disponibilidade</b> para os consultórios poderem agendar por esse link.</p>
     </div>
@@ -1330,7 +1331,7 @@ async function loadOnboarding(){
     // Se ainda não viu a celebração, mostra (e marca o dismiss pra não voltar)
     if(!p.onboarding_celebrated){
       el.innerHTML = `<div class="card onb-celebrate">
-        <div class="onb-celebrate-emoji">🎉</div>
+        <div class="onb-celebrate-emoji"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/><path d="M22 2 11 13"/></svg></div>
         <h3 style="font-family:'Fraunces',serif;font-size:22px;margin-bottom:6px">Pronto! Sua conta está configurada.</h3>
         <p style="color:var(--muted);font-size:14.5px;margin-bottom:14px">Agora é só compartilhar seu link com os primeiros consultórios e ver as reservas chegarem.</p>
         <button class="btn btn-primary btn-sm" onclick="markOnboardingCelebrated()">Beleza, vamos lá! ✓</button>
@@ -1357,7 +1358,7 @@ async function loadOnboarding(){
   el.innerHTML = `<div class="card onb-card">
     <div class="onb-head">
       <div>
-        <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">🚀 Primeiros passos</div>
+        <div style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg> Primeiros passos</div>
         <h3 style="font-family:'Fraunces',serif;font-size:20px;color:var(--ink);margin-bottom:2px">Termine de configurar sua conta</h3>
         <p style="font-size:13.5px;color:var(--muted)">${doneCount} de ${total} concluído${doneCount===1?'':'s'}.</p>
       </div>
@@ -1435,7 +1436,7 @@ async function loadStats(){
   const monthName=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m];
   const fmtBRL=v=>'R$ '+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
 
-  let html=`<div class="section-title">📊 Resumo de ${monthName}</div>
+  let html=`<div class="section-title"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg> Resumo de ${monthName}</div>
     <div class="stats-grid">
       <div class="stat">
         <div class="stat-label">Consultas confirmadas</div>
@@ -1536,11 +1537,11 @@ function subscribeCard(p){
     <div style="margin-top:14px;max-width:420px" id="cupBlock">
       <button type="button" id="cupToggleBtn" onclick="toggleCouponField()"
         style="background:none;border:none;color:var(--primary-d);font-size:13.5px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:6px">
-        🎫 Tem cupom? <span style="font-size:11px">▾</span>
+        <svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg> Tem cupom? <span style="font-size:11px">▾</span>
       </button>
       <div id="cupArea" style="display:none;margin-top:10px;padding:12px;background:var(--surface-2);border-radius:11px;border:1.5px dashed var(--border)">
         <div id="cupAutoBadge" style="display:none;background:#fffbf2;border:1px solid #ecdfbf;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#8a6d27;font-weight:600">
-          🎁 Cupom da sua indicação aplicado automaticamente
+          <svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg> Cupom da sua indicação aplicado automaticamente
         </div>
         <div style="display:flex;gap:8px;align-items:flex-start">
           <input id="subCoupon" type="text" placeholder="EX: LANCAMENTO30 ou JOAO-A8K3"
@@ -1633,7 +1634,7 @@ async function maybeSendWelcomeEmail(){
 
 // expõe pra debug manual no console: window.debugReferral()
 window.debugReferral = async function(){
-  console.group('🔍 Debug do programa de indicação');
+  console.group('<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Debug do programa de indicação');
   console.log('1. window.EndodocCoupon disponível?', !!window.EndodocCoupon);
   if(window.EndodocCoupon){
     const stored = window.EndodocCoupon.getFull();
@@ -1674,8 +1675,8 @@ async function tryAutoApplyCoupon(){
       const isRef = window._validatedCoupon.type === 'referral';
       const ref = window._validatedCoupon.referrer_name;
       badge.innerHTML = isRef && ref
-        ? `🎁 Você foi indicado por <b>${esc(ref)}</b> — desconto aplicado automaticamente`
-        : '🎁 Cupom aplicado automaticamente da sua chegada';
+        ? `<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg> Você foi indicado por <b>${esc(ref)}</b> — desconto aplicado automaticamente`
+        : '<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg> Cupom aplicado automaticamente da sua chegada';
       // remove o badge se o cupom NÃO validar (pra não confundir)
     } else if(badge && !window._validatedCoupon){
       badge.style.display = 'none';
@@ -1787,7 +1788,7 @@ function dispoShell(){
   const hourOpts = SLOTS.map(s=>`<option value="${s}">${s}</option>`).join('');
   return `<div class="page-head"><h1>Disponibilidade</h1><p>Defina os dias e horários que você abre para agendamento.</p></div>
   <div class="card">
-    <div class="section-title">📅 Definir vários dias de uma vez (recomendado)</div>
+    <div class="section-title"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Definir vários dias de uma vez (recomendado)</div>
     <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">Crie sua agenda padrão e replique por semanas/meses. Ex.: <i>"toda terça e quinta, das 9h às 18h, pelos próximos 3 meses"</i>.</p>
 
     <div class="section-title" style="font-size:12px;margin-top:4px">PERÍODO</div>
@@ -1822,7 +1823,7 @@ function dispoShell(){
       <button class="btn btn-ghost btn-sm" onclick="dispoAll(true)">Marcar todos</button>
       <button class="btn btn-ghost btn-sm" onclick="dispoAll(false)">Limpar livres</button>
     </div>
-    <p style="font-size:12px;color:var(--muted);margin-top:10px">🔒 Horários já reservados ficam bloqueados e não podem ser removidos sem cancelar o agendamento.</p>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Horários já reservados ficam bloqueados e não podem ser removidos sem cancelar o agendamento.</p>
   </div>`;
 }
 function getRecHours(){
@@ -1872,7 +1873,7 @@ async function loadDispoSlots(){
   const availSet=new Set((av||[]).map(r=>hhmm(r.slot_time)));
   const bookedSet=new Set((bk||[]).map(r=>hhmm(r.slot_time)));
   cont.innerHTML=SLOTS.map(s=>{
-    if(bookedSet.has(s)) return `<button class="chip locked" disabled>${s} 🔒</button>`;
+    if(bookedSet.has(s)) return `<button class="chip locked" disabled>${s} <svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>`;
     return `<button class="chip ${availSet.has(s)?'on':''}" onclick="toggleSlot('${s}')">${s}</button>`;
   }).join('');
 }
@@ -1989,14 +1990,14 @@ function viewPerfil(){
       <p style="font-size:12px;color:var(--muted);margin-top:6px">Digite cada procedimento e pressione <b>Enter</b> para adicionar. Clique no × para remover.</p>
     </div>
     <div class="field">
-      <label>Link de avaliação Google ⭐</label>
+      <label>Link de avaliação Google <svg class="eico" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></label>
       <input id="pfGoogleReview" type="url" value="${esc(p.google_review_url||'')}" placeholder="https://g.page/r/SEU_ID/review">
       <p style="font-size:12px;color:var(--muted);margin-top:4px">Cole o link do seu Google Maps aqui. 9 dias após cada atendimento o paciente recebe automaticamente um WhatsApp pedindo avaliação.</p>
     </div>
     <button class="btn btn-primary" onclick="saveProfile()">Salvar alterações</button>
   </div>
   <div class="card" style="max-width:560px;margin:0 auto">
-    <div class="section-title">Cobrança via PIX 💸</div>
+    <div class="section-title">Cobrança via PIX <svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></div>
     <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 14px">Ao finalizar um atendimento, você pode enviar a cobrança direto pro WhatsApp da clínica, com o valor e o PIX copia-e-cola. O dinheiro cai na sua conta, sem taxa.</p>
     <div class="row2" style="grid-template-columns:1fr 1fr">
       <div class="field"><label>Tipo de chave PIX</label>
@@ -2243,19 +2244,19 @@ function bookingCard(g, opts){
          <button class="pill-icon" title="Mais" onclick='toggleBkMenu(this)'>⋯</button>
          <div class="bk-menu-pop hidden">
            <button class="bk-menu-item" onclick='unmarkCompleted("${first.id}")'>↩️ Desfazer realizado</button>
-           <button class="bk-menu-item danger" onclick='cancelBks(${idsAttr})'>❌ Cancelar consulta</button>
+           <button class="bk-menu-item danger" onclick='cancelBks(${idsAttr})'><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg> Cancelar consulta</button>
          </div>
        </div>`
     : `<div class="bk-menu" style="display:flex;gap:6px;flex-shrink:0;align-items:center">
-         <button class="pill" onclick='openReschedule(${idsAttr})'>📅 Reagendar</button>
+         <button class="pill" onclick='openReschedule(${idsAttr})'><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Reagendar</button>
          <button class="pill-icon" title="Mais" onclick='toggleBkMenu(this)'>⋯</button>
          <div class="bk-menu-pop hidden">
-           <button class="bk-menu-item danger" onclick='cancelBks(${idsAttr})'>❌ Cancelar consulta</button>
+           <button class="bk-menu-item danger" onclick='cancelBks(${idsAttr})'><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg> Cancelar consulta</button>
          </div>
        </div>`;
 
   let ribbon = '';
-  if(opts.pending) ribbon = `<div class="bk-ribbon">⏳ Aguardando sua confirmação</div>`;
+  if(opts.pending) ribbon = `<div class="bk-ribbon"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> Aguardando sua confirmação</div>`;
   else if(completed) {
     const dt = new Date(first.completed_at);
     const fmt = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')} às ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
@@ -2272,20 +2273,20 @@ function bookingCard(g, opts){
       </div>
       ${headerActions}
     </div>
-    <div class="bk-line">📍 ${esc(first.office_address||'—')}</div>
-    ${first.patient_name?`<div class="bk-line">👤 <b>${esc(first.patient_name)}</b>${first.patient_phone?' · '+esc(formatPhone(first.patient_phone)):''}${first._totalSessions>1?` <span class="pill session-count" title="Esta é a ${first._sessionNumber}ª sessão deste paciente com você">${first._sessionNumber}ª de ${first._totalSessions}</span>`:''}</div>`:''}
+    <div class="bk-line"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> ${esc(first.office_address||'—')}</div>
+    ${first.patient_name?`<div class="bk-line"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> <b>${esc(first.patient_name)}</b>${first.patient_phone?' · '+esc(formatPhone(first.patient_phone)):''}${first._totalSessions>1?` <span class="pill session-count" title="Esta é a ${first._sessionNumber}ª sessão deste paciente com você">${first._sessionNumber}ª de ${first._totalSessions}</span>`:''}</div>`:''}
     ${first.office_address && !completed ?`<iframe class="bk-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${q}&z=16&output=embed"></iframe>`:''}
-    <div class="bk-notes">📝 ${esc(first.notes||'—')}</div>
+    <div class="bk-notes"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> ${esc(first.notes||'—')}</div>
     <div class="bk-actions">
       ${!opts.pending && first.patient_phone ? renderAnamnesePill(first.id) : ''}
       ${!opts.pending && first.patient_phone ? renderConsentPill(first) : ''}
       ${prontuarioPill}
       ${reportPill}
-      ${!opts.pending ? (first.consultation_value ? `<button class="pill prontuario-filled" onclick="openValueModal('${first.id}')" title="Editar valor cobrado">💰 R$ ${Number(first.consultation_value).toFixed(2).replace('.',',')}</button>` : `<button class="pill prontuario-empty" onclick="openValueModal('${first.id}')">💰 Valor cobrado</button>`) : ''}
+      ${!opts.pending ? (first.consultation_value ? `<button class="pill prontuario-filled" onclick="openValueModal('${first.id}')" title="Editar valor cobrado"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5"/></svg> R$ ${Number(first.consultation_value).toFixed(2).replace('.',',')}</button>` : `<button class="pill prontuario-empty" onclick="openValueModal('${first.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5"/></svg> Valor cobrado</button>`) : ''}
       ${!opts.pending ? renderChargePill(first) : ''}
       ${canMarkDone ? `<button class="pill done" onclick='markCompleted("${first.id}", ${idsAttr})'>✓ Marcar realizado</button>` : ''}
-      ${first.office_address && !completed ?`<a class="pill" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">🗺️ Como chegar</a>`:''}
-      ${first.document_path?`<button class="pill dl" onclick="downloadDoc('${encodeURIComponent(first.document_path)}')">📎 Baixar documento</button>`:''}
+      ${first.office_address && !completed ?`<a class="pill" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg> Como chegar</a>`:''}
+      ${first.document_path?`<button class="pill dl" onclick="downloadDoc('${encodeURIComponent(first.document_path)}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Baixar documento</button>`:''}
     </div>
   </div>`;
 }
@@ -2295,9 +2296,9 @@ function renderChargePill(bk){
   if(!(currentProf && currentProf.pix_key)) return '';
   if(!bk.office_phone) return '';
   if(bk.charge_sent_at){
-    return `<button class="pill report-sent" onclick="sendCharge('${bk.id}',true)" title="Cobrança enviada em ${new Date(bk.charge_sent_at).toLocaleString('pt-BR')} · reenviar">💸 Cobrança enviada ✓</button>`;
+    return `<button class="pill report-sent" onclick="sendCharge('${bk.id}',true)" title="Cobrança enviada em ${new Date(bk.charge_sent_at).toLocaleString('pt-BR')} · reenviar"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg> Cobrança enviada ✓</button>`;
   }
-  return `<button class="pill report-ready" onclick="sendCharge('${bk.id}',false)">💸 Cobrar via PIX</button>`;
+  return `<button class="pill report-ready" onclick="sendCharge('${bk.id}',false)"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg> Cobrar via PIX</button>`;
 }
 async function sendCharge(bookingId, resend){
   if(!(currentProf && currentProf.pix_key)){
@@ -2324,18 +2325,18 @@ async function sendCharge(bookingId, resend){
 }
 function renderReportPill(bookingId){
   const r = (window._reportMap||{})[bookingId];
-  if(!r) return `<button class="pill report-create" onclick="openReport('${bookingId}')">📋 Criar relatório</button>`;
-  if(r.sent_to_office_at) return `<button class="pill report-sent" onclick="openReport('${bookingId}')">📋 Relatório enviado ✓</button>`;
-  return `<button class="pill report-ready" onclick="openReport('${bookingId}')">📋 Relatório (rascunho)</button>`;
+  if(!r) return `<button class="pill report-create" onclick="openReport('${bookingId}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Criar relatório</button>`;
+  if(r.sent_to_office_at) return `<button class="pill report-sent" onclick="openReport('${bookingId}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Relatório enviado ✓</button>`;
+  return `<button class="pill report-ready" onclick="openReport('${bookingId}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Relatório (rascunho)</button>`;
 }
 function renderProntuarioPill(bookingId, hasNotes){
-  if(hasNotes) return `<button class="pill prontuario-filled" onclick="openProntuario('${bookingId}')">📝 Prontuário ✓</button>`;
-  return `<button class="pill prontuario-empty" onclick="openProntuario('${bookingId}')">📝 Prontuário</button>`;
+  if(hasNotes) return `<button class="pill prontuario-filled" onclick="openProntuario('${bookingId}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Prontuário ✓</button>`;
+  return `<button class="pill prontuario-empty" onclick="openProntuario('${bookingId}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Prontuário</button>`;
 }
 function renderConsentPill(bk){
-  if(bk.consent_signed_at) return `<button class="pill report-sent" onclick="openConsentView('${bk.id}')" title="Assinado em ${new Date(bk.consent_signed_at).toLocaleString('pt-BR')} · clique para ver">✅ TCLE assinado</button>`;
-  if(bk.consent_sent_at)   return `<button class="pill prontuario-filled" onclick="sendConsent('${bk.id}',true)" title="Enviado em ${new Date(bk.consent_sent_at).toLocaleString('pt-BR')}">📋 TCLE enviado · reenviar</button>`;
-  return `<button class="pill prontuario-empty" onclick="sendConsent('${bk.id}',false)">📋 Enviar TCLE</button>`;
+  if(bk.consent_signed_at) return `<button class="pill report-sent" onclick="openConsentView('${bk.id}')" title="Assinado em ${new Date(bk.consent_signed_at).toLocaleString('pt-BR')} · clique para ver"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> TCLE assinado</button>`;
+  if(bk.consent_sent_at)   return `<button class="pill prontuario-filled" onclick="sendConsent('${bk.id}',true)" title="Enviado em ${new Date(bk.consent_sent_at).toLocaleString('pt-BR')}"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> TCLE enviado · reenviar</button>`;
+  return `<button class="pill prontuario-empty" onclick="sendConsent('${bk.id}',false)"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Enviar TCLE</button>`;
 }
 async function sendConsent(bookingId, resend){
   const msg = resend ? 'Reenviar o TCLE pro WhatsApp do paciente?' : 'Enviar o Termo de Consentimento (TCLE) pro WhatsApp do paciente?';
@@ -2369,10 +2370,10 @@ async function openConsentView(bookingId){
   const dataConsulta = b.slot_date ? new Date(b.slot_date+'T12:00:00').toLocaleDateString('pt-BR') : '';
   const hora = b.slot_time ? b.slot_time.slice(0,5) : '';
   const proc = b.procedure || 'Tratamento de canal (endodontia)';
-  const html = `<h3 style="font-family:'Fraunces',serif">📋 Termo de Consentimento assinado</h3>
+  const html = `<h3 style="font-family:'Fraunces',serif"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Termo de Consentimento assinado</h3>
     <p class="sub">${esc(b.office_name||'')}${dataConsulta?' · '+dataConsulta+(hora?' '+hora:''):''}</p>
     <div style="background:var(--success-soft,#e4f3ec);border:1px solid #a7d9c4;border-radius:12px;padding:14px 16px;margin:14px 0;display:flex;gap:12px;align-items:flex-start">
-      <span style="font-size:22px;line-height:1">✅</span>
+      <span style="font-size:22px;line-height:1"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
       <div style="font-size:13.5px;line-height:1.6;color:#0f5d5b">
         <b>Assinado digitalmente</b><br>
         Por: <b>${esc(pname)}</b><br>
@@ -2386,7 +2387,7 @@ async function openConsentView(bookingId){
     </div>
     <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="closeModal()">Fechar</button>
-      <button class="btn btn-primary btn-sm" onclick="exportConsentPDF()">📥 Baixar PDF</button>
+      <button class="btn btn-primary btn-sm" onclick="exportConsentPDF()"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar PDF</button>
     </div>`;
   showModal(html);
 }
@@ -2690,24 +2691,24 @@ function renderProntuarioModal(){
 - Medicação intracanal: Ca(OH)2
 - Retorno em 15 dias">${esc(e.clinical_notes||'')}</textarea>
         <div class="mic-bar">
-          <button type="button" class="mic-btn" id="micBtn_${e.id}" onclick="toggleVoiceRecord('${e.id}')">🎙️ Ditado por voz</button>
+          <button type="button" class="mic-btn" id="micBtn_${e.id}" onclick="toggleVoiceRecord('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></svg> Ditado por voz</button>
           <span class="mic-label" id="micLabel_${e.id}"></span>
         </div>
         <div class="pt-entry-actions">
           ${total > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="cancelEditEntry()">Cancelar</button>` : ''}
-          <button type="button" class="btn btn-primary btn-sm" onclick="saveProntuario('${e.id}')">💾 Salvar</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="saveProntuario('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar</button>
         </div>`;
     } else if(e.clinical_notes){
       bodyHtml = `
         <div class="pt-entry-body">${esc(e.clinical_notes)}</div>
         <div class="pt-entry-actions">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')">✏️ Editar</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>
         </div>`;
     } else {
       bodyHtml = `
         <div class="pt-entry-body empty">Sem evolução registrada nesta sessão.</div>
         <div class="pt-entry-actions">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')">📝 Adicionar evolução</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Adicionar evolução</button>
         </div>`;
     }
 
@@ -2726,12 +2727,12 @@ function renderProntuarioModal(){
   const html = `
     <div class="rep-head">
       <div>
-        <h3>📝 Prontuário do paciente</h3>
+        <h3><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Prontuário do paciente</h3>
         <div class="sub">${esc(bk.patient_name||'Paciente')}${phoneStr}</div>
       </div>
       <button class="rep-close" onclick="closeProntuario()" title="Fechar">✕</button>
     </div>
-    <div class="pt-summary">📋 ${sessionsLabel} · Visível somente pra você</div>
+    <div class="pt-summary"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> ${sessionsLabel} · Visível somente pra você</div>
     <div class="pt-timeline">
       ${entries.length ? timelineHtml : '<div class="pt-empty-state">Nenhum atendimento encontrado.</div>'}
     </div>
@@ -2841,11 +2842,11 @@ async function openHistoryDetail(bookingId){
   // seção anamnese
   let anamBlock;
   if(anam && anam.filled_at){
-    anamBlock = `<div class="hd-actions-row"><button class="pill anam-done" onclick="viewAnamnese('${anam.id}')">📋 Ver anamnese preenchida</button><span style="font-size:12px;color:var(--muted);align-self:center">Respondida em ${new Date(anam.filled_at).toLocaleString('pt-BR')}</span></div>`;
+    anamBlock = `<div class="hd-actions-row"><button class="pill anam-done" onclick="viewAnamnese('${anam.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Ver anamnese preenchida</button><span style="font-size:12px;color:var(--muted);align-self:center">Respondida em ${new Date(anam.filled_at).toLocaleString('pt-BR')}</span></div>`;
   } else if(anam && anam.sent_at){
-    anamBlock = `<div class="hd-prontuario empty">📤 Anamnese enviada em ${new Date(anam.sent_at).toLocaleString('pt-BR')}, mas o paciente ainda não preencheu.</div>`;
+    anamBlock = `<div class="hd-prontuario empty"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Anamnese enviada em ${new Date(anam.sent_at).toLocaleString('pt-BR')}, mas o paciente ainda não preencheu.</div>`;
   } else if(bk.patient_phone){
-    anamBlock = `<div class="hd-prontuario empty">⏳ Anamnese não foi enviada pra esse atendimento.</div>`;
+    anamBlock = `<div class="hd-prontuario empty"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> Anamnese não foi enviada pra esse atendimento.</div>`;
   } else {
     anamBlock = `<div class="hd-prontuario empty">Sem dados de paciente — anamnese não se aplica.</div>`;
   }
@@ -2853,11 +2854,11 @@ async function openHistoryDetail(bookingId){
   // seção relatório
   let repBlock;
   if(rep && rep.sent_to_office_at){
-    repBlock = `<div class="hd-actions-row"><button class="pill report-sent" onclick="openReport('${bk.id}')">📋 Ver relatório enviado</button><span style="font-size:12px;color:var(--muted);align-self:center">Enviado em ${new Date(rep.sent_to_office_at).toLocaleString('pt-BR')}</span></div>`;
+    repBlock = `<div class="hd-actions-row"><button class="pill report-sent" onclick="openReport('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Ver relatório enviado</button><span style="font-size:12px;color:var(--muted);align-self:center">Enviado em ${new Date(rep.sent_to_office_at).toLocaleString('pt-BR')}</span></div>`;
   } else if(rep){
-    repBlock = `<div class="hd-actions-row"><button class="pill report-ready" onclick="openReport('${bk.id}')">📋 Abrir rascunho</button><span style="font-size:12px;color:var(--muted);align-self:center">Salvo em ${new Date(rep.updated_at||rep.created_at).toLocaleString('pt-BR')} · ainda não enviado</span></div>`;
+    repBlock = `<div class="hd-actions-row"><button class="pill report-ready" onclick="openReport('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Abrir rascunho</button><span style="font-size:12px;color:var(--muted);align-self:center">Salvo em ${new Date(rep.updated_at||rep.created_at).toLocaleString('pt-BR')} · ainda não enviado</span></div>`;
   } else if(isCompleted){
-    repBlock = `<div class="hd-actions-row"><button class="pill report-create" onclick="openReport('${bk.id}')">📋 Criar relatório</button></div>`;
+    repBlock = `<div class="hd-actions-row"><button class="pill report-create" onclick="openReport('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Criar relatório</button></div>`;
   } else {
     repBlock = `<div class="hd-prontuario empty">Marque o atendimento como realizado pra criar um relatório.</div>`;
   }
@@ -2868,11 +2869,11 @@ async function openHistoryDetail(bookingId){
     prontBlock = `
       <div class="hd-prontuario">${esc(bk.clinical_notes)}</div>
       <div class="hd-actions-row" style="margin-top:10px">
-        <button class="pill prontuario-filled" onclick="closeHistoryDetail();openProntuario('${bk.id}')">📝 Editar prontuário</button>
+        <button class="pill prontuario-filled" onclick="closeHistoryDetail();openProntuario('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Editar prontuário</button>
         <span style="font-size:12px;color:var(--muted);align-self:center">Atualizado em ${new Date(bk.clinical_notes_updated_at).toLocaleString('pt-BR')}</span>
       </div>`;
   } else if(isCompleted){
-    prontBlock = `<div class="hd-actions-row"><button class="pill prontuario-empty" onclick="closeHistoryDetail();openProntuario('${bk.id}')">📝 Adicionar prontuário</button></div>`;
+    prontBlock = `<div class="hd-actions-row"><button class="pill prontuario-empty" onclick="closeHistoryDetail();openProntuario('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Adicionar prontuário</button></div>`;
   } else {
     prontBlock = `<div class="hd-prontuario empty">Marque o atendimento como realizado pra escrever o prontuário.</div>`;
   }
@@ -2898,38 +2899,38 @@ async function openHistoryDetail(bookingId){
     </div>
 
     <div class="hd-section">
-      <h4>💰 Financeiro <span class="h4-meta">${bk.consultation_value?(bk.payment_status==='paid'?'pago ✓':'pendente'):'sem valor'}</span></h4>
+      <h4><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5"/></svg> Financeiro <span class="h4-meta">${bk.consultation_value?(bk.payment_status==='paid'?'pago ✓':'pendente'):'sem valor'}</span></h4>
       ${bk.consultation_value
         ? `<div class="hd-info-grid">
             <div><div class="lbl">Valor cobrado</div><div class="val" style="font-family:Georgia,serif;font-size:20px;font-weight:600;color:var(--primary-d)">R$ ${Number(bk.consultation_value).toFixed(2).replace('.',',').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.')}</div></div>
-            <div><div class="lbl">Status do pagamento</div><div class="val">${bk.payment_status==='paid'?`<span style="color:var(--success);font-weight:600">✓ Recebido</span>${bk.paid_at?` <span style="color:var(--muted);font-size:12px">· ${new Date(bk.paid_at).toLocaleDateString('pt-BR')}</span>`:''}`:'<span style="color:#8a6d27;font-weight:600">⏳ A receber</span>'}</div></div>
+            <div><div class="lbl">Status do pagamento</div><div class="val">${bk.payment_status==='paid'?`<span style="color:var(--success);font-weight:600">✓ Recebido</span>${bk.paid_at?` <span style="color:var(--muted);font-size:12px">· ${new Date(bk.paid_at).toLocaleDateString('pt-BR')}</span>`:''}`:'<span style="color:#8a6d27;font-weight:600"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> A receber</span>'}</div></div>
           </div>
           <div class="hd-actions-row" style="margin-top:10px">
-            <button class="pill prontuario-filled" onclick="closeHistoryDetail();openValueModal('${bk.id}')">✏️ Editar valor</button>
+            <button class="pill prontuario-filled" onclick="closeHistoryDetail();openValueModal('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar valor</button>
             <button class="pill ${bk.payment_status==='paid'?'prontuario-empty':'done'}" onclick="togglePaid('${bk.id}','${bk.payment_status==='paid'?'false':'true'}');closeHistoryDetail();setTimeout(()=>openHistoryDetail('${bk.id}'),200)">${bk.payment_status==='paid'?'↩️ Marcar pendente':'✓ Marcar pago'}</button>
-            ${(currentProf && currentProf.pix_key && bk.office_phone) ? `<button class="pill ${bk.charge_sent_at?'report-sent':'report-ready'}" onclick="sendCharge('${bk.id}',${bk.charge_sent_at?'true':'false'})">${bk.charge_sent_at?'💸 Cobrança enviada ✓':'💸 Cobrar via PIX'}</button>` : ''}
+            ${(currentProf && currentProf.pix_key && bk.office_phone) ? `<button class="pill ${bk.charge_sent_at?'report-sent':'report-ready'}" onclick="sendCharge('${bk.id}',${bk.charge_sent_at?'true':'false'})">${bk.charge_sent_at?'<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg> Cobrança enviada ✓':'<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg> Cobrar via PIX'}</button>` : ''}
           </div>`
-        : `<div class="hd-actions-row"><button class="pill prontuario-empty" onclick="closeHistoryDetail();openValueModal('${bk.id}')">💰 Adicionar valor cobrado</button></div>`
+        : `<div class="hd-actions-row"><button class="pill prontuario-empty" onclick="closeHistoryDetail();openValueModal('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5"/></svg> Adicionar valor cobrado</button></div>`
       }
     </div>
 
     <div class="hd-section">
-      <h4>📝 Prontuário <span class="h4-meta">${bk.clinical_notes?'preenchido':'sem registro'}</span></h4>
+      <h4><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Prontuário <span class="h4-meta">${bk.clinical_notes?'preenchido':'sem registro'}</span></h4>
       ${prontBlock}
     </div>
 
     <div class="hd-section">
-      <h4>🩺 Anamnese pré-consulta <span class="h4-meta">${anam&&anam.filled_at?'preenchida':(anam&&anam.sent_at?'enviada':'não enviada')}</span></h4>
+      <h4><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3H3a1 1 0 0 0-1 1v5a6 6 0 0 0 12 0V4a1 1 0 0 0-1-1h-1"/><path d="M8 15v1a6 6 0 0 0 12 0v-4"/><circle cx="20" cy="10" r="2"/></svg> Anamnese pré-consulta <span class="h4-meta">${anam&&anam.filled_at?'preenchida':(anam&&anam.sent_at?'enviada':'não enviada')}</span></h4>
       ${anamBlock}
     </div>
 
     <div class="hd-section">
-      <h4>📤 Relatório pro consultório <span class="h4-meta">${rep&&rep.sent_to_office_at?'enviado':(rep?'rascunho':'não criado')}</span></h4>
+      <h4><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Relatório pro consultório <span class="h4-meta">${rep&&rep.sent_to_office_at?'enviado':(rep?'rascunho':'não criado')}</span></h4>
       ${repBlock}
     </div>
 
     <div class="rep-actions" style="justify-content:space-between">
-      <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger-soft)" onclick="confirmDeleteBooking('${bk.id}')">🗑️ Excluir permanentemente</button>
+      <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger-soft)" onclick="confirmDeleteBooking('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Excluir permanentemente</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="closeHistoryDetail()">Fechar</button>
     </div>`;
   document.getElementById('modal').classList.add('modal-lg');
@@ -2975,15 +2976,15 @@ function formatPhone(d){
 }
 function renderAnamnesePill(bookingId){
   const a = (window._anamMap||{})[bookingId];
-  if(!a) return `<button class="pill anam-wait" onclick="sendAnamneseNow('${bookingId}')" title="Clique para enviar a anamnese pro WhatsApp do paciente">📤 Enviar anamnese</button>`;
+  if(!a) return `<button class="pill anam-wait" onclick="sendAnamneseNow('${bookingId}')" title="Clique para enviar a anamnese pro WhatsApp do paciente"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Enviar anamnese</button>`;
   if(a.filled_at){
-    return `<button class="pill anam-done" onclick="viewAnamnese('${a.id}')">📋 Ver anamnese</button>`;
+    return `<button class="pill anam-done" onclick="viewAnamnese('${a.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Ver anamnese</button>`;
   }
   if(a.sent_at){
-    return `<span class="pill anam-sent">📤 Anamnese enviada</span>
+    return `<span class="pill anam-sent"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Anamnese enviada</span>
             <button class="pill" onclick="resendAnamnese('${bookingId}')">Reenviar</button>`;
   }
-  return `<button class="pill anam-wait" onclick="sendAnamneseNow('${bookingId}')" title="Clique para enviar a anamnese pro WhatsApp do paciente">📤 Enviar anamnese</button>`;
+  return `<button class="pill anam-wait" onclick="sendAnamneseNow('${bookingId}')" title="Clique para enviar a anamnese pro WhatsApp do paciente"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Enviar anamnese</button>`;
 }
 
 /* ===== Marcar como realizado ===== */
@@ -3120,19 +3121,19 @@ function showReportModal(){
         <div class="rep-grid-2" style="margin-top:10px">
           <div class="rep-field"><label>Retorno sugerido</label><input name="retorno" value="${esc(r.retorno||'')}" placeholder="Ex: 12 meses"></div>
         </div>
-        <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="criarLembreteRetorno()" title="Abre o Google Agenda com o lembrete de retorno pré-preenchido">📅 Criar lembrete de retorno no Google Agenda</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="criarLembreteRetorno()" title="Abre o Google Agenda com o lembrete de retorno pré-preenchido"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Criar lembrete de retorno no Google Agenda</button>
       </div>
 
       <div class="rep-section">
-        <h4>📷 Radiografias</h4>
+        <h4><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Radiografias</h4>
         <div class="photo-area" id="phAreaRx">
           ${renderPhotoGrid('radiografias', r.radiografias||[])}
         </div>
       </div>
 
       <div class="rep-section">
-        <h4>🦷 Galeria (fotos do procedimento)</h4>
-        <p style="font-size:12px;color:var(--muted);margin:-6px 0 10px">📐 Use fotos no formato <b>3x4 (retrato / vertical)</b> pra ficarem no padrão do relatório.</p>
+        <h4><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5c-1.8-1.7-4.6-2-6.4-.4C3.9 6.6 3.6 9.4 4.4 12c.6 2 .8 4 1.3 5.6.4 1.3.7 2.4 1.5 2.4.9 0 1.1-1.6 1.4-3 .3-1.3.6-2.5 1.4-2.5s1.1 1.2 1.4 2.5c.3 1.4.5 3 1.4 3 .8 0 1.1-1.1 1.5-2.4.5-1.6.7-3.6 1.3-5.6.8-2.6.5-5.4-1.2-6.9-1.8-1.6-4.6-1.3-6.4.4z"/></svg> Galeria (fotos do procedimento)</h4>
+        <p style="font-size:12px;color:var(--muted);margin:-6px 0 10px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4z"/><path d="M7.5 10.5l2 2M10.5 7.5l2 2M4.5 13.5l2 2"/></svg> Use fotos no formato <b>3x4 (retrato / vertical)</b> pra ficarem no padrão do relatório.</p>
         <div class="photo-area" id="phAreaGal">
           ${renderPhotoGrid('galeria', r.galeria||[])}
         </div>
@@ -3140,9 +3141,9 @@ function showReportModal(){
 
       <div class="rep-actions">
         <button type="button" class="btn btn-ghost btn-sm" onclick="closeReport()">Fechar</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="saveReportDraft()">💾 Salvar rascunho</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="previewReportPDF()">👁️ Pré-visualizar PDF</button>
-        <button type="submit" class="btn btn-primary btn-sm">📤 Enviar pro WhatsApp do consultório</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="saveReportDraft()"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar rascunho</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="previewReportPDF()"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> Pré-visualizar PDF</button>
+        <button type="submit" class="btn btn-primary btn-sm"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Enviar pro WhatsApp do consultório</button>
       </div>
     </form>`;
   document.getElementById('modal').classList.add('modal-lg');
@@ -3276,7 +3277,7 @@ function renderPhotoGrid(type, paths){
   if(!count){
     return `${counter}<label class="photo-area-empty">
       <input type="file" accept="image/*" multiple style="display:none" onchange="handleReportPhotos('${type}',this.files)">
-      📎 <b>Clique pra adicionar fotos</b> ou arraste aqui<br>
+      <svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> <b>Clique pra adicionar fotos</b> ou arraste aqui<br>
       <span style="font-size:11.5px">JPG, PNG · até ${REPORT_PHOTO_MAX} fotos · várias de uma vez</span>
     </label>`;
   }
@@ -4030,11 +4031,11 @@ function renderAgendaView(){
 
   if(totalEmpty){
     body.innerHTML = head + `<div class="card empty-state">
-      <div class="empty-ico">📅</div>
+      <div class="empty-ico"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></div>
       <h3>Sua agenda está limpa</h3>
       <p>Compartilhe seu link com consultórios e veja as reservas chegarem aqui automaticamente.</p>
       <div class="empty-cta">
-        <button class="btn btn-primary btn-sm" onclick="copyLink('endodoc.com.br/'+(currentProf&&currentProf.slug||''))">📋 Copiar meu link</button>
+        <button class="btn btn-primary btn-sm" onclick="copyLink('endodoc.com.br/'+(currentProf&&currentProf.slug||''))"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Copiar meu link</button>
         <button class="btn btn-ghost btn-sm" onclick="go('dispo')">Definir horários →</button>
       </div>
     </div>`;
@@ -4137,19 +4138,26 @@ function agOpenPop(ev, id){
   const dateStr=dt?`${AG_DOW[dt.getDay()]}, ${dt.getDate()} ${AG_MESABR[dt.getMonth()]} ${dt.getFullYear()}`:'';
   const status=b.status==='pending'?'Aguardando confirmação':(b.completed_at?'Finalizada':'Confirmada');
   const statusColor=b.status==='pending'?'#8a6d27':(b.completed_at?'#2e7d57':'#14514D');
+  const IC={
+    phone:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+    cal:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>',
+    clock:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    user:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    pin:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>'
+  };
   const pop=document.createElement('div');
   pop.id='agPop'; pop.className='agpop';
   pop.innerHTML=`
-    <button class="agpop-close" onclick="agClosePop()">✕</button>
-    <div class="agpop-head"><div class="agpop-av">${esc(initial)}</div><div><div class="agpop-name">${esc(b.patient_name||'Paciente')}</div>${b.patient_phone?`<div class="agpop-phone">📱 ${esc(formatPhone(b.patient_phone))}</div>`:''}</div></div>
+    <button class="agpop-close" onclick="agClosePop()" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <div class="agpop-head"><div class="agpop-av">${esc(initial)}</div><div><div class="agpop-name">${esc(b.patient_name||'Paciente')}</div>${b.patient_phone?`<div class="agpop-phone">${IC.phone}${esc(formatPhone(b.patient_phone))}</div>`:''}</div></div>
     <div class="agpop-meta">
-      <div class="row">📅 ${esc(dateStr)}</div>
-      <div class="row">🕐 ${esc(timeStr)}</div>
-      ${b.office_responsible?`<div class="row">👤 Indicação: ${esc(b.office_responsible)}</div>`:''}
+      <div class="row">${IC.cal}${esc(dateStr)}</div>
+      <div class="row">${IC.clock}${esc(timeStr)}</div>
+      ${b.office_responsible?`<div class="row">${IC.user}Indicação: ${esc(b.office_responsible)}</div>`:''}
     </div>
-    ${b.office_name||b.office_address?`<div class="agpop-addr">📍 ${esc(b.office_name||'')}${b.office_address?' · '+esc(b.office_address):''}</div>`:''}
+    ${b.office_name||b.office_address?`<div class="agpop-addr">${IC.pin}<span>${esc(b.office_name||'')}${b.office_address?' · '+esc(b.office_address):''}</span></div>`:''}
     ${b.procedure?`<div class="agpop-proclbl">Procedimento</div><div class="agpop-proc">${esc(b.procedure)}</div>`:''}
-    <div class="agpop-status"><span style="color:${statusColor}">● ${esc(status)}</span></div>
+    <div class="agpop-status"><span class="agpop-dot" style="background:${statusColor}"></span><span style="color:${statusColor}">${esc(status)}</span></div>
     <button class="agpop-btn" onclick="agClosePop();openHistoryDetail('${b.id}')">Ver detalhes e ações</button>
   `;
   document.body.appendChild(pop);
@@ -4209,16 +4217,22 @@ function agStyles(){
     .tg-mmore{font-size:10px;color:var(--muted);cursor:pointer;font-weight:600}
     @media(max-width:640px){.tg-daycol{min-width:96px}}
     .agpop{position:fixed;width:290px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:16px;z-index:200;max-height:86vh;overflow-y:auto}
-    .agpop-close{position:absolute;top:10px;right:12px;border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer}
+    .agpop-close{position:absolute;top:10px;right:12px;border:none;background:none;color:var(--muted);cursor:pointer;padding:2px;line-height:0}
+    .agpop-close svg{width:16px;height:16px}
+    .agpop .ic{width:14px;height:14px;flex:none}
     .agpop-head{display:flex;gap:10px;align-items:center}
     .agpop-av{width:38px;height:38px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
     .agpop-name{font-size:14px;font-weight:700;color:var(--primary-d)}
-    .agpop-phone{font-size:11.5px;color:var(--muted);margin-top:2px}
-    .agpop-meta{margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink);background:var(--primary-soft);border-radius:9px;padding:9px 11px}
-    .agpop-addr{font-size:12px;color:var(--ink);margin-top:10px;line-height:1.4}
+    .agpop-phone{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px}
+    .agpop-meta{margin-top:10px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ink);background:var(--primary-soft);border-radius:9px;padding:9px 11px}
+    .agpop-meta .row{display:flex;align-items:center;gap:7px}
+    .agpop-meta .ic{stroke:var(--primary-d)}
+    .agpop-addr{font-size:12px;color:var(--ink);margin-top:10px;line-height:1.4;display:flex;align-items:flex-start;gap:7px}
+    .agpop-addr .ic{margin-top:1px;stroke:var(--accent,#c2a063)}
     .agpop-proclbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-top:12px;margin-bottom:4px}
     .agpop-proc{font-size:12.5px;font-weight:600;color:var(--ink)}
-    .agpop-status{margin-top:12px;font-size:12.5px;font-weight:700}
+    .agpop-status{margin-top:12px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+    .agpop-dot{width:8px;height:8px;border-radius:50%;flex:none}
     .agpop-btn{width:100%;margin-top:12px;background:var(--primary-d);color:#fff;border:none;padding:10px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
   </style>`;
 }
@@ -4322,7 +4336,7 @@ function renderSelectedDay(iso, active, pending){
       if(next){
         const fromId = g.bookings[g.bookings.length-1].id;
         const toId = next.bookings[0].id;
-        return card + `<div class="bk-trajeto" data-from="${fromId}" data-to="${toId}"><span class="bk-trajeto-spinner">🚗 calculando trajeto…</span></div>`;
+        return card + `<div class="bk-trajeto" data-from="${fromId}" data-to="${toId}"><span class="bk-trajeto-spinner"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M5 12h14"/></svg> calculando trajeto…</span></div>`;
       }
       return card;
     }).join('');
@@ -4358,7 +4372,7 @@ async function enrichTravelTimesGrouped(groups){
     const node=document.querySelector(`.bk-trajeto[data-from="${a.id}"][data-to="${b.id}"]`);
     if(!node) continue;
     if(!a.office_lat || !a.office_lng || !b.office_lat || !b.office_lng){
-      node.innerHTML='<span class="bk-trajeto-warn">🚗 sem endereço completo pra calcular o trajeto</span>';
+      node.innerHTML='<span class="bk-trajeto-warn"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M5 12h14"/></svg> sem endereço completo pra calcular o trajeto</span>';
       continue;
     }
     pairs.push({ origin:{lat:a.office_lat,lng:a.office_lng}, dest:{lat:b.office_lat,lng:b.office_lng} });
@@ -4374,13 +4388,13 @@ async function enrichTravelTimesGrouped(groups){
     const {results}=await r.json();
     (results||[]).forEach((res,i)=>{
       const node=nodes[i]; if(!node) return;
-      if(!res){ node.innerHTML='<span class="bk-trajeto-warn">🚗 rota não encontrada</span>'; return; }
+      if(!res){ node.innerHTML='<span class="bk-trajeto-warn"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M5 12h14"/></svg> rota não encontrada</span>'; return; }
       const min=Math.round(res.duration_s/60);
       const km=(res.distance_m/1000).toFixed(1).replace('.',',');
-      node.innerHTML=`<span class="bk-trajeto-line">🚗 <b>${min} min</b> · ${km} km até o próximo</span>`;
+      node.innerHTML=`<span class="bk-trajeto-line"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M5 12h14"/></svg> <b>${min} min</b> · ${km} km até o próximo</span>`;
     });
   }catch(e){
-    nodes.forEach(n=>{ n.innerHTML='<span class="bk-trajeto-warn">🚗 não consegui calcular agora</span>'; });
+    nodes.forEach(n=>{ n.innerHTML='<span class="bk-trajeto-warn"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M5 12h14"/></svg> não consegui calcular agora</span>'; });
   }
 }
 async function confirmBks(ids){
@@ -4465,18 +4479,18 @@ async function viewAnamnese(anamId){
 
   // Monta modal com loading da IA no topo
   const modalId = 'anamModal_' + Date.now();
-  const html = `<h3 style="font-family:'Fraunces',serif">📋 Anamnese</h3>
+  const html = `<h3 style="font-family:'Fraunces',serif"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Anamnese</h3>
     <p class="sub">${esc(pname)} · ${b.office_name?esc(b.office_name):''}</p>
     ${filled?`<p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Preenchida em ${filled}</p>`:''}
     <div id="${modalId}_ai">
-      <div class="ai-loading"><span style="font-size:18px">✨</span>Analisando com IA…</div>
+      <div class="ai-loading"><span style="font-size:18px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z"/><path d="M19 15l.6 1.6L21 17l-1.4.5L19 19l-.6-1.5L17 17l1.4-.2z"/></svg></span>Analisando com IA…</div>
     </div>
     <table style="width:100%;border-collapse:collapse;border-top:1px solid var(--border)">
       ${rows || '<tr><td style="padding:14px 0;color:var(--muted)">Sem respostas registradas.</td></tr>'}
     </table>
     <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="closeModal()">Fechar</button>
-      <button class="btn btn-primary btn-sm" onclick="exportAnamnesePDF()">📥 Baixar PDF</button>
+      <button class="btn btn-primary btn-sm" onclick="exportAnamnesePDF()"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar PDF</button>
     </div>`;
   showModal(html);
 
@@ -4523,13 +4537,13 @@ function _renderAiAnalysis(r){
 
   let html = `<div class="ai-analysis">
     <div class="ai-analysis-head">
-      <span>✨ Avaliação clínica — IA</span>
+      <span><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z"/><path d="M19 15l.6 1.6L21 17l-1.4.5L19 19l-.6-1.5L17 17l1.4-.2z"/></svg> Avaliação clínica — IA</span>
       <small>Hipótese baseada na anamnese · confirmar com exame clínico/radiográfico</small>
     </div>`;
 
   // Urgência badge
   html += `<div style="display:inline-flex;align-items:center;gap:6px;background:${urg.bg};border:1px solid ${urg.border};color:${urg.color};border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;margin-bottom:12px">
-    <span style="font-size:13px">${urgencia==='urgencia'?'🚨':urgencia==='prioritaria'?'⚡':'🟢'}</span>${urg.label}
+    <span style="font-size:13px">${urgencia==='urgencia'?'<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18v-6a5 5 0 0 1 10 0v6"/><path d="M5 21h14M12 2v1"/><path d="M4.6 6.6 5.3 7.3M19.4 6.6l-.7.7"/></svg>':urgencia==='prioritaria'?'<svg class="eico" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>':'<svg class="eico" viewBox="0 0 24 24" fill="#22c55e"><circle cx="12" cy="12" r="8"/></svg>'}</span>${urg.label}
   </div>`;
 
   // Alertas clínicos
@@ -4539,7 +4553,7 @@ function _renderAiAnalysis(r){
 
   // Diagnóstico provável
   if(diag.length){
-    html += `<div class="ai-section"><div class="ai-section-lbl">🔬 Hipótese diagnóstica</div>
+    html += `<div class="ai-section"><div class="ai-section-lbl"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h8M3 22h18M14 22a7 7 0 1 0 0-14h-1"/><path d="M9 14h2M9 12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z"/></svg> Hipótese diagnóstica</div>
       <div style="display:flex;flex-direction:column;gap:5px">
         ${diag.map((d,i)=>`<div style="display:flex;align-items:flex-start;gap:8px;font-size:13.5px;color:var(--ink);line-height:1.4">
           <span style="flex-shrink:0;font-weight:700;color:var(--primary-d);min-width:18px">${i+1}.</span>${esc(d)}
@@ -4550,7 +4564,7 @@ function _renderAiAnalysis(r){
 
   // Conduta sugerida
   if(conduta.length){
-    html += `<div class="ai-section"><div class="ai-section-lbl">📋 Conduta sugerida</div>
+    html += `<div class="ai-section"><div class="ai-section-lbl"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Conduta sugerida</div>
       <div style="display:flex;flex-direction:column;gap:5px">
         ${conduta.map(c=>`<div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--ink);line-height:1.4">
           <span style="flex-shrink:0;color:var(--primary);font-size:15px;line-height:1.2">›</span>${esc(c)}
@@ -4858,7 +4872,7 @@ async function loadHistorico(){
   // lista
   if(!list.length){
     document.getElementById('histList').innerHTML = `<div class="card empty-state">
-      <div class="empty-ico">🗂️</div>
+      <div class="empty-ico"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/><path d="M2 10h20"/></svg></div>
       <h3>Sem histórico no período</h3>
       <p>Ajuste o período acima ou aguarde: assim que você atender uma consulta, ela aparece aqui automaticamente.</p>
     </div>`;
@@ -4890,7 +4904,7 @@ async function loadHistorico(){
         <div class="hist-t">${horario}${dur>1?` <span style="color:var(--muted)">(${dur}h)</span>`:''}</div>
       </div>
       <div class="hist-main">
-        <div class="hist-name">${esc(first.office_name)}${hasNotes?' <span style="font-size:11px;color:var(--primary);font-weight:600" title="Tem prontuário">📝</span>':''}</div>
+        <div class="hist-name">${esc(first.office_name)}${hasNotes?' <span style="font-size:11px;color:var(--primary);font-weight:600" title="Tem prontuário"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></span>':''}</div>
         <div class="hist-meta">${esc(first.procedure||'—')}${first.office_responsible?' · '+esc(first.office_responsible):''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px">${badge}${extraIcon}</div>
@@ -4904,7 +4918,7 @@ function openSupport(){
   const html = `
     <div class="rep-head">
       <div>
-        <h3>💬 Suporte Endo<span style="color:#0a5d5c">Doc</span></h3>
+        <h3><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Suporte Endo<span style="color:#0a5d5c">Doc</span></h3>
         <div class="sub">Tô aqui pra te ajudar — escolhe o canal que preferir.</div>
       </div>
       <button class="rep-close" onclick="closeModal()" title="Fechar">✕</button>
@@ -4913,7 +4927,7 @@ function openSupport(){
       <a href="/contato" target="_blank" rel="noopener"
          style="display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid var(--primary);background:var(--primary-soft);border-radius:12px;text-decoration:none;transition:.15s"
          onmouseover="this.style.background='#d2e7e5'" onmouseout="this.style.background='var(--primary-soft)'">
-        <div style="width:46px;height:46px;background:var(--primary-d);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:22px;flex-shrink:0">📝</div>
+        <div style="width:46px;height:46px;background:var(--primary-d);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:22px;flex-shrink:0"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;color:var(--primary-d);font-size:15px">Página de contato</div>
           <div style="font-size:13px;color:var(--ink)">Manda um recado pelo formulário (a gente registra e responde)</div>
@@ -4923,7 +4937,7 @@ function openSupport(){
       <a href="https://wa.me/5511989794945?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20EndoDoc" target="_blank" rel="noopener"
          style="display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid #d6f1de;background:#eaf9ef;border-radius:12px;text-decoration:none;transition:.15s"
          onmouseover="this.style.background='#dff4e6'" onmouseout="this.style.background='#eaf9ef'">
-        <div style="width:46px;height:46px;background:#25d366;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:24px;flex-shrink:0">📱</div>
+        <div style="width:46px;height:46px;background:#25d366;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:24px;flex-shrink:0"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;color:#0e6630;font-size:15px">WhatsApp</div>
           <div style="font-size:13px;color:#3a6b48">(11) 98979-4945 · resposta mais rápida</div>
@@ -4933,7 +4947,7 @@ function openSupport(){
       <a href="mailto:contato@endodoc.com.br?subject=Suporte%20EndoDoc"
          style="display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid var(--border);background:var(--surface-2);border-radius:12px;text-decoration:none;transition:.15s"
          onmouseover="this.style.background='#f5ecd9'" onmouseout="this.style.background='var(--surface-2)'">
-        <div style="width:46px;height:46px;background:var(--primary);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:24px;flex-shrink:0">✉️</div>
+        <div style="width:46px;height:46px;background:var(--primary);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:24px;flex-shrink:0"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;color:var(--ink);font-size:15px">E-mail</div>
           <div style="font-size:13px;color:var(--muted)">contato@endodoc.com.br · pra dúvidas detalhadas</div>
@@ -4943,7 +4957,7 @@ function openSupport(){
       <a href="https://instagram.com/endodoc.app" target="_blank" rel="noopener"
          style="display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid #f5d6e4;background:#fdf0f5;border-radius:12px;text-decoration:none;transition:.15s"
          onmouseover="this.style.background='#fbe5ec'" onmouseout="this.style.background='#fdf0f5'">
-        <div style="width:46px;height:46px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:22px;flex-shrink:0">📷</div>
+        <div style="width:46px;height:46px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);border-radius:12px;display:grid;place-items:center;color:#fff;font-size:22px;flex-shrink:0"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
         <div style="flex:1">
           <div style="font-weight:700;color:#8a1746;font-size:15px">Instagram</div>
           <div style="font-size:13px;color:#a04063">@endodoc.app · novidades e dicas</div>
@@ -4985,7 +4999,7 @@ async function openReschedule(ids){
 /* ===== Indique e Ganhe ===== */
 async function renderIndique(){
   const body = document.getElementById('appBody');
-  body.innerHTML = `<div class="page-head"><h1>🎁 Indique e ganhe</h1><p>Carregando seu código de indicação…</p></div>`;
+  body.innerHTML = `<div class="page-head"><h1><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg> Indique e ganhe</h1><p>Carregando seu código de indicação…</p></div>`;
 
   try {
     // 1) código + estatísticas do funil
@@ -5022,8 +5036,8 @@ ${link}`);
         const stageBadge = it.status === 'paid'
           ? '<span style="background:#dff1ec;color:#0f5d5b;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700">✓ Pagou · +30d pra você</span>'
           : (it.status === 'checkout'
-            ? '<span style="background:#fff3cd;color:#85620a;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700">⏳ No checkout</span>'
-            : '<span style="background:var(--surface-2);color:var(--muted);padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700">📥 Criou conta</span>');
+            ? '<span style="background:#fff3cd;color:#85620a;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> No checkout</span>'
+            : '<span style="background:var(--surface-2);color:var(--muted);padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Criou conta</span>');
         return `
           <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
             <div style="flex:1;min-width:0">
@@ -5039,7 +5053,7 @@ ${link}`);
 
     body.innerHTML = `
       <div class="page-head">
-        <h1>🎁 Indique e ganhe</h1>
+        <h1><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg> Indique e ganhe</h1>
         <p>Compartilhe seu código com outros endodontistas. Quando eles assinarem, ambos ganham.</p>
       </div>
 
@@ -5047,17 +5061,17 @@ ${link}`);
         <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.85;margin-bottom:8px">Seu código pessoal</div>
         <div style="font-family:'Monaco','JetBrains Mono',monospace;font-size:36px;font-weight:700;letter-spacing:2px;margin-bottom:16px;background:rgba(255,255,255,.15);padding:14px 18px;border-radius:12px;display:inline-block">${esc(code)}</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
-          <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:none;font-weight:700" onclick="copyText('${esc(code)}','Código copiado!')">📋 Copiar código</button>
-          <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:none;font-weight:700" onclick="copyText('${link}','Link copiado!')">🔗 Copiar link</button>
-          <a class="btn btn-ghost btn-sm" style="background:#25d366;color:#fff;border:none;font-weight:700;text-decoration:none" href="${waShare}" target="_blank" rel="noopener">📱 Compartilhar no WhatsApp</a>
+          <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:none;font-weight:700" onclick="copyText('${esc(code)}','Código copiado!')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Copiar código</button>
+          <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:none;font-weight:700" onclick="copyText('${link}','Link copiado!')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copiar link</button>
+          <a class="btn btn-ghost btn-sm" style="background:#25d366;color:#fff;border:none;font-weight:700;text-decoration:none" href="${waShare}" target="_blank" rel="noopener"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg> Compartilhar no WhatsApp</a>
         </div>
       </div>
 
       <div class="stats-grid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
-        <div class="stat" title="Quantos criaram conta usando seu link"><div class="stat-label">📥 Cadastros</div><div class="stat-val">${totalSignups}</div></div>
-        <div class="stat" title="Quantos chegaram ao checkout"><div class="stat-label">💳 Em checkout</div><div class="stat-val">${totalCheckouts}</div></div>
-        <div class="stat" title="Quantos pagaram (recompensa liberada)"><div class="stat-label">✅ Pagaram</div><div class="stat-val">${totalPaid}</div></div>
-        <div class="stat" title="Total de dias adicionados na sua assinatura"><div class="stat-label">🎁 Dias grátis</div><div class="stat-val">${daysCredited}d</div></div>
+        <div class="stat" title="Quantos criaram conta usando seu link"><div class="stat-label"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Cadastros</div><div class="stat-val">${totalSignups}</div></div>
+        <div class="stat" title="Quantos chegaram ao checkout"><div class="stat-label"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> Em checkout</div><div class="stat-val">${totalCheckouts}</div></div>
+        <div class="stat" title="Quantos pagaram (recompensa liberada)"><div class="stat-label"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Pagaram</div><div class="stat-val">${totalPaid}</div></div>
+        <div class="stat" title="Total de dias adicionados na sua assinatura"><div class="stat-label"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg> Dias grátis</div><div class="stat-val">${daysCredited}d</div></div>
       </div>
 
       <div class="card" style="margin-bottom:18px">
@@ -5070,17 +5084,17 @@ ${link}`);
         <div class="section-title">Como funciona</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:8px">
           <div style="text-align:center;padding:14px">
-            <div style="font-size:30px;margin-bottom:8px">📤</div>
+            <div style="font-size:30px;margin-bottom:8px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
             <div style="font-weight:700;margin-bottom:6px;font-size:15px">1. Compartilhe seu código</div>
             <div style="font-size:13px;color:var(--muted);line-height:1.45">Manda pra colegas endodontistas que poderiam usar o Endo<span style="color:#0a5d5c">Doc</span>.</div>
           </div>
           <div style="text-align:center;padding:14px">
-            <div style="font-size:30px;margin-bottom:8px">💰</div>
+            <div style="font-size:30px;margin-bottom:8px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5"/></svg></div>
             <div style="font-weight:700;margin-bottom:6px;font-size:15px">2. Ele assina com 30% off</div>
             <div style="font-size:13px;color:var(--muted);line-height:1.45">No 1º pagamento ele paga 30% a menos. Tudo automático no checkout.</div>
           </div>
           <div style="text-align:center;padding:14px">
-            <div style="font-size:30px;margin-bottom:8px">🎁</div>
+            <div style="font-size:30px;margin-bottom:8px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg></div>
             <div style="font-weight:700;margin-bottom:6px;font-size:15px">3. Você ganha 30 dias</div>
             <div style="font-size:13px;color:var(--muted);line-height:1.45">Sua assinatura é estendida em 30 dias por cada indicado que paga.</div>
           </div>
@@ -5100,7 +5114,7 @@ ${link}`);
     `;
   } catch(e){
     console.error(e);
-    body.innerHTML = `<div class="page-head"><h1>🎁 Indique e ganhe</h1></div>
+    body.innerHTML = `<div class="page-head"><h1><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9"/><path d="M12 8S10.5 2 7.5 4 12 8 12 8Z"/><path d="M12 8s1.5-6 4.5-4S12 8 12 8Z"/></svg> Indique e ganhe</h1></div>
       <div class="card" style="text-align:center;padding:32px"><div style="font-size:32px">⚠️</div>
         <h3 style="margin:10px 0 8px">Não foi possível carregar seu código</h3>
         <p style="color:var(--muted);font-size:14px">${esc(e.message||'erro desconhecido')}</p>
@@ -5175,7 +5189,7 @@ async function loadFinanceiro(){
   // Estado vazio se nenhum atendimento tem valor preenchido
   if(!totalReceita && !list.length){
     document.getElementById('finContent').innerHTML = `<div class="card empty-state">
-      <div class="empty-ico">💰</div>
+      <div class="empty-ico"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5"/></svg></div>
       <h3>Sem dados financeiros ainda</h3>
       <p>Conforme você for atendendo e preenchendo o valor cobrado em cada consulta, sua receita aparece aqui — separada por clínica, com tendência mês a mês.</p>
     </div>`;
@@ -5183,7 +5197,7 @@ async function loadFinanceiro(){
   }
   if(!totalReceita){
     document.getElementById('finContent').innerHTML = `<div class="card empty-state">
-      <div class="empty-ico">💰</div>
+      <div class="empty-ico"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5"/></svg></div>
       <h3>Preencha o valor das consultas</h3>
       <p>Você tem ${list.length} consulta(s) no período mas nenhuma com valor cobrado. Vai em <a href="#" onclick="go('agenda');return false" style="color:var(--primary);font-weight:600">Agenda</a> ou <a href="#" onclick="go('historico');return false" style="color:var(--primary);font-weight:600">Histórico</a> e adiciona o valor de cada uma.</p>
     </div>`;
@@ -5244,7 +5258,7 @@ async function loadFinanceiro(){
     </div>
 
     <div class="card" style="margin-bottom:18px">
-      <div class="section-title" style="margin-bottom:16px">📈 Evolução mensal (últimos 6 meses)</div>
+      <div class="section-title" style="margin-bottom:16px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> Evolução mensal (últimos 6 meses)</div>
       <div class="fin-chart">
         ${months.map(m=>{
           const h = m.value>0 ? Math.max(6, Math.round((m.value/maxMonth)*140)) : 4;
@@ -5260,7 +5274,7 @@ async function loadFinanceiro(){
 
     <div class="row2" style="margin-bottom:18px">
       <div class="card">
-        <div class="section-title" style="margin-bottom:14px">🏆 Top clínicas (por receita)</div>
+        <div class="section-title" style="margin-bottom:14px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg> Top clínicas (por receita)</div>
         ${topClinicas.length?topClinicas.map((c,i)=>{
           const pct = Math.round((c.total/totalReceita)*100);
           return `<div class="fin-rank">
@@ -5275,7 +5289,7 @@ async function loadFinanceiro(){
         }).join(''):'<div style="color:var(--muted);text-align:center;padding:12px">Sem dados</div>'}
       </div>
       <div class="card">
-        <div class="section-title" style="margin-bottom:14px">🦷 Por procedimento</div>
+        <div class="section-title" style="margin-bottom:14px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5c-1.8-1.7-4.6-2-6.4-.4C3.9 6.6 3.6 9.4 4.4 12c.6 2 .8 4 1.3 5.6.4 1.3.7 2.4 1.5 2.4.9 0 1.1-1.6 1.4-3 .3-1.3.6-2.5 1.4-2.5s1.1 1.2 1.4 2.5c.3 1.4.5 3 1.4 3 .8 0 1.1-1.1 1.5-2.4.5-1.6.7-3.6 1.3-5.6.8-2.6.5-5.4-1.2-6.9-1.8-1.6-4.6-1.3-6.4.4z"/></svg> Por procedimento</div>
         ${topProcs.length?topProcs.map((p,i)=>{
           const pct = Math.round((p.total/totalReceita)*100);
           return `<div class="fin-rank">
@@ -5292,7 +5306,7 @@ async function loadFinanceiro(){
     </div>
 
     <div class="card">
-      <div class="section-title" style="margin-bottom:14px">📋 Atendimentos no período (${list.length})</div>
+      <div class="section-title" style="margin-bottom:14px"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Atendimentos no período (${list.length})</div>
       <div class="fin-list">
         ${list.map(b=>{
           const [y,m,d] = (b.slot_date||'').split('-');
@@ -5306,9 +5320,9 @@ async function loadFinanceiro(){
             </div>
             <div class="fin-row-value">
               ${b.consultation_value?`<b>${fmtBRL(b.consultation_value)}</b>`:`<span style="color:var(--muted);font-size:12px">sem valor</span>`}
-              ${b.consultation_value?`<span class="fin-status ${isPaid?'paid':'pending'}" onclick="togglePaid('${b.id}',${isPaid?'false':'true'})" title="${isPaid?'Clique pra marcar como a receber':'Clique pra marcar como recebido'}">${isPaid?'✓ Recebido':'⏳ A receber'}</span>`:''}
+              ${b.consultation_value?`<span class="fin-status ${isPaid?'paid':'pending'}" onclick="togglePaid('${b.id}',${isPaid?'false':'true'})" title="${isPaid?'Clique pra marcar como a receber':'Clique pra marcar como recebido'}">${isPaid?'✓ Recebido':'<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> A receber'}</span>`:''}
             </div>
-            <button class="pill" onclick="openValueModal('${b.id}')" title="Editar valor">${b.consultation_value?'✏️':'+ Valor'}</button>
+            <button class="pill" onclick="openValueModal('${b.id}')" title="Editar valor">${b.consultation_value?'<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>':'+ Valor'}</button>
           </div>`;
         }).join('')}
       </div>
@@ -5319,7 +5333,7 @@ async function togglePaid(bookingId, makePaid){
   const paidAt = status==='paid' ? new Date().toISOString() : null;
   const { error } = await sb.from('bookings').update({ payment_status:status, paid_at:paidAt }).eq('id',bookingId);
   if(error){ toast('Erro: '+error.message,'err'); return; }
-  toast(status==='paid'?'✓ Marcado como pago':'⏳ Marcado como pendente','ok');
+  toast(status==='paid'?'Marcado como pago':'Marcado como pendente','ok');
   // Atualiza só a view atual
   if(document.getElementById('finContent')) loadFinanceiro();
   else if(document.getElementById('histList')) loadHistorico();
@@ -5345,7 +5359,7 @@ async function openValueModal(bookingId){
           <div class="val-status-txt"><b>Sim, já recebi</b><span>Entra como pago</span></div>
         </button>
         <button type="button" id="valBtnPending" class="val-status-btn ${!isPaid?'active':''}" onclick="selectValueStatus('pending')">
-          <div class="val-status-ico">⏳</div>
+          <div class="val-status-ico"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg></div>
           <div class="val-status-txt"><b>Ainda não</b><span>Marca a receber</span></div>
         </button>
       </div>
@@ -5378,7 +5392,7 @@ async function saveValue(bookingId){
   const { error } = await sb.from('bookings').update(updates).eq('id',bookingId);
   if(error){ toast('Erro: '+error.message,'err'); return; }
   closeModal();
-  toast(v ? (status==='paid'?'✓ Salvo como recebido':'⏳ Salvo como a receber') : 'Valor removido','ok');
+  toast(v ? (status==='paid'?'Salvo como recebido':'Salvo como a receber') : 'Valor removido','ok');
   // Atualiza SÓ a view atualmente renderizada (não troca de tela)
   if(document.getElementById('finContent')) loadFinanceiro();
   else if(document.getElementById('histList')) loadHistorico();
