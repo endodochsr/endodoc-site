@@ -2818,12 +2818,13 @@ async function openHistoryDetail(bookingId){
   // ids de todos os slots deste mesmo atendimento (multi-slot) — usado por
   // Marcar realizado / Cancelar / Reagendar / Confirmar / Recusar.
   let groupIds=[bk.id];
+  let anchorId=bk.id;
   try{
-    let gq = sb.from('bookings').select('id').eq('slot_date',bk.slot_date).eq('office_name',bk.office_name||'').in('status',['active','pending']);
+    let gq = sb.from('bookings').select('id,slot_time').eq('slot_date',bk.slot_date).eq('office_name',bk.office_name||'').in('status',['active','pending']).order('slot_time',{ascending:true});
     if(bk.patient_phone) gq=gq.eq('patient_phone',bk.patient_phone);
     else if(bk.patient_name) gq=gq.eq('patient_name',bk.patient_name);
     const { data:sibs } = await gq;
-    if(sibs && sibs.length) groupIds=sibs.map(s=>s.id);
+    if(sibs && sibs.length){ groupIds=sibs.map(s=>s.id); anchorId=sibs[0].id; }
   }catch(_){}
 
   // Fallback: atendimentos multi-slot (ex.: canal de 2h) têm a anamnese vinculada
@@ -2935,6 +2936,21 @@ async function openHistoryDetail(bookingId){
       actionButtons += `<button class="pill cancel" onclick="(async()=>{await cancelBks(${gIds});closeHistoryDetail()})()">${IX} Cancelar consulta</button>`;
   }
 
+  // ===== Duração (esticar / encurtar) — só p/ atendimento ativo =====
+  const curDur = groupIds.length;
+  const canResize = !isPending && !isCompleted && !isCancelled;
+  const ICLOCK='<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+  const durationSection = canResize ? `
+    <div class="hd-section">
+      <h4>${ICLOCK} Duração <span class="h4-meta">${curDur}h</span></h4>
+      <div class="hd-actions-row" style="align-items:center;gap:10px">
+        <button class="pill" ${curDur<=1?'disabled style=\"opacity:.5;cursor:default\"':''} onclick="(async()=>{await resizeBooking(${gIds},${curDur-1});hdRefresh('${anchorId}')})()">− 1 hora</button>
+        <span style="font-weight:700;color:var(--primary-d);font-size:15px;min-width:34px;text-align:center">${curDur}h</span>
+        <button class="pill" onclick="(async()=>{await resizeBooking(${gIds},${curDur+1});hdRefresh('${anchorId}')})()">+ 1 hora</button>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">Esticar adiciona a próxima hora livre; encurtar libera a última hora. O início não muda.</p>
+    </div>` : '';
+
   const html = `
     <div class="hd-head">
       <div>
@@ -2959,7 +2975,7 @@ async function openHistoryDetail(bookingId){
       <h4><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Ações</h4>
       <div class="hd-actions-row" style="flex-wrap:wrap;gap:8px">${actionButtons || '<span style="font-size:12.5px;color:var(--muted)">Sem ações disponíveis para este atendimento.</span>'}</div>
     </div>
-
+    ${durationSection}
     <div class="hd-section">
       <h4><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5"/></svg> Financeiro <span class="h4-meta">${bk.consultation_value?(bk.payment_status==='paid'?'pago ✓':'pendente'):'sem valor'}</span></h4>
       ${bk.consultation_value
@@ -4084,6 +4100,42 @@ function agNav(dir){
 }
 function agDayFromMonth(iso){ window._agenda.selected=iso; window._agenda.view='dia'; renderAgendaView(); }
 
+// Redimensiona a duração de um atendimento (esticar/encurtar) via RPC
+async function resizeBooking(ids, newDur){
+  if(!Array.isArray(ids) || !ids.length) return;
+  if(newDur < 1) return;
+  toast('Ajustando duração…','');
+  const { error } = await sb.rpc('resize_booking_group',{ p_ids: ids, p_new_dur: newDur });
+  if(error){ toast('Erro: '+(error.message||error),'err'); await renderAgenda(); return; }
+  toast('Duração atualizada!','ok');
+  await renderAgenda();
+}
+// Arraste da borda inferior do bloco (desktop) pra mudar a duração
+function agResizeStart(ev, handle){
+  ev.preventDefault(); ev.stopPropagation();
+  const appt = handle.parentElement;
+  let ids; try{ ids = JSON.parse(appt.getAttribute('data-ids')||'[]'); }catch(_){ ids=[]; }
+  const curDur = parseInt(appt.getAttribute('data-dur')||'1',10);
+  const startY = ev.clientY;
+  let newDur = curDur;
+  appt.classList.add('resizing');
+  function move(e){
+    const dh = Math.round((e.clientY - startY)/AG_HH);
+    newDur = Math.min(12, Math.max(1, curDur + dh));
+    appt.style.height = (newDur*AG_HH-3)+'px';
+  }
+  function up(){
+    document.removeEventListener('mousemove',move);
+    document.removeEventListener('mouseup',up);
+    appt.classList.remove('resizing');
+    window._agSuppressClick = true;
+    setTimeout(()=>{ window._agSuppressClick=false; }, 60);
+    if(newDur !== curDur) resizeBooking(ids, newDur);
+  }
+  document.addEventListener('mousemove',move);
+  document.addEventListener('mouseup',up);
+}
+
 function renderAgendaView(){
   const body = document.getElementById('appBody');
   const ag = window._agenda;
@@ -4159,11 +4211,13 @@ function agTimeGrid(days, all){
       const isPend=b.status==='pending';
       const cls=['tg-appt',isEval?'eval':'',isPend?'pend':''].filter(Boolean).join(' ');
       const tEnd=String(h+dur).padStart(2,'0')+':00';
-      return `<div class="${cls}" style="top:${top}px;height:${height}px" onclick="agOpenPop(event,'${b.id}')">
+      const idsAttr=JSON.stringify(g.bookings.map(x=>x.id)).replace(/"/g,'&quot;');
+      return `<div class="${cls}" data-ids="${idsAttr}" data-dur="${dur}" style="top:${top}px;height:${height}px" onclick="agOpenPop(event,'${b.id}')">
         <div class="tg-a-time">${(b.slot_time||'').slice(0,5)} - ${tEnd}</div>
         <div class="tg-a-name">${esc(b.patient_name||'—')}</div>
         ${b.office_responsible?`<div class="tg-a-ind">${esc(b.office_responsible)}</div>`:''}
         ${b.office_address?`<div class="tg-a-addr">${esc(b.office_address)}</div>`:''}
+        ${isPend?'':'<div class="tg-resize" title="Arraste pra mudar a duração" onmousedown="agResizeStart(event,this)"></div>'}
       </div>`;
     }).join('');
     return `<div class="tg-daycol">${head}<div class="tg-daybody" style="height:${hours.length*AG_HH}px">${lines}${appts}</div></div>`;
@@ -4210,6 +4264,7 @@ function agMonthGrid(all){
 function agClosePop(){ const p=document.getElementById('agPop'); if(p) p.remove(); }
 function agOpenPop(ev, id){
   ev.stopPropagation();
+  if(window._agSuppressClick) return;  // acabou de redimensionar, não abre o popover
   agClosePop();
   const all=[...(window._agenda.active||[]),...(window._agenda.pending||[])];
   const b=all.find(x=>x.id===id); if(!b) return;
@@ -4297,6 +4352,11 @@ function agStyles(){
     .tg-hourline{height:${AG_HH}px;border-bottom:1px dashed var(--border)}
     .tg-appt{position:absolute;left:3px;right:3px;background:var(--primary-soft);border-left:3px solid var(--primary);border-radius:7px;padding:5px 7px;overflow:hidden;cursor:pointer;transition:filter .12s}
     .tg-appt:hover{filter:brightness(.97)}
+    .tg-appt.resizing{opacity:.9;box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:5}
+    .tg-resize{position:absolute;left:0;right:0;bottom:0;height:9px;cursor:ns-resize;border-radius:0 0 7px 7px}
+    .tg-resize::after{content:"";position:absolute;left:50%;bottom:2px;width:20px;height:2px;transform:translateX(-50%);border-radius:2px;background:currentColor;opacity:0}
+    .tg-appt:hover .tg-resize::after{opacity:.35}
+    @media(max-width:900px){.tg-resize{display:none}}
     .tg-appt.eval{border-left-color:var(--accent,#c2a063)}
     .tg-appt.pend{background:repeating-linear-gradient(45deg,#fdf3df,#fdf3df 7px,#f7ead0 7px,#f7ead0 14px);border-left-color:#c9a227}
     .tg-a-time{font-size:9px;color:var(--primary-d);font-weight:700}
