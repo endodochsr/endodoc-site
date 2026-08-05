@@ -585,6 +585,10 @@ async function confirmBooking(){
   openModal(`<div style="text-align:center"><div style="font-size:46px">✅</div>
     <h3 style="margin-top:6px">Agendamento confirmado!</h3>
     <p class="sub" style="margin-top:8px">${esc(name)}<br>${fmtLong(d)} ${horarioStr}<br>com ${esc(prof.name)}</p>
+    <div style="text-align:left;background:var(--primary-soft);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin:16px 0;font-size:13px;line-height:1.55;color:var(--ink)">
+      <b>Fique de olho no WhatsApp</b><br>
+      Você vai receber uma mensagem com a <b>ficha de pré-atendimento</b> (anamnese) e, quando for o caso, o termo de consentimento. Para garantir que chegue, <b>salve o contato e responda "OK"</b> assim que receber.
+    </div>
     <button class="btn btn-primary btn-block" onclick="closeModal()">Concluir</button></div>`);
 }
 
