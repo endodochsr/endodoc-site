@@ -2177,10 +2177,11 @@ async function changeSlug(){
 /* ===== agenda ===== */
 const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 function groupBookings(list){
-  // agrupa multi-slot consecutivos da mesma reserva: mesmo dia, mesma clínica, mesmo telefone
+  // agrupa multi-slot consecutivos da MESMA reserva: mesmo dia, mesma clínica e MESMO PACIENTE.
+  // (incluir o paciente na chave evita unir Maria 10-12 com José 12-14 na mesma clínica)
   const groups=[]; let cur=null;
   for(const b of list){
-    const key=b.slot_date+'|'+b.office_name+'|'+(b.office_phone||'');
+    const key=b.slot_date+'|'+b.office_name+'|'+(b.office_phone||'')+'|'+(b.patient_phone||b.patient_name||'');
     if(cur && cur.key===key && cur.lastTime && hourDiff(cur.lastTime,b.slot_time)===1){
       cur.bookings.push(b); cur.lastTime=b.slot_time;
     } else {
@@ -2527,6 +2528,76 @@ async function exportConsentPDF(){
 }
 
 /* ===== Novo agendamento manual (pelo dentista) ===== */
+// ===== Editar dados de um atendimento (aplica a todos os slots do grupo) =====
+async function openEditBooking(bookingId){
+  toast('Carregando…','');
+  const { data:bk, error } = await sb.from('bookings').select('*').eq('id',bookingId).maybeSingle();
+  if(error || !bk){ toast('Erro ao carregar','err'); return; }
+  // todos os slots do mesmo atendimento (multi-slot) — editados juntos
+  let ids=[bk.id];
+  try{
+    let gq = sb.from('bookings').select('id').eq('slot_date',bk.slot_date).eq('office_name',bk.office_name||'').in('status',['active','pending']);
+    if(bk.patient_phone) gq=gq.eq('patient_phone',bk.patient_phone);
+    else if(bk.patient_name) gq=gq.eq('patient_name',bk.patient_name);
+    const { data:sibs } = await gq;
+    if(sibs && sibs.length) ids=sibs.map(s=>s.id);
+  }catch(_){}
+  const idsAttr=JSON.stringify(ids).replace(/"/g,'&quot;');
+  const v=(s)=>esc(s==null?'':String(s));
+  const html = `<h3 style="font-family:'Fraunces',serif">Editar atendimento</h3>
+    <p class="sub">Corrige os dados da consulta. Para mudar data/horário use <b>Reagendar</b>; para a duração, os botões <b>+1h/−1h</b>.</p>
+    <form id="ebForm" onsubmit="event.preventDefault();saveEditBooking('${idsAttr}','${bk.id}')" style="margin-top:10px">
+      <div class="section-title" style="margin-top:4px">Paciente</div>
+      <div class="row2">
+        <div class="field"><label>Nome do paciente *</label><input id="ebPatientName" required value="${v(bk.patient_name)}"></div>
+        <div class="field"><label>WhatsApp do paciente</label><input id="ebPatientPhone" value="${v(bk.patient_phone)}" inputmode="tel"></div>
+      </div>
+      <div class="section-title">Consultório</div>
+      <div class="row2">
+        <div class="field"><label>Nome da clínica *</label><input id="ebOfficeName" required value="${v(bk.office_name)}"></div>
+        <div class="field"><label>Responsável</label><input id="ebOfficeResp" value="${v(bk.office_responsible)}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Telefone da clínica</label><input id="ebOfficePhone" value="${v(bk.office_phone)}" inputmode="tel"></div>
+        <div class="field"><label>E-mail da clínica</label><input id="ebOfficeEmail" value="${v(bk.office_email)}" inputmode="email"></div>
+      </div>
+      <div class="field"><label>Endereço</label><input id="ebOfficeAddress" value="${v(bk.office_address)}"></div>
+      <div class="section-title">Atendimento</div>
+      <div class="field"><label>Procedimento</label><input id="ebProcedure" value="${v(bk.procedure)}"></div>
+      <div class="field"><label>Observações</label><textarea id="ebNotes" rows="2">${v(bk.notes)}</textarea></div>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal();openHistoryDetail('${bk.id}')">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="ebSaveBtn">Salvar alterações</button>
+      </div>
+    </form>`;
+  showModal(html);
+}
+async function saveEditBooking(idsAttr, reopenId){
+  let ids; try{ ids=JSON.parse(idsAttr); }catch(_){ ids=[]; }
+  if(!ids.length){ toast('Reserva não identificada','err'); return; }
+  const name=val('ebPatientName'), office=val('ebOfficeName');
+  if(!name){ toast('Informe o nome do paciente','err'); return; }
+  if(!office){ toast('Informe o nome da clínica','err'); return; }
+  const patch={
+    patient_name: name,
+    patient_phone: val('ebPatientPhone')||null,
+    office_name: office,
+    office_responsible: val('ebOfficeResp')||null,
+    office_phone: val('ebOfficePhone')||null,
+    office_email: val('ebOfficeEmail')||null,
+    office_address: val('ebOfficeAddress')||null,
+    procedure: val('ebProcedure')||null,
+    notes: val('ebNotes')||null,
+  };
+  const btn=document.getElementById('ebSaveBtn'); if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
+  toast('Salvando…','');
+  const { error } = await sb.from('bookings').update(patch).in('id', ids);
+  if(error){ toast('Erro: '+error.message,'err'); if(btn){ btn.disabled=false; btn.textContent='Salvar alterações'; } return; }
+  toast('Atendimento atualizado!','ok');
+  await renderAgenda();
+  closeModal();
+  openHistoryDetail(reopenId||ids[0]);
+}
 function openNewBooking(){
   const hourOpts = SLOTS.map(s=>`<option value="${s}"${s==='09:00'?' selected':''}>${s}</option>`).join('');
   const html = `<h3 style="font-family:'Fraunces',serif">＋ Nova consulta</h3>
@@ -2951,6 +3022,10 @@ async function openHistoryDetail(bookingId){
       actionButtons += `<button class="pill dl" onclick="downloadDoc('${encodeURIComponent(bk.document_path)}')">${ICLIP} Baixar documento</button>`;
     if(!isCompleted && !isCancelled)
       actionButtons += `<button class="pill cancel" onclick="(async()=>{await cancelBks(${gIds});closeHistoryDetail()})()">${IX} Cancelar consulta</button>`;
+  }
+  if(!isCancelled){
+    const IEDIT='<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
+    actionButtons = `<button class="pill" onclick="closeHistoryDetail();openEditBooking('${bk.id}')">${IEDIT} Editar dados</button>` + actionButtons;
   }
 
   // ===== Duração (esticar / encurtar) — só p/ atendimento ativo =====
@@ -4323,6 +4398,7 @@ function agOpenPop(ev, id){
       <button class="agpop-confirm" onclick='agClosePop();confirmBks(${JSON.stringify(pendIds)})'>✓ Confirmar consulta</button>
       <button class="agpop-reject" onclick='agClosePop();rejectBks(${JSON.stringify(pendIds)})'>Recusar</button>
     </div>`:''}
+    <button class="agpop-edit" onclick="agClosePop();openEditBooking('${b.id}')">Editar dados</button>
     <button class="agpop-btn" onclick="agClosePop();openHistoryDetail('${b.id}')">Ver detalhes e ações</button>
   `;
   document.body.appendChild(pop);
@@ -4425,6 +4501,9 @@ function agStyles(){
     .agpop-status{margin-top:12px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px}
     .agpop-dot{width:8px;height:8px;border-radius:50%;flex:none}
     .agpop-btn{width:100%;margin-top:10px;background:var(--primary-d);color:#fff;border:none;padding:10px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+    .agpop-edit{width:100%;margin-top:10px;background:#fff;color:var(--primary-d);border:1px solid var(--border);padding:9px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+    .agpop-edit:hover{background:var(--primary-soft)}
+    .agpop-edit + .agpop-btn{margin-top:8px}
     .agpop-actions{display:flex;gap:8px;margin-top:12px}
     .agpop-confirm{flex:1;background:#1e7167;color:#fff;border:none;padding:10px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
     .agpop-confirm:hover{background:#14514d}
