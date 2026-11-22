@@ -68,6 +68,7 @@
 const SUPA_URL='https://tuolwdniugjwbepujqoy.supabase.co';
 
 const QUESTIONS = [
+  { id:'telefone',     type:'tel',     label:'Seu telefone (WhatsApp)' },
   { id:'queixa',       type:'text',    label:'Queixa Principal' },
   { id:'tratamento',   type:'snn',     label:'Está sob algum tratamento médico?',                         detail:'Qual tratamento?' },
   { id:'cardio',       type:'snn',     label:'Possui alguma alteração cardiovascular?' },
@@ -213,6 +214,13 @@ function renderQuestion(q, num, value, detailValue){
         }).join('')}
       </div>
       ${detailBlock}
+    </div>`;
+  }
+  if(q.type==='tel'){
+    return `<div class="q" data-q="${q.id}">
+      <div class="q-num">${num}</div>
+      <div class="q-text">${esc(q.label)} *</div>
+      <input type="tel" name="${q.id}" inputmode="tel" placeholder="(11) 99999-0000" value="${esc(value||'')}">
     </div>`;
   }
   if(isText){

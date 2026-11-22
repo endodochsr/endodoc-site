@@ -3648,34 +3648,45 @@ async function openProntuario(bookingId){
   toast('Carregando…','');
   // 1) busca o booking atual
   const { data:bk, error } = await sb.from('bookings')
-    .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,clinical_notes,clinical_notes_updated_at')
+    .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,patient_id,clinical_notes,clinical_notes_updated_at')
     .eq('id',bookingId).maybeSingle();
   if(error || !bk){ toast('Erro ao carregar','err'); return; }
 
-  // 2) busca histórico completo do paciente (matched por telefone, ou nome se sem telefone)
-  const { data:history, error:errH } = await sb.rpc('get_patient_history', {
-    p_phone: bk.patient_phone || null,
-    p_name:  bk.patient_phone ? null : (bk.patient_name || null)
-  });
-  if(errH){ console.error(errH); }
-
-  // garante que o booking atual está na lista (caso RPC ainda não tenha rodado ou paciente sem identificação)
-  let entries = Array.isArray(history) ? [...history] : [];
-  if(!entries.find(e=>e.id===bk.id)){
-    entries.unshift({
-      id: bk.id, slot_date: bk.slot_date, slot_time: bk.slot_time,
-      office_name: bk.office_name, patient_name: bk.patient_name, patient_phone: bk.patient_phone,
-      clinical_notes: bk.clinical_notes, clinical_notes_updated_at: bk.clinical_notes_updated_at,
-      status: 'completed', created_at: null
-    });
+  // 2) histórico do paciente — por patient_id (confiável), senão por telefone.
+  //    NUNCA por nome (evita misturar pacientes homônimos, ex.: duas "Adriana").
+  let hist=[];
+  try{
+    if(bk.patient_id){
+      const { data } = await sb.from('bookings')
+        .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,clinical_notes,clinical_notes_updated_at')
+        .eq('patient_id', bk.patient_id);
+      hist = data||[];
+    } else if(bk.patient_phone){
+      const { data } = await sb.rpc('get_patient_history',{ p_phone: bk.patient_phone, p_name: null });
+      hist = Array.isArray(data)?data:[];
+    }
+  }catch(err){ console.error(err); }
+  if(!hist.find(e=>e.id===bk.id)){
+    hist.unshift({ id:bk.id, slot_date:bk.slot_date, slot_time:bk.slot_time, office_name:bk.office_name,
+      patient_name:bk.patient_name, patient_phone:bk.patient_phone, clinical_notes:bk.clinical_notes, clinical_notes_updated_at:bk.clinical_notes_updated_at });
   }
-  // ordena DESC (mais recente primeiro). A RPC já faz isso, mas garantimos.
-  entries.sort((a,b)=> (b.slot_date+(b.slot_time||'')).localeCompare(a.slot_date+(a.slot_time||'')));
+
+  // 3) colapsa multi-slot do MESMO dia num único registro (consulta de 2h = 1 sessão, não 2 blocos)
+  const byDate={};
+  const score=x=> (x.clinical_notes?2:0) + (x.id===bk.id?1:0);
+  hist.forEach(e=>{
+    const k=e.slot_date; const cur=byDate[k];
+    if(!cur){ byDate[k]=e; return; }
+    if(score(e)>score(cur)) byDate[k]=e;
+    else if(score(e)===score(cur) && (e.slot_time||'')<(cur.slot_time||'')) byDate[k]=e;
+  });
+  const entries=Object.values(byDate).sort((a,b)=> (b.slot_date+(b.slot_time||'')).localeCompare(a.slot_date+(a.slot_time||'')));
 
   window._prontBk = bk;
   window._prontEntries = entries;
-  window._prontEditingId = bk.id; // entrada em edição (sempre começa pela atual)
-
+  window._prontDate = bk.slot_date;                   // identifica a sessão atual pela data
+  const curEntry = entries.find(e=>e.slot_date===bk.slot_date);
+  window._prontEditingId = curEntry ? curEntry.id : bk.id;
   renderProntuarioModal();
 }
 
@@ -3696,7 +3707,7 @@ function renderProntuarioModal(){
     const pos = total - idx; // número da sessão (1ª é a mais antiga)
     const dt = new Date(e.slot_date+'T12:00:00');
     const dtStr = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
-    const isCurrent = e.id === bk.id;
+    const isCurrent = e.slot_date === window._prontDate;
     const isEditing = e.id === editingId;
     const officeStr = e.office_name ? esc(e.office_name) : '';
 
@@ -3806,10 +3817,9 @@ async function saveProntuario(bookingId){
       ent.clinical_notes = txt || null;
       ent.clinical_notes_updated_at = new Date().toISOString();
     }
-    // se editou uma entrada anterior, volta visualização da entrada atual
-    if(window._prontBk && id !== window._prontBk.id){
-      window._prontEditingId = window._prontBk.id;
-    }
+    // se editou uma entrada anterior, volta visualização da entrada atual (da data atual)
+    const curEntry = window._prontEntries.find(e=>e.slot_date===window._prontDate);
+    if(curEntry && id !== curEntry.id){ window._prontEditingId = curEntry.id; }
     renderProntuarioModal();
   }
 
@@ -6721,9 +6731,14 @@ async function confirmReschedule(){
   toast('Reagendado! Clínica avisada por e-mail.','ok');
   closeModal(); renderAgenda();
 }
+// fecha o modal só quando o clique COMEÇA e TERMINA no fundo (overlay).
+// evita fechar sem querer ao selecionar texto arrastando pra fora do campo (perda de dados).
+let _ovMouseDownOnOverlay=false;
+document.addEventListener('mousedown', e=>{ _ovMouseDownOnOverlay = (e.target===document.getElementById('overlay')); });
 document.addEventListener('click', e=>{
   const ov=document.getElementById('overlay');
-  if(ov && e.target===ov) closeModal();
+  if(ov && e.target===ov && _ovMouseDownOnOverlay) closeModal();
+  _ovMouseDownOnOverlay=false;
 });
 async function downloadDoc(encPath){
   const path=decodeURIComponent(encPath);
