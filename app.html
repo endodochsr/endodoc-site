@@ -651,7 +651,7 @@ const GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar.events';
 function show(id){document.getElementById(id).classList.remove('hidden');}
 function hide(id){document.getElementById(id).classList.add('hidden');}
 function val(id){return document.getElementById(id).value.trim();}
-function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return iso(d);}
 function hhmm(t){return (t||'').slice(0,5);}
