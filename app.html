@@ -572,6 +572,7 @@
       <button data-v="agenda"                    onclick="go('agenda')"    ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></span>Agenda</button>
       <button data-v="pacientes"                 onclick="go('pacientes')" ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Pacientes</button>
       <button data-v="plano"                     onclick="go('plano')"     ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5c-1.8-1.7-4.6-2-6.4-.4C3.9 6.6 3.6 9.4 4.4 12c.6 2 .8 4 1.3 5.6.4 1.3.7 2.4 1.5 2.4.9 0 1.1-1.6 1.4-3 .3-1.3.6-2.5 1.4-2.5s1.1 1.2 1.4 2.5c.3 1.4.5 3 1.4 3 .8 0 1.1-1.1 1.5-2.4.5-1.6.7-3.6 1.3-5.6.8-2.6.5-5.4-1.2-6.9-1.8-1.6-4.6-1.3-6.4.4z"/></svg></span>Plano de tratamento</button>
+      <button data-v="orcamentos"                onclick="go('orcamentos')"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg></span>Orçamentos</button>
       <button data-v="tabela"                    onclick="go('tabela')"    ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18"/></svg></span>Minha tabela</button>
       <button data-v="dispo"                     onclick="go('dispo')"     ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Disponibilidade</button>
       <button data-v="historico"                 onclick="go('historico')" ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span>Histórico</button>
@@ -1240,6 +1241,7 @@ function go(v){
   else if(v==='agenda'){ body.innerHTML='<div class="page-head"><h1>Agenda</h1><p>Carregando…</p></div>'; renderAgenda(); }
   else if(v==='pacientes'){ body.innerHTML='<div class="page-head"><h1>Pacientes</h1><p>Carregando…</p></div>'; renderPacientes(); }
   else if(v==='plano'){ body.innerHTML='<div class="page-head"><h1>Plano de tratamento</h1><p>Carregando…</p></div>'; renderPlano(); }
+  else if(v==='orcamentos'){ body.innerHTML='<div class="page-head"><h1>Orçamentos</h1><p>Carregando…</p></div>'; renderOrcamentos(); }
   else if(v==='tabela'){ body.innerHTML='<div class="page-head"><h1>Minha tabela</h1><p>Carregando…</p></div>'; renderTabela(); }
   else if(v==='dispo'){ body.innerHTML=dispoShell(); loadDispoSlots(); setTimeout(updateRecPreview,0); }
   else if(v==='historico'){ body.innerHTML='<div class="page-head"><h1>Histórico</h1><p>Carregando…</p></div>'; renderHistorico(); }
@@ -2970,6 +2972,117 @@ function planPDF(){
   doc.save('orcamento-'+String(pl.patient_name||'paciente').replace(/\s+/g,'-').toLowerCase()+'.pdf');
 }
 
+/* ---------- Orçamentos (lista dos planos) ---------- */
+async function renderOrcamentos(){
+  const body=document.getElementById('appBody');
+  const { data, error } = await sb.from('treatment_plans').select('id,patient_id,patient_name,items,total,status,created_at,sent_at,authorized_at,scheduled_at').order('created_at',{ascending:false});
+  if(error){ body.innerHTML='<div class="page-head"><h1>Orçamentos</h1></div><div class="card">Erro: '+esc(error.message)+'</div>'; return; }
+  window._orcs=data||[]; if(!window._orcFilter)window._orcFilter='todos';
+  renderOrcamentosView();
+}
+function orcBadge(s){
+  if(s==='autorizado') return '<span class="orc-badge done">✓ Autorizado</span>';
+  if(s==='enviado')    return '<span class="orc-badge sent">Apresentado</span>';
+  if(s==='recusado')   return '<span class="orc-badge rej">Recusado</span>';
+  return '<span class="orc-badge draft">Rascunho</span>';
+}
+function renderOrcamentosView(){
+  const body=document.getElementById('appBody'); const list=window._orcs||[];
+  const enviados=list.filter(p=>p.status==='enviado'); const autoriz=list.filter(p=>p.status==='autorizado');
+  const rasc=list.filter(p=>p.status==='rascunho');
+  const sched=autoriz.filter(p=>p.scheduled_at).length;
+  const sum=(a)=>a.reduce((s,p)=>s+(Number(p.total)||0),0);
+  const cards=`<div class="orc-cards">
+    <div class="orc-card"><div class="orc-c-l">Aguardando resposta</div><div class="orc-c-n">${money(sum(enviados))}</div><div class="orc-c-s">${enviados.length} orçamento${enviados.length!==1?'s':''} apresentado${enviados.length!==1?'s':''}</div></div>
+    <div class="orc-card"><div class="orc-c-l">Autorizados</div><div class="orc-c-n">${autoriz.length}</div><div class="orc-c-s">${sched} já ${sched===1?'virou':'viraram'} atendimento · ${money(sum(autoriz))}</div></div>
+    <div class="orc-card"><div class="orc-c-l">Em rascunho</div><div class="orc-c-n">${rasc.length}</div><div class="orc-c-s">ainda não enviados</div></div>
+  </div>`;
+  const tab=(k,l)=>`<button class="orc-tab${window._orcFilter===k?' active':''}" onclick="orcSetFilter('${k}')">${l}</button>`;
+  body.innerHTML=orcStyles()+`<div class="page-head"><h1>Orçamentos</h1><p>Todos os planos que você montou.</p></div>`+cards+
+    `<div class="orc-controls"><div class="orc-tabs">${tab('todos','Todos')}${tab('enviado','Apresentados')}${tab('autorizado','Autorizados')}</div><input id="orcSearch" class="pt-search" placeholder="Buscar pelo paciente" oninput="orcApply()" style="flex:1;min-width:160px"></div>`+
+    `<div id="orcList"></div>`;
+  orcApply();
+}
+function orcSetFilter(k){ window._orcFilter=k; renderOrcamentosView(); }
+function orcApply(){
+  const box=document.getElementById('orcList'); if(!box)return;
+  const q=(document.getElementById('orcSearch')?.value||'').toLowerCase().trim();
+  let list=(window._orcs||[]).slice();
+  if(window._orcFilter!=='todos') list=list.filter(p=>p.status===window._orcFilter);
+  if(q) list=list.filter(p=>(p.patient_name||'').toLowerCase().includes(q));
+  if(!list.length){ box.innerHTML='<div class="card" style="text-align:center;color:var(--muted);padding:26px">Nenhum orçamento aqui.</div>'; return; }
+  box.innerHTML='<div class="orc-listbox">'+list.map(p=>{
+    const n=(p.items||[]).length; const dt=p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'';
+    const extra=(p.status==='autorizado'&&p.authorized_at)?(' · autorizado em '+new Date(p.authorized_at).toLocaleDateString('pt-BR')):'';
+    return `<div class="orc-row">
+      <div class="orc-main"><div class="orc-name">${esc(p.patient_name||'Paciente')}</div><div class="orc-sub">${n} procedimento${n!==1?'s':''}</div><div class="orc-date">Feito em ${dt}${extra}</div></div>
+      <div class="orc-val">${money(p.total)}</div>
+      ${orcBadge(p.status)}
+      <div class="orc-actions">
+        <button class="pill" onclick="orcamentoOpen('${p.id}')">Abrir</button>
+        ${p.status==='enviado'?`<button class="pill done" onclick="orcamentoAuth('${p.id}')">Autorizar</button>`:''}
+        ${(p.status==='autorizado'&&!p.scheduled_at)?`<button class="pill done" onclick="orcamentoToAgenda('${p.id}')">Agendar</button>`:''}
+        ${(p.status==='autorizado'&&p.scheduled_at)?`<span class="orc-badge done" style="white-space:nowrap">✓ virou atendimento</span>`:''}
+        <button class="pill-icon" title="Excluir" onclick="orcamentoDelete('${p.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+async function orcamentoOpen(id){
+  const { data:p, error } = await sb.from('treatment_plans').select('*').eq('id',id).maybeSingle();
+  if(error||!p){ toast('Erro ao abrir','err'); return; }
+  window._plan={ id:p.id, patient_id:p.patient_id, patient_name:p.patient_name||'', title:p.title||'Plano de tratamento', dentition:p.dentition||'adulto', odontogram:p.odontogram||{}, items:p.items||[], discount:Number(p.discount)||0, status:p.status||'rascunho', token:p.token };
+  go('plano');
+}
+async function orcamentoAuth(id){
+  if(!confirm('Marcar este orçamento como autorizado?')) return;
+  const { error } = await sb.from('treatment_plans').update({ status:'autorizado', authorized_at:new Date().toISOString() }).eq('id',id);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast('Orçamento autorizado','ok'); renderOrcamentos();
+}
+async function orcamentoDelete(id){
+  if(!confirm('Excluir este orçamento?')) return;
+  const { error } = await sb.from('treatment_plans').delete().eq('id',id);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast('Orçamento excluído','ok'); renderOrcamentos();
+}
+// orçamento autorizado -> abre o agendamento já preenchido (cai na Agenda e no Financeiro)
+async function orcamentoToAgenda(id){
+  const { data:p, error } = await sb.from('treatment_plans').select('*').eq('id',id).maybeSingle();
+  if(error||!p){ toast('Erro ao abrir','err'); return; }
+  let phone='';
+  if(p.patient_id){ const r=await sb.from('patients').select('phone').eq('id',p.patient_id).maybeSingle(); phone=r.data?r.data.phone||'':''; }
+  const n=(p.items||[]).length;
+  const proc = (p.title&&p.title!=='Plano de tratamento') ? p.title : ('Plano de tratamento'+(n?` (${n} procedimento${n!==1?'s':''})`:''));
+  openNewBooking({ patient_id:p.patient_id, patient_name:p.patient_name, patient_phone:phone, procedure:proc, value:Number(p.total)||0, plan_id:p.id });
+}
+function orcStyles(){ return `<style>
+  .orc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  .orc-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .orc-c-l{font-size:12.5px;color:var(--muted);font-weight:600}
+  .orc-c-n{font-size:24px;font-weight:800;color:var(--primary-d);margin:4px 0 2px}
+  .orc-c-s{font-size:11.5px;color:var(--muted)}
+  .orc-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 14px}
+  .orc-tabs{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .orc-tab{border:none;background:#fff;padding:9px 16px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .orc-tab.active{background:var(--primary-d);color:#fff}
+  .orc-listbox{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+  .orc-row{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .orc-row:last-child{border-bottom:none}
+  .orc-main{flex:1;min-width:150px}
+  .orc-name{font-weight:700;font-size:15px;color:var(--ink)}
+  .orc-sub{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .orc-date{font-size:11px;color:var(--muted);margin-top:3px}
+  .orc-val{font-weight:800;font-size:16px;color:var(--ink)}
+  .orc-badge{font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px}
+  .orc-badge.done{background:#dff1ec;color:#0f5d5b}
+  .orc-badge.sent{background:#e3f1f0;color:#1E7167}
+  .orc-badge.draft{background:#f0f2f1;color:#5e706f}
+  .orc-badge.rej{background:#fbeeee;color:#b23a3a}
+  .orc-actions{display:flex;gap:8px;align-items:center}
+  @media(max-width:640px){.orc-cards{grid-template-columns:1fr}}
+</style>`; }
+
 /* ========================= PACIENTES ========================= */
 const PT_COLORS=['#cfe2f3','#d9d2e9','#d9ead3','#f6cfe0','#fce5cd'];
 function ptInitials(name){const p=(name||'').trim().split(/\s+/);return (((p[0]||'')[0]||'')+((p.length>1?(p[p.length-1][0]||''):''))).toUpperCase();}
@@ -3264,7 +3377,8 @@ async function saveEditBooking(idsAttr, reopenId){
   closeModal();
   openHistoryDetail(reopenId||ids[0]);
 }
-function openNewBooking(){
+function openNewBooking(prefill){
+  window._nbPrefill = prefill || null;
   const hourOpts = SLOTS.map(s=>`<option value="${s}"${s==='09:00'?' selected':''}>${s}</option>`).join('');
   const html = `<h3 style="font-family:'Fraunces',serif">＋ Nova consulta</h3>
     <p class="sub">Você marca direto, já confirmada. O paciente recebe a anamnese e os lembretes no WhatsApp automaticamente.</p>
@@ -3310,12 +3424,22 @@ function openNewBooking(){
     </form>`;
   showModal(html);
   loadNbPatients();
+  // prefill (ex.: vindo de um orçamento autorizado)
+  const pf=window._nbPrefill;
+  if(pf){
+    const set=(id,v)=>{ const e=document.getElementById(id); if(e&&v!=null&&v!=='')e.value=v; };
+    set('nbPatientName', pf.patient_name);
+    set('nbPatientPhone', pf.patient_phone?formatPhone(pf.patient_phone):'');
+    set('nbProcedure', pf.procedure);
+    const hid=document.getElementById('nbPatientId'); if(hid&&pf.patient_id)hid.value=pf.patient_id;
+  }
 }
 async function loadNbPatients(){
   const sel=document.getElementById('nbPatientSelect'); if(!sel)return;
   const { data } = await sb.from('patients').select('id,name,phone').order('name');
   window._nbPats=data||[];
   sel.innerHTML='<option value="">— Novo paciente (digitar abaixo) —</option>'+(data||[]).map(p=>`<option value="${p.id}">${esc(p.name)}${p.phone?' · '+esc(formatPhone(p.phone)):''}</option>`).join('');
+  if(window._nbPrefill && window._nbPrefill.patient_id){ sel.value=window._nbPrefill.patient_id; }
 }
 function nbPatientChosen(){
   const sel=document.getElementById('nbPatientSelect'); const id=sel.value;
@@ -3354,7 +3478,7 @@ async function saveNewBooking(){
   if(btn){ btn.disabled = true; btn.textContent = 'Criando…'; }
   toast('Criando consulta…','');
   try{
-    const { error } = await sb.rpc('create_booking_manual', {
+    const { data: newIds, error } = await sb.rpc('create_booking_manual', {
       p_date: date,
       p_times: times,
       p_office_name: office,
@@ -3371,6 +3495,13 @@ async function saveNewBooking(){
       p_patient_id: (document.getElementById('nbPatientId') && document.getElementById('nbPatientId').value) || null,
     });
     if(error) throw error;
+    // veio de um orçamento autorizado? grava o valor no atendimento (cai no Financeiro)
+    const pf = window._nbPrefill;
+    if(pf && pf.value && Array.isArray(newIds) && newIds.length){
+      await sb.from('bookings').update({ consultation_value: pf.value }).in('id', newIds);
+      if(pf.plan_id) await sb.from('treatment_plans').update({ scheduled_at: new Date().toISOString() }).eq('id', pf.plan_id);
+    }
+    window._nbPrefill = null;
     toast('✓ Consulta criada! Anamnese e lembretes enviados.','ok');
     closeModal();
     renderAgenda();
