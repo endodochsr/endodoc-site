@@ -2722,22 +2722,14 @@ function renderPlanoView(){
          </div>
        </div>`;
 }
-function toothSVG(n,cond,upper){
-  const d=n%10;
-  const type=(d===1||d===2)?'incisor':(d===3?'canine':(d===4||d===5)?'premolar':'molar');
-  const col=cond?condColor(cond):'#ffffff';
-  const stroke=cond?condColor(cond):'#8a9b9a';
-  // orientação canônica: coroa embaixo (y44-70), raízes apontando pra CIMA (arcada superior)
-  const blade=(bx,w,tx,ty)=>`M${bx-w} 44 C${bx-w} 34 ${tx-1} ${ty+8} ${tx} ${ty} C${tx+1} ${ty+8} ${bx+w} 34 ${bx+w} 44`;
-  let crown, roots=[];
-  if(type==='incisor'){ crown='M12 44 L28 44 Q30 44 30 47 L30 63 Q30 70 23 70 L17 70 Q10 70 10 63 L10 47 Q10 44 12 44 Z'; roots=[blade(20,6,20,7)]; }
-  else if(type==='canine'){ crown='M11 44 L29 44 L29 57 Q29 64 21 71 Q13 64 11 57 Z'; roots=[blade(20,6,20,2)]; }
-  else if(type==='premolar'){ crown='M11 44 L29 44 Q30 44 30 48 L30 62 Q30 69 23 69 L21 66 L19 69 L17 69 Q10 69 10 62 L10 48 Q10 44 11 44 Z'; roots=[blade(20,6,20,7)]; }
-  else { crown='M8 44 L32 44 Q34 44 34 48 L34 62 Q34 69 27 69 L24 66 L21 69 L19 66 L16 69 L13 69 Q6 69 6 62 L6 48 Q6 44 8 44 Z';
-    roots = upper ? [blade(12,4,6,9),blade(20,4,20,5),blade(28,4,34,9)] : [blade(15,5,11,6),blade(25,5,29,6)]; }
-  const inner=`<path d="${crown}" fill="${col}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>`+roots.map(r=>`<path d="${r}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round"/>`).join('');
-  const g = upper ? inner : `<g transform="translate(0,76) scale(1,-1)">${inner}</g>`;
-  return `<svg viewBox="0 0 40 76" class="tooth-svg">${g}</svg>`;
+// mapeia dente decíduo (50-80) para o permanente correspondente (temos imagem só dos permanentes)
+function toothImgNum(n){ const q=Math.floor(n/10), d=n%10; const map={5:1,6:2,7:3,8:4}; return map[q]?(map[q]*10+d):n; }
+function toothSVG(n,cond){
+  const src='/dentes/'+toothImgNum(n)+'.png';
+  const tint = cond
+    ? `<span class="od-tint" style="background:${condColor(cond)};-webkit-mask:url('${src}') center/contain no-repeat;mask:url('${src}') center/contain no-repeat"></span>`
+    : '';
+  return `<span class="od-pic"><img class="od-img" src="${src}" alt="Dente ${n}" loading="lazy">${tint}</span>`;
 }
 function odontogramHTML(){
   const pl=window._plan;
@@ -2826,9 +2818,11 @@ function planStyles(){ return `<style>
   .od-scroll{overflow-x:auto;padding-bottom:2px}
   .od-arch{display:grid;gap:3px;margin-bottom:8px;min-width:420px}
   .od-tooth{display:flex;flex-direction:column;align-items:center;gap:1px;border:none;background:none;cursor:pointer;padding:2px 0;position:relative}
-  .od-tooth .tooth-svg{width:100%;max-width:30px;height:auto;transition:.12s}
-  .od-tooth:hover .tooth-svg{transform:translateY(-2px)}
-  .od-tooth.hasproc::after{content:"";position:absolute;top:0;right:22%;width:6px;height:6px;border-radius:50%;background:var(--accent,#c2a063);border:1px solid #fff}
+  .od-pic{position:relative;display:block;width:100%;max-width:34px;aspect-ratio:3/5;margin:0 auto;transition:.12s}
+  .od-tooth:hover .od-pic{transform:translateY(-2px)}
+  .od-img{width:100%;height:100%;object-fit:contain;display:block}
+  .od-tint{position:absolute;inset:0;mix-blend-mode:multiply;pointer-events:none}
+  .od-tooth.hasproc::after{content:"";position:absolute;top:0;right:16%;width:7px;height:7px;border-radius:50%;background:var(--accent,#c2a063);border:1.5px solid #fff;z-index:2}
   .od-num{font-size:9.5px;font-weight:700;color:var(--muted)}
   .od-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:11.5px;color:var(--muted)}
   .od-legend span{display:flex;align-items:center;gap:5px}
