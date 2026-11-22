@@ -3279,14 +3279,15 @@ async function openPatientDetail(id){
   window._pdCurrent=id;
   const body=document.getElementById('appBody');
   body.innerHTML='<div class="page-head"><h1>Paciente</h1><p>Carregando…</p></div>';
-  const [patR, planR, bkR] = await Promise.all([
-    sb.from('patients').select('*').eq('id',id).maybeSingle(),
-    sb.from('treatment_plans').select('id,title,total,status,created_at,sent_at,authorized_at,scheduled_at,items').eq('patient_id',id).order('created_at',{ascending:false}),
-    sb.from('bookings').select('id,slot_date,slot_time,status,completed_at,consultation_value,payment_status,procedure').eq('patient_id',id)
-  ]);
+  try{
+  const patR = await sb.from('patients').select('*').eq('id',id).maybeSingle();
+  if(patR.error) throw patR.error;
   const p=patR.data; if(!p){ toast('Paciente não encontrado','err'); renderPacientes(); return; }
   window._patients=(window._patients||[]).map(x=>x.id===p.id?p:x);
-  const plans=planR.data||[]; const bks=bkR.data||[]; const today=todayISO();
+  let plans=[], bks=[];
+  try{ const r=await sb.from('treatment_plans').select('id,title,total,status,created_at,sent_at,authorized_at,scheduled_at,items').eq('patient_id',id).order('created_at',{ascending:false}); plans=r.data||[]; }catch(_){}
+  try{ const r=await sb.from('bookings').select('id,slot_date,slot_time,status,completed_at,consultation_value,payment_status,procedure').eq('patient_id',id); bks=r.data||[]; }catch(_){}
+  const today=todayISO();
   const age=ptAge(p.birth_date); const col=ptColorOf(p);
   const sexLbl={F:'Feminino',M:'Masculino',O:'Outro'}[p.sex]||'';
   const hasActive=bks.some(b=>(b.status==='active'||b.status==='pending')&&!b.completed_at);
@@ -3357,6 +3358,11 @@ async function openPatientDetail(id){
         ${p.notes?row('Observações', p.notes):''}
       </div>
     </div>`;
+  }catch(e){
+    console.error('openPatientDetail', e);
+    const b=document.getElementById('appBody');
+    if(b) b.innerHTML='<button class="btn btn-ghost btn-sm" onclick="renderPacientes()">← Pacientes</button><div class="card" style="margin-top:12px;color:#b23a3a">Não consegui abrir a ficha: '+esc(e&&e.message?e.message:String(e))+'</div>';
+  }
 }
 function pdStyles(){ return `<style>
   .pd-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
