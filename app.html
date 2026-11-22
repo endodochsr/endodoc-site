@@ -3509,6 +3509,15 @@ async function saveEditBooking(idsAttr, reopenId){
   closeModal();
   openHistoryDetail(reopenId||ids[0]);
 }
+// duplica um agendamento (mesmos dados, nova data/hora) — agiliza "+1 consulta"
+async function duplicarAgendamento(bookingId){
+  const { data:b, error } = await sb.from('bookings').select('*').eq('id',bookingId).maybeSingle();
+  if(error||!b){ toast('Erro ao carregar','err'); return; }
+  closeHistoryDetail();
+  openNewBooking({ patient_id:b.patient_id, patient_name:b.patient_name, patient_phone:b.patient_phone,
+    procedure:b.procedure, tooth:b.tooth, office_name:b.office_name, office_phone:b.office_phone,
+    office_address:b.office_address, notes:b.notes });
+}
 function openNewBooking(prefill){
   window._nbPrefill = prefill || null;
   const hourOpts = SLOTS.map(s=>`<option value="${s}"${s==='09:00'?' selected':''}>${s}</option>`).join('');
@@ -3531,7 +3540,10 @@ function openNewBooking(prefill){
       <div class="field"><label>Endereço (opcional)</label><input id="nbOfficeAddress" placeholder="Rua, número, bairro, cidade"></div>
 
       <div class="section-title">Atendimento</div>
-      <div class="field"><label>Procedimento *</label><input id="nbProcedure" required value="Tratamento de canal" placeholder="Ex.: Tratamento de canal"></div>
+      <div class="row2">
+        <div class="field"><label>Procedimento *</label><input id="nbProcedure" required value="Tratamento de canal" placeholder="Ex.: Tratamento de canal"></div>
+        <div class="field"><label>Dente (opcional)</label><input id="nbTooth" placeholder="Ex.: 36" inputmode="numeric"></div>
+      </div>
       <div class="row2">
         <div class="field"><label>Data *</label><input type="date" id="nbDate" required min="${todayISO()}" value="${todayISO()}"></div>
         <div class="field"><label>Horário de início *</label><select id="nbTime">${hourOpts}</select></div>
@@ -3563,6 +3575,11 @@ function openNewBooking(prefill){
     set('nbPatientName', pf.patient_name);
     set('nbPatientPhone', pf.patient_phone?formatPhone(pf.patient_phone):'');
     set('nbProcedure', pf.procedure);
+    set('nbTooth', pf.tooth);
+    set('nbOfficeName', pf.office_name);
+    set('nbOfficePhone', pf.office_phone?formatPhone(pf.office_phone):'');
+    set('nbOfficeAddress', pf.office_address);
+    set('nbNotes', pf.notes);
     const hid=document.getElementById('nbPatientId'); if(hid&&pf.patient_id)hid.value=pf.patient_id;
   }
 }
@@ -3625,6 +3642,7 @@ async function saveNewBooking(){
       p_office_lat: null,
       p_office_lng: null,
       p_patient_id: (document.getElementById('nbPatientId') && document.getElementById('nbPatientId').value) || null,
+      p_tooth: (val('nbTooth') || null),
     });
     if(error) throw error;
     // veio de um orçamento autorizado? grava o valor no atendimento (cai no Financeiro)
@@ -3982,7 +4000,10 @@ async function openHistoryDetail(bookingId){
   }
   if(!isCancelled){
     const IEDIT='<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
-    actionButtons = `<button class="pill" onclick="closeHistoryDetail();openEditBooking('${bk.id}')">${IEDIT} Editar dados</button>` + actionButtons;
+    const IDUP='<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    actionButtons = `<button class="pill" onclick="closeHistoryDetail();openEditBooking('${bk.id}')">${IEDIT} Editar dados</button>`
+      + `<button class="pill" onclick="duplicarAgendamento('${bk.id}')">${IDUP} Duplicar</button>`
+      + actionButtons;
   }
 
   // ===== Duração (esticar / encurtar) — só p/ atendimento ativo =====
@@ -4030,7 +4051,7 @@ async function openHistoryDetail(bookingId){
       ${bk.consultation_value
         ? `<div class="hd-info-grid">
             <div><div class="lbl">Valor cobrado</div><div class="val" style="font-family:Georgia,serif;font-size:20px;font-weight:600;color:var(--primary-d)">R$ ${Number(bk.consultation_value).toFixed(2).replace('.',',').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.')}</div></div>
-            <div><div class="lbl">Status do pagamento</div><div class="val">${bk.payment_status==='paid'?`<span style="color:var(--success);font-weight:600">✓ Recebido</span>${bk.paid_at?` <span style="color:var(--muted);font-size:12px">· ${new Date(bk.paid_at).toLocaleDateString('pt-BR')}</span>`:''}`:'<span style="color:#8a6d27;font-weight:600"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> A receber</span>'}</div></div>
+            <div><div class="lbl">Status do pagamento</div><div class="val">${bk.payment_status==='paid'?`<span style="color:var(--success);font-weight:600">✓ Recebido</span>${(bk.paid_at||bk.payment_method)?` <span style="color:var(--muted);font-size:12px">· ${[payMethodLabel(bk.payment_method), bk.paid_at?new Date(bk.paid_at).toLocaleDateString('pt-BR'):''].filter(Boolean).join(' · ')}</span>`:''}`:'<span style="color:#8a6d27;font-weight:600"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> A receber</span>'}</div></div>
           </div>
           <div class="hd-actions-row" style="margin-top:10px">
             <button class="pill prontuario-filled" onclick="closeHistoryDetail();openValueModal('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar valor</button>
@@ -5263,7 +5284,8 @@ function agTimeGrid(days, all){
       const cls=['tg-appt',isEval?'eval':'',isPend?'pend':''].filter(Boolean).join(' ');
       const tEnd=String(h+dur).padStart(2,'0')+':00';
       const idsAttr=JSON.stringify(g.bookings.map(x=>x.id)).replace(/"/g,'&quot;');
-      return `<div class="${cls}" data-ids="${idsAttr}" data-dur="${dur}" style="top:${top}px;height:${height}px" onclick="agOpenPop(event,'${b.id}')">
+      const csCol=b.consult_status?consultColor(b.consult_status):'';
+      return `<div class="${cls}" data-ids="${idsAttr}" data-dur="${dur}" style="top:${top}px;height:${height}px${csCol?';border-left:5px solid '+csCol:''}" onclick="agOpenPop(event,'${b.id}')">
         <div class="tg-a-time">${(b.slot_time||'').slice(0,5)} - ${tEnd}</div>
         <div class="tg-a-name">${esc(b.patient_name||'—')}</div>
         ${b.office_responsible?`<div class="tg-a-ind">${esc(b.office_responsible)}</div>`:''}
@@ -5312,6 +5334,20 @@ function agMonthGrid(all){
   return `<div class="tg-month"><div class="tg-mhead">${dow.map(x=>`<div>${x}</div>`).join('')}</div><div class="tg-mgrid">${cells}</div></div>`;
 }
 
+const CONSULT_STATUS=[['confirmado','Confirmado','#2e7d57'],['reagendado','Reagendado','#d4a017'],['desmarcado','Desmarcado','#e0892e'],['faltou','Faltou','#b23a3a']];
+function consultColor(s){ const c=CONSULT_STATUS.find(x=>x[0]===s); return c?c[2]:''; }
+function consultLabel(s){ const c=CONSULT_STATUS.find(x=>x[0]===s); return c?c[1]:''; }
+async function agSetConsultStatus(id, status){
+  const all=[...(window._agenda.active||[]),...(window._agenda.pending||[])];
+  const b=all.find(x=>x.id===id);
+  let ids=[id];
+  if(b) ids = all.filter(x=>x.slot_date===b.slot_date && (x.office_name||'')===(b.office_name||'') && (x.patient_phone||'')===(b.patient_phone||'')).map(x=>x.id);
+  const { error } = await sb.from('bookings').update({ consult_status: status||null }).in('id',ids);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast(status?('Status: '+consultLabel(status)):'Status removido','ok');
+  agClosePop();
+  renderAgenda();
+}
 function agClosePop(){ const p=document.getElementById('agPop'); if(p) p.remove(); }
 function agOpenPop(ev, id){
   ev.stopPropagation();
@@ -5355,6 +5391,8 @@ function agOpenPop(ev, id){
       <button class="agpop-confirm" onclick='agClosePop();confirmBks(${JSON.stringify(pendIds)})'>✓ Confirmar consulta</button>
       <button class="agpop-reject" onclick='agClosePop();rejectBks(${JSON.stringify(pendIds)})'>Recusar</button>
     </div>`:''}
+    <div class="agpop-cslabel">Status da consulta</div>
+    <div class="agpop-cs">${CONSULT_STATUS.map(c=>`<button class="agpop-csbtn${b.consult_status===c[0]?' active':''}" style="--csc:${c[2]}" onclick="agSetConsultStatus('${b.id}','${b.consult_status===c[0]?'':c[0]}')">${c[1]}</button>`).join('')}</div>
     <button class="agpop-edit" onclick="agClosePop();openEditBooking('${b.id}')">Editar dados</button>
     <button class="agpop-btn" onclick="agClosePop();openHistoryDetail('${b.id}')">Ver detalhes e ações</button>
   `;
@@ -5458,6 +5496,11 @@ function agStyles(){
     .agpop-status{margin-top:12px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px}
     .agpop-dot{width:8px;height:8px;border-radius:50%;flex:none}
     .agpop-btn{width:100%;margin-top:10px;background:var(--primary-d);color:#fff;border:none;padding:10px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+    .agpop-cslabel{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:14px 0 6px}
+    .agpop-cs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .agpop-csbtn{border:1.5px solid var(--border);background:#fff;border-radius:8px;padding:7px 6px;font:inherit;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+    .agpop-csbtn:hover{border-color:var(--csc)}
+    .agpop-csbtn.active{background:var(--csc);border-color:var(--csc);color:#fff}
     .agpop-edit{width:100%;margin-top:10px;background:#fff;color:var(--primary-d);border:1px solid var(--border);padding:9px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
     .agpop-edit:hover{background:var(--primary-soft)}
     .agpop-edit + .agpop-btn{margin-top:8px}
@@ -6554,6 +6597,7 @@ async function loadFinanceiro(){
             <div class="fin-row-value">
               ${b.consultation_value?`<b>${fmtBRL(b.consultation_value)}</b>`:`<span style="color:var(--muted);font-size:12px">sem valor</span>`}
               ${b.consultation_value?`<span class="fin-status ${isPaid?'paid':'pending'}" onclick="togglePaid('${b.id}',${isPaid?'false':'true'})" title="${isPaid?'Clique pra marcar como a receber':'Clique pra marcar como recebido'}">${isPaid?'✓ Recebido':'<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg> A receber'}</span>`:''}
+              ${isPaid && (b.payment_method||b.paid_at)?`<span style="font-size:11px;color:var(--muted)">${[payMethodLabel(b.payment_method), b.paid_at?new Date(b.paid_at).toLocaleDateString('pt-BR'):''].filter(Boolean).join(' · ')}</span>`:''}
             </div>
             <button class="pill" onclick="openValueModal('${b.id}')" title="Editar valor">${b.consultation_value?'<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>':'+ Valor'}</button>
           </div>`;
@@ -6561,15 +6605,38 @@ async function loadFinanceiro(){
       </div>
     </div>`;
 }
+const PAY_METHODS=[['pix','Pix'],['dinheiro','Dinheiro'],['debito','Cartão de débito'],['credito_vista','Crédito à vista'],['credito_parcelado','Crédito parcelado']];
+function payMethodLabel(m){ const f=PAY_METHODS.find(x=>x[0]===m); return f?f[1]:''; }
 async function togglePaid(bookingId, makePaid){
-  const status = makePaid==='true' || makePaid===true ? 'paid' : 'pending';
-  const paidAt = status==='paid' ? new Date().toISOString() : null;
-  const { error } = await sb.from('bookings').update({ payment_status:status, paid_at:paidAt }).eq('id',bookingId);
+  const makeP = (makePaid==='true' || makePaid===true);
+  if(makeP){ openPaymentModal(bookingId); return; }   // marcar recebido -> escolhe forma e data
+  const { error } = await sb.from('bookings').update({ payment_status:'pending', paid_at:null, payment_method:null }).eq('id',bookingId);
   if(error){ toast('Erro: '+error.message,'err'); return; }
-  toast(status==='paid'?'Marcado como pago':'Marcado como pendente','ok');
-  // Atualiza só a view atual
+  toast('Marcado como a receber','ok');
   if(document.getElementById('finContent')) loadFinanceiro();
   else if(document.getElementById('histList')) loadHistorico();
+}
+function openPaymentModal(bookingId){
+  const today=todayISO();
+  const html=`<div class="pf-head"><h3 style="font-family:'Fraunces',serif">Registrar recebimento</h3><button class="rep-close" onclick="closeModal()" title="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="row2" style="margin-top:8px">
+      <div class="field"><label>Forma de pagamento</label><select id="payMethod">${PAY_METHODS.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('')}</select></div>
+      <div class="field"><label>Data do pagamento</label><input type="date" id="payDate" value="${today}" max="${today}"></div>
+    </div>
+    <div class="pf-foot" style="justify-content:flex-end;margin-top:16px"><button type="button" class="btn btn-ghost btn-sm" onclick="closeModal()">Cancelar</button><button type="button" class="btn btn-primary btn-sm" onclick="savePayment('${bookingId}')">Confirmar recebimento</button></div>`;
+  showModal(html);
+}
+async function savePayment(bookingId){
+  const method=document.getElementById('payMethod').value;
+  const dateStr=document.getElementById('payDate').value||todayISO();
+  const paidAt=new Date(dateStr+'T12:00:00').toISOString();
+  const { error } = await sb.from('bookings').update({ payment_status:'paid', payment_method:method, paid_at:paidAt }).eq('id',bookingId);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast('✓ Recebimento registrado','ok');
+  closeModal();
+  if(document.getElementById('finContent')) loadFinanceiro();
+  else if(document.getElementById('histList')) loadHistorico();
+  else if(window._pdCurrent) openPatientDetail(window._pdCurrent);
 }
 async function openValueModal(bookingId){
   const { data:bk } = await sb.from('bookings').select('id,consultation_value,payment_status,office_name,slot_date,slot_time').eq('id',bookingId).maybeSingle();
