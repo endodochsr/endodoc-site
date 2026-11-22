@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Seu orçamento — EndoDoc</title>
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+<meta name="theme-color" content="#0a5d5c" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f5efe6;--surface:#fff;--ink:#16302f;--muted:#5e706f;--primary:#0e7c7b;--primary-d:#0a5d5c;--primary-soft:#e3f1f0;--accent:#c2a063;--success:#2e7d57;--success-soft:#e4f3ec;--danger:#c0492f;--border:#e4ecec;--shadow:0 6px 30px rgba(16,48,47,.10)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em}
+  .wrap{max-width:640px;margin:0 auto;padding:24px 18px 60px}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+  .top .mark{width:52px;height:52px;object-fit:contain;margin:-8px -4px}
+  .top .name{font-family:'Fraunces',serif;font-weight:600;font-size:17px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:22px}
+  .card+.card{margin-top:14px}
+  .head{text-align:center;margin-bottom:6px}
+  .head h1{font-size:23px;margin-bottom:6px}
+  .head p{color:var(--muted);font-size:14px}
+  .prof-pill{display:inline-flex;align-items:center;gap:8px;background:var(--primary-soft);color:var(--primary-d);padding:7px 14px;border-radius:999px;font-size:13.5px;font-weight:600;margin-top:10px}
+  .phase{margin-bottom:14px}
+  .phase-h{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:6px}
+  .phase-num{width:20px;height:20px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);font-size:11px;font-weight:700;display:grid;place-items:center}
+  .phase-name{flex:1;font-size:13.5px;font-weight:700}
+  .phase-sub{font-size:13px;font-weight:700;color:var(--primary-d)}
+  .item{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:14px;border-bottom:1px solid #f0f2f1}
+  .item:last-child{border-bottom:none}
+  .item .tooth{font-size:11px;color:var(--muted)}
+  .item .val{font-weight:700;white-space:nowrap}
+  .totals{margin-top:10px}
+  .trow{display:flex;justify-content:space-between;padding:5px 0;font-size:14.5px}
+  .trow.total{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;font-size:19px;color:var(--primary-d);font-weight:700}
+  .sign-block{background:#f8fdfc;border:1.5px solid var(--primary-soft);border-radius:14px;padding:18px}
+  .sign-block label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+  .sign-block input[type=text]{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:15px}
+  .sign-block input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+  .check-row{display:flex;gap:12px;align-items:flex-start;margin:14px 0}
+  .check-row input{flex:0 0 20px;width:20px;height:20px;accent-color:var(--primary);margin-top:2px;cursor:pointer}
+  .check-row span{font-size:14px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:13px;font-weight:700;font-size:15px;border:none;cursor:pointer;font-family:inherit;width:100%}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(14,124,123,.28)}
+  .btn-primary:hover{background:var(--primary-d)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .ok-state,.err-state{text-align:center;padding:28px 18px}
+  .ok-state .icon{width:72px;height:72px;border-radius:50%;background:var(--success-soft);color:var(--success);display:grid;place-items:center;font-size:36px;margin:0 auto 14px}
+  .err-state .icon{width:72px;height:72px;border-radius:50%;background:#fbeae6;color:var(--danger);display:grid;place-items:center;font-size:36px;margin:0 auto 14px}
+  .center{min-height:60vh;display:grid;place-items:center;color:var(--muted);text-align:center;padding:24px}
+  .already{background:var(--success-soft);border:1px solid #a7d9c4;border-radius:14px;padding:18px;text-align:center;color:var(--success);font-weight:600;font-size:14.5px}
+  .footer{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
+  .footer a{color:var(--primary-d);text-decoration:none}
+  .disc{color:var(--danger)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><img class="mark" src="/brand/favicon.svg" alt="EndoDoc"><div class="name">Endo<span style="color:#0a5d5c;opacity:.65">Doc</span></div></div>
+  <div id="root"><div class="center"><p>Carregando orçamento…</p></div></div>
+  <div class="footer"><a href="https://endodoc.com.br">endodoc.com.br</a></div>
+</div>
+<script>
+const SUPA_URL='https://tuolwdniugjwbepujqoy.supabase.co';
+const SUPA_KEY='sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
+const PHASES=[['urgencia','Urgência'],['adequacao','Adequação do meio bucal'],['reabilitacao','Reabilitação'],['estetica','Estética'],['manutencao','Manutenção']];
+const root=document.getElementById('root');
+function esc(s){const d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
+function money(n){return 'R$ '+(Number(n)||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+function itemSub(it){const q=it.unit==='face'?(Number(it.faces)||1):(Number(it.qty)||1);return (Number(it.price)||0)*q;}
+
+async function init(){
+  const token=new URLSearchParams(location.search).get('token');
+  if(!token){ showError('Link inválido.'); return; }
+  try{
+    const r=await fetch(`${SUPA_URL}/functions/v1/orcamento-public?token=${encodeURIComponent(token)}`,{headers:{apikey:SUPA_KEY,Authorization:`Bearer ${SUPA_KEY}`}});
+    const c=await r.json();
+    if(!r.ok||!c||c.error){ showError('Orçamento não encontrado. O link pode ter expirado.'); return; }
+    render(c);
+  }catch(e){ console.error(e); showError('Erro ao carregar. Tente novamente.'); }
+}
+function showError(m){ root.innerHTML=`<div class="card"><div class="err-state"><div class="icon">⚠️</div><h2 style="margin-bottom:8px">Ops!</h2><p style="color:var(--muted)">${esc(m)}</p></div></div>`; }
+
+function render(c){
+  const p=c.professional||{}; const profStr=`${p.name||''}${p.specialty?' · '+p.specialty:''}`;
+  const items=c.items||[];
+  const subtotal=items.reduce((s,it)=>s+itemSub(it),0);
+  const total=Math.max(0,subtotal-(Number(c.discount)||0));
+  const phasesHTML=PHASES.map(([pk,pl],i)=>{
+    const its=items.filter(it=>it.phase===pk); if(!its.length)return '';
+    const sub=its.reduce((s,it)=>s+itemSub(it),0);
+    const rows=its.map(it=>{
+      const q=it.unit==='face'?(it.faces||1):(it.qty||1); const qtxt=it.unit==='face'?` · ${q} face${q>1?'s':''}`:(q>1?` · x${q}`:'');
+      return `<div class="item"><div>${esc(it.name)}${it.tooth?` <span class="tooth">(dente ${esc(it.tooth)}${qtxt})</span>`:`<span class="tooth">${esc(qtxt)}</span>`}</div><div class="val">${it.price?money(itemSub(it)):'a combinar'}</div></div>`;
+    }).join('');
+    return `<div class="phase"><div class="phase-h"><span class="phase-num">${i+1}</span><span class="phase-name">${esc(pl)}</span><span class="phase-sub">${money(sub)}</span></div>${rows}</div>`;
+  }).join('');
+
+  const authorized = c.status==='autorizado';
+  const signCard = authorized
+    ? `<div class="card"><div class="already"><div style="font-size:34px;margin-bottom:8px">✅</div><div style="font-size:16px;margin-bottom:4px">Orçamento autorizado</div><div style="font-weight:400;font-size:13px">${c.authorized_at?('Autorizado em '+new Date(c.authorized_at).toLocaleString('pt-BR')+(c.authorized_name?(' por '+esc(c.authorized_name)):'')):''}</div></div></div>`
+    : `<div class="card"><div class="sign-block">
+        <label>Seu nome completo</label>
+        <input type="text" id="authName" placeholder="Digite seu nome" autocomplete="name" value="${esc(c.patient_name||'')}">
+        <div class="check-row"><input type="checkbox" id="authChk"><span>Li o orçamento acima e autorizo o início do tratamento conforme descrito.</span></div>
+        <button class="btn btn-primary" id="authBtn" onclick="authorize()">Autorizar orçamento</button>
+      </div></div>`;
+
+  root.innerHTML=`
+    <div class="card">
+      <div class="head"><h1>Seu orçamento</h1><p>${esc(c.patient_name||'')}</p>${profStr?`<div class="prof-pill">${esc(profStr)}</div>`:''}</div>
+    </div>
+    <div class="card">
+      ${phasesHTML||'<p style="color:var(--muted);text-align:center">Sem itens no orçamento.</p>'}
+      <div class="totals">
+        <div class="trow"><span>Subtotal</span><span>${money(subtotal)}</span></div>
+        ${(Number(c.discount)||0)>0?`<div class="trow"><span>Desconto</span><span class="disc">- ${money(c.discount)}</span></div>`:''}
+        <div class="trow total"><span>Total</span><span>${money(total)}</span></div>
+      </div>
+    </div>
+    ${signCard}`;
+}
+
+async function authorize(){
+  const name=(document.getElementById('authName').value||'').trim();
+  const chk=document.getElementById('authChk').checked;
+  const btn=document.getElementById('authBtn');
+  if(!name){ alert('Informe seu nome para autorizar.'); return; }
+  if(!chk){ alert('Marque a caixa para autorizar.'); return; }
+  btn.disabled=true; btn.textContent='Enviando…';
+  try{
+    const token=new URLSearchParams(location.search).get('token');
+    const r=await fetch(`${SUPA_URL}/functions/v1/orcamento-public`,{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPA_KEY,Authorization:`Bearer ${SUPA_KEY}`},body:JSON.stringify({token,authorized_name:name,user_agent:navigator.userAgent.slice(0,300)})});
+    const res=await r.json().catch(()=>({}));
+    if(!r.ok||res.error){ if(res.error==='already_authorized'){ showOk(name); return; } throw new Error(res.error||('http '+r.status)); }
+    showOk(name);
+  }catch(e){ console.error(e); btn.disabled=false; btn.textContent='Autorizar orçamento'; alert('Erro ao autorizar. Tente novamente.'); }
+}
+function showOk(name){
+  root.innerHTML=`<div class="card"><div class="ok-state"><div class="icon">✅</div><h2 style="margin-bottom:8px">Orçamento autorizado!</h2><p style="color:var(--muted)">Obrigado, <strong>${esc(name)}</strong>. O profissional recebeu sua autorização. Pode fechar esta janela.</p></div></div>`;
+}
+init();
+</script>
+</body>
+</html>

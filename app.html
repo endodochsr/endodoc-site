@@ -571,6 +571,8 @@
       <button data-v="visao"      class="active" onclick="go('visao')"     ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>Visão geral</button>
       <button data-v="agenda"                    onclick="go('agenda')"    ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></span>Agenda</button>
       <button data-v="pacientes"                 onclick="go('pacientes')" ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Pacientes</button>
+      <button data-v="plano"                     onclick="go('plano')"     ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5c-1.8-1.7-4.6-2-6.4-.4C3.9 6.6 3.6 9.4 4.4 12c.6 2 .8 4 1.3 5.6.4 1.3.7 2.4 1.5 2.4.9 0 1.1-1.6 1.4-3 .3-1.3.6-2.5 1.4-2.5s1.1 1.2 1.4 2.5c.3 1.4.5 3 1.4 3 .8 0 1.1-1.1 1.5-2.4.5-1.6.7-3.6 1.3-5.6.8-2.6.5-5.4-1.2-6.9-1.8-1.6-4.6-1.3-6.4.4z"/></svg></span>Plano de tratamento</button>
+      <button data-v="tabela"                    onclick="go('tabela')"    ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18"/></svg></span>Minha tabela</button>
       <button data-v="dispo"                     onclick="go('dispo')"     ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Disponibilidade</button>
       <button data-v="historico"                 onclick="go('historico')" ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span>Histórico</button>
       <button data-v="financeiro"                onclick="go('financeiro')"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>Financeiro</button>
@@ -1237,6 +1239,8 @@ function go(v){
   }
   else if(v==='agenda'){ body.innerHTML='<div class="page-head"><h1>Agenda</h1><p>Carregando…</p></div>'; renderAgenda(); }
   else if(v==='pacientes'){ body.innerHTML='<div class="page-head"><h1>Pacientes</h1><p>Carregando…</p></div>'; renderPacientes(); }
+  else if(v==='plano'){ body.innerHTML='<div class="page-head"><h1>Plano de tratamento</h1><p>Carregando…</p></div>'; renderPlano(); }
+  else if(v==='tabela'){ body.innerHTML='<div class="page-head"><h1>Minha tabela</h1><p>Carregando…</p></div>'; renderTabela(); }
   else if(v==='dispo'){ body.innerHTML=dispoShell(); loadDispoSlots(); setTimeout(updateRecPreview,0); }
   else if(v==='historico'){ body.innerHTML='<div class="page-head"><h1>Histórico</h1><p>Carregando…</p></div>'; renderHistorico(); }
   else if(v==='financeiro'){ body.innerHTML='<div class="page-head"><h1>Financeiro</h1><p>Carregando…</p></div>'; renderFinanceiro(); }
@@ -2530,6 +2534,412 @@ async function exportConsentPDF(){
 }
 
 /* ===== Novo agendamento manual (pelo dentista) ===== */
+/* ==================== PLANO DE TRATAMENTO ==================== */
+const PLAN_PHASES=[['urgencia','Urgência'],['adequacao','Adequação do meio bucal'],['reabilitacao','Reabilitação'],['estetica','Estética'],['manutencao','Manutenção']];
+function phaseLabel(k){const f=PLAN_PHASES.find(p=>p[0]===k);return f?f[1]:k;}
+const TOOTH_CONDITIONS=[
+  ['cariado','Cariado','#d9534f','tratar'],
+  ['rest_insatisfatoria','Restauração insatisfatória','#e0a92e','tratar'],
+  ['fraturado','Fraturado','#c0492f','tratar'],
+  ['mobilidade','Com mobilidade','#b5651d','tratar'],
+  ['restaurado','Restaurado','#3a7bd5','tratado'],
+  ['endodontia','Com endodontia','#7e57c2','tratado'],
+  ['protese','Com prótese','#00897b','tratado'],
+  ['implante','Implante','#546e7a','tratado'],
+  ['higido','Hígido','#2e7d57','saudavel'],
+  ['erupcao','Em erupção','#9e9e9e','saudavel'],
+  ['ausente','Ausente','#bdbdbd','ausencia'],
+  ['incluso','Incluso','#8d6e63','ausencia'],
+];
+function condColor(k){const c=TOOTH_CONDITIONS.find(x=>x[0]===k);return c?c[2]:'';}
+function condLabel(k){const c=TOOTH_CONDITIONS.find(x=>x[0]===k);return c?c[1]:'';}
+const FDI_ADULT_UP=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+const FDI_ADULT_LO=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+const FDI_CHILD_UP=[55,54,53,52,51,61,62,63,64,65];
+const FDI_CHILD_LO=[85,84,83,82,81,71,72,73,74,75];
+const CATALOG=[
+ {spec:'Dentística',groups:[
+   {g:'Restaurações',items:[['rest-resina','Restauração em resina','face','adequacao'],['rest-ionomero','Restauração em ionômero de vidro','face','adequacao'],['rest-amalgama','Restauração em amálgama','face','adequacao'],['troca-rest','Troca de restauração','face','adequacao'],['art','Restauração atraumática (ART)','fixo','adequacao'],['rest-prov','Restauração provisória','fixo','adequacao']]},
+   {g:'Facetas e lentes',items:[['faceta-resina','Faceta direta em resina','fixo','estetica'],['lente','Lente de contato dental','fixo','estetica'],['faceta-laminado','Faceta indireta (laminado)','fixo','estetica'],['faceta-ceromero','Faceta em cerômero','fixo','estetica']]},
+   {g:'Peças indiretas',items:[['inlay-onlay','Inlay / onlay','fixo','reabilitacao'],['rest-metalica','Restauração metálica fundida','fixo','reabilitacao']]},
+   {g:'Estética e acabamento',items:[['reanatomizacao','Reanatomização de dente','fixo','estetica'],['colagem-fragmento','Colagem de fragmento dentário','fixo','estetica'],['microabrasao','Microabrasão (manchas de fluorose)','fixo','estetica'],['polimento','Polimento de restauração','fixo','manutencao']]},
+   {g:'Outros',items:[['clareamento-interno','Clareamento interno (dente escurecido)','fixo','estetica']]},
+ ]},
+ {spec:'Endodontia',groups:[
+   {g:'Tratamento de canal',items:[['endo-uni','Tratamento endodôntico unirradicular','fixo','adequacao'],['endo-bi','Tratamento endodôntico birradicular','fixo','adequacao'],['endo-multi','Tratamento endodôntico multirradicular','fixo','adequacao'],['retrat-endo','Retratamento endodôntico','fixo','adequacao']]},
+   {g:'Urgência e polpa',items:[['pulpectomia-urg','Pulpectomia (urgência)','fixo','urgencia'],['pulpotomia','Pulpotomia','fixo','urgencia'],['capeamento','Capeamento pulpar direto','fixo','urgencia'],['curativo','Curativo de demora','fixo','urgencia']]},
+   {g:'Complicações',items:[['perfuracao','Tratamento de perfuração endodôntica','fixo','adequacao'],['remocao-corpo','Remoção de corpo estranho intracanal','fixo','adequacao'],['remocao-nucleo','Remoção de núcleo/pino','fixo','adequacao']]},
+   {g:'Cirurgia parendodôntica',items:[['apicectomia','Apicectomia','fixo','adequacao'],['amputacao','Amputação radicular','fixo','adequacao']]},
+ ]},
+ {spec:'Periodontia',groups:[
+   {g:'Cirurgia periodontal',items:[['aumento-coroa','Aumento de coroa clínica','fixo','adequacao'],['cunha-distal','Cunha distal','fixo','adequacao'],['enxerto-conjuntivo','Enxerto de tecido conjuntivo subepitelial','fixo','adequacao'],['rtg','Regeneração tecidual guiada (RTG)','fixo','adequacao'],['tunelizacao','Tunelização','fixo','adequacao']]},
+   {g:'Outros',items:[['abscesso-perio','Tratamento de abscesso periodontal','fixo','urgencia'],['limpeza','Limpeza','fixo','adequacao']]},
+ ]},
+ {spec:'Cirurgia e Traumatologia Bucomaxilofaciais',groups:[
+   {g:'Exodontias',items:[['exo-simples','Exodontia simples','fixo','adequacao'],['exo-raiz','Exodontia de raiz residual','fixo','adequacao'],['exo-3molar','Exodontia de terceiro molar','fixo','adequacao'],['exo-incluso','Exodontia de dente incluso','fixo','adequacao'],['exo-semi','Exodontia de dente semi-incluso','fixo','adequacao'],['exo-retalho','Exodontia a retalho','fixo','adequacao'],['exo-orto','Exodontia por indicação ortodôntica','fixo','adequacao'],['odontosseccao','Odontossecção','fixo','adequacao']]},
+   {g:'Outros',items:[['sepultamento','Sepultamento radicular','fixo','adequacao'],['reimplante','Reimplante dentário','fixo','urgencia']]},
+ ]},
+ {spec:'Prótese Dentária',groups:[
+   {g:'Coroas',items:[['coroa-ceramica','Coroa em cerâmica pura','fixo','reabilitacao'],['coroa-metaloceramica','Coroa metalocerâmica','fixo','reabilitacao'],['coroa-ceromero','Coroa em cerômero','fixo','reabilitacao'],['coroa-metalica','Coroa metálica','fixo','reabilitacao'],['coroa-unitaria','Coroa protética unitária','fixo','reabilitacao']]},
+   {g:'Prótese fixa',items:[['pf-elemento','Prótese fixa — elemento','fixo','reabilitacao'],['pf-adesiva','Prótese fixa adesiva','fixo','reabilitacao']]},
+   {g:'Provisórios',items:[['coroa-prov','Coroa em resina provisória','fixo','reabilitacao'],['pf-prov','Prótese fixa provisória','fixo','reabilitacao']]},
+   {g:'Núcleos e pinos',items:[['nucleo-metalico','Núcleo metálico fundido','fixo','reabilitacao'],['pino-fibra','Pino de fibra de vidro','fixo','reabilitacao'],['nucleo-preench','Núcleo de preenchimento','fixo','reabilitacao']]},
+   {g:'Manutenção',items:[['cimentacao','Cimentação de peça protética','fixo','manutencao'],['remocao-pf','Remoção de prótese fixa','fixo','manutencao']]},
+ ]},
+ {spec:'Implantodontia',groups:[
+   {g:'Implantes',items:[['implante','Implante dentário','fixo','reabilitacao'],['implante-zigo','Implante zigomático','fixo','reabilitacao'],['reabertura','Reabertura e instalação de cicatrizador','fixo','reabilitacao'],['remocao-implante','Remoção de implante','fixo','adequacao']]},
+   {g:'Prótese sobre implante',items:[['protese-implante','Prótese sobre implante','fixo','reabilitacao'],['coroa-prov-implante','Coroa provisória sobre implante','fixo','reabilitacao'],['munhao','Intermediário protético (munhão)','fixo','reabilitacao']]},
+   {g:'Outros',items:[['peri-implantite','Tratamento de peri-implantite','fixo','manutencao']]},
+ ]},
+ {spec:'Odontopediatria',groups:[
+   {g:'Restaurações e coroas',items:[['rest-deciduo','Restauração em decíduo','face','adequacao'],['art-deciduo','Restauração atraumática em decíduo','fixo','adequacao'],['coroa-aco','Coroa de aço em decíduo','fixo','reabilitacao'],['coroa-acetato','Coroa de acetato em decíduo','fixo','reabilitacao']]},
+   {g:'Polpa',items:[['pulpotomia-deciduo','Pulpotomia em decíduo','fixo','urgencia'],['pulpectomia-deciduo','Pulpectomia em decíduo','fixo','urgencia']]},
+   {g:'Cirurgia',items:[['exo-deciduo','Exodontia de decíduo','fixo','adequacao'],['ulotomia','Ulotomia / ulectomia','fixo','adequacao']]},
+ ]},
+ {spec:'Radiologia Odontológica e Imaginologia',groups:[{g:'Imagem',items:[['radio-periapical','Radiografia periapical','fixo','adequacao']]}]},
+ {spec:'Clínica geral',groups:[{g:'Preventivo',items:[['vitalidade','Teste de vitalidade pulpar','fixo','adequacao'],['selante','Selante de fóssulas e fissuras','fixo','adequacao']]}]},
+];
+// índice key -> {name,specialty,unit,phase} a partir do catálogo
+const CAT_INDEX=(()=>{const m={};CATALOG.forEach(s=>s.groups.forEach(gr=>gr.items.forEach(it=>{m[it[0]]={key:it[0],name:it[1],unit:it[2],phase:it[3],specialty:s.spec,group:gr.g};})));return m;})();
+function money(n){return 'R$ '+(Number(n)||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+
+// preços do dentista (Minha tabela) carregados em memória: proc_key -> row
+async function loadProcPrices(){
+  const { data } = await sb.from('procedure_prices').select('*');
+  const m={}; (data||[]).forEach(r=>{ m[r.proc_key]=r; }); window._procPrices=m; return m;
+}
+function procPriceOf(key){ const r=(window._procPrices||{})[key]; return r? Number(r.price||0):0; }
+function procUnitOf(key){ const r=(window._procPrices||{})[key]; if(r&&r.unit) return r.unit; return (CAT_INDEX[key]?CAT_INDEX[key].unit:'fixo'); }
+function procNameOf(key){ const r=(window._procPrices||{})[key]; if(CAT_INDEX[key]) return CAT_INDEX[key].name; return r?r.name:key; }
+
+/* ---------- Minha tabela ---------- */
+async function renderTabela(){
+  const body=document.getElementById('appBody');
+  await loadProcPrices();
+  const customs=Object.values(window._procPrices||{}).filter(r=>r.is_custom);
+  const row=(key,name,spec,unit)=>{
+    const pr=procPriceOf(key); const u=procUnitOf(key);
+    return `<div class="tb-row"><div class="tb-nm">${esc(name)}${u==='face'?' <span class="tb-tag">por face</span>':''}<div class="tb-sp">${esc(spec)}</div></div>
+      <div class="tb-price"><span>R$</span><input type="number" step="0.01" min="0" value="${pr?pr.toFixed(2):''}" placeholder="0,00" onchange="saveProcPrice('${key}',this.value)"></div></div>`;
+  };
+  let html = tbStyles() + `<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap"><div><h1>Minha tabela</h1><p>Defina o preço de cada procedimento. Isso alimenta o plano de tratamento.</p></div><button class="btn btn-primary btn-sm" onclick="addCustomProc()">+ Procedimento próprio</button></div>`;
+  html += `<input id="tbSearch" class="pt-search" placeholder="Buscar procedimento…" oninput="tabelaFilter()" style="margin:10px 0 14px;width:100%">`;
+  if(customs.length){
+    html += `<div class="tb-spec" data-spec="meus"><div class="tb-spec-h">Meus procedimentos</div>`+customs.map(c=>`<div class="tb-row" data-nm="${esc((c.name||'').toLowerCase())}"><div class="tb-nm">${esc(c.name||'')}${c.unit==='face'?' <span class="tb-tag">por face</span>':''}<div class="tb-sp">${esc(c.specialty||'Meu')}</div></div><div class="tb-price"><span>R$</span><input type="number" step="0.01" min="0" value="${c.price?Number(c.price).toFixed(2):''}" placeholder="0,00" onchange="saveProcPrice('${c.proc_key}',this.value)"><button class="tb-del" title="Excluir" onclick="delCustomProc('${c.proc_key}')">×</button></div></div>`).join('')+`</div>`;
+  }
+  CATALOG.forEach(s=>{
+    html += `<div class="tb-spec" data-spec="${esc(s.spec)}"><div class="tb-spec-h">${esc(s.spec)}</div>`;
+    s.groups.forEach(gr=> gr.items.forEach(it=>{ html += row(it[0],it[1],s.spec,it[2]).replace('<div class="tb-row">',`<div class="tb-row" data-nm="${esc(it[1].toLowerCase())}">`); }));
+    html += `</div>`;
+  });
+  body.innerHTML = html;
+}
+function tabelaFilter(){
+  const q=(document.getElementById('tbSearch')?.value||'').toLowerCase().trim();
+  document.querySelectorAll('#appBody .tb-row').forEach(r=>{ r.style.display = (!q || (r.getAttribute('data-nm')||'').includes(q))?'':'none'; });
+  document.querySelectorAll('#appBody .tb-spec').forEach(s=>{ const any=[...s.querySelectorAll('.tb-row')].some(r=>r.style.display!=='none'); s.style.display=any?'':'none'; });
+}
+async function saveProcPrice(key,val){
+  const price=parseFloat(String(val).replace(',','.'))||0;
+  const cat=CAT_INDEX[key];
+  const payload={ professional_id:currentProf.id, proc_key:key, price,
+    unit: procUnitOf(key), specialty: cat?cat.specialty:(window._procPrices?.[key]?.specialty||null),
+    phase: cat?cat.phase:(window._procPrices?.[key]?.phase||'adequacao'),
+    name: cat?cat.name:(window._procPrices?.[key]?.name||null),
+    is_custom: !cat, updated_at:new Date().toISOString() };
+  const { error } = await sb.from('procedure_prices').upsert(payload,{onConflict:'professional_id,proc_key'});
+  if(error){ toast('Erro ao salvar preço: '+error.message,'err'); return; }
+  if(!window._procPrices)window._procPrices={}; window._procPrices[key]={...(window._procPrices[key]||{}),...payload};
+  toast('Preço salvo','ok');
+}
+async function addCustomProc(){
+  const name=prompt('Nome do procedimento próprio:'); if(!name)return;
+  const key='custom-'+Date.now().toString(36);
+  const payload={ professional_id:currentProf.id, proc_key:key, name:name.trim(), specialty:'Meu', phase:'adequacao', unit:'fixo', price:0, is_custom:true };
+  const { error } = await sb.from('procedure_prices').insert(payload);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast('Procedimento criado','ok'); renderTabela();
+}
+async function delCustomProc(key){
+  if(!confirm('Excluir este procedimento próprio?'))return;
+  const { error } = await sb.from('procedure_prices').delete().eq('proc_key',key);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  renderTabela();
+}
+function tbStyles(){ return `<style>
+  .tb-spec{margin-bottom:16px}
+  .tb-spec-h{font-family:'Fraunces',serif;font-size:15px;font-weight:600;color:var(--primary-d);margin:0 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .tb-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--border)}
+  .tb-nm{font-size:14px;color:var(--ink);font-weight:600}
+  .tb-sp{font-size:11px;color:var(--muted);font-weight:400;margin-top:1px}
+  .tb-tag{font-size:10px;background:var(--primary-soft);color:var(--primary-d);border-radius:20px;padding:1px 8px;font-weight:700;margin-left:4px}
+  .tb-price{display:flex;align-items:center;gap:6px;flex:none}
+  .tb-price span{font-size:12px;color:var(--muted)}
+  .tb-price input{width:100px;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font:inherit;font-size:14px;text-align:right}
+  .tb-del{border:none;background:none;color:var(--danger);font-size:18px;cursor:pointer;line-height:1;padding:0 4px}
+</style>`; }
+
+/* ---------- Montador do plano ---------- */
+function newPlan(){ return { id:null, patient_id:null, patient_name:'', title:'Plano de tratamento', dentition:'adulto', odontogram:{}, items:[], discount:0, status:'rascunho', token:null }; }
+async function renderPlano(){
+  const body=document.getElementById('appBody');
+  await loadProcPrices();
+  const { data:pats } = await sb.from('patients').select('id,name,birth_date,phone').order('name');
+  window._planPats=pats||[];
+  if(!window._plan) window._plan=newPlan();
+  renderPlanoView();
+}
+function planPatientOptions(){
+  const sel=window._plan.patient_id||'';
+  return '<option value="">— Escolha o paciente —</option>'+(window._planPats||[]).map(p=>`<option value="${p.id}"${p.id===sel?' selected':''}>${esc(p.name)}</option>`).join('');
+}
+function renderPlanoView(){
+  const body=document.getElementById('appBody'); const pl=window._plan;
+  const subtotal=pl.items.reduce((s,it)=>s+itemSubtotal(it),0);
+  const total=Math.max(0,subtotal-(Number(pl.discount)||0));
+  const head=`<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+    <div><h1>Plano de tratamento</h1><p>Monte o plano e o orçamento do paciente.</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="planOpenSaved()">Planos salvos</button>
+      <button class="btn btn-ghost btn-sm" onclick="planReset()">Novo</button>
+      <button class="btn btn-primary btn-sm" onclick="planSave()">Salvar</button>
+    </div>
+  </div>`;
+  const topbar=`<div class="pl-top">
+    <div class="field" style="flex:1;min-width:200px"><label>Paciente</label><select id="planPat" onchange="planChoosePatient()">${planPatientOptions()}</select></div>
+    <div class="field"><label>Dentição</label><div class="seg" style="min-width:180px"><button type="button" class="seg-btn${pl.dentition==='adulto'?' active':''}" onclick="planSetDentition('adulto')">Adulto</button><button type="button" class="seg-btn${pl.dentition==='infantil'?' active':''}" onclick="planSetDentition('infantil')">Infantil</button></div></div>
+    ${pl.patient_id?`<a class="btn btn-ghost btn-sm" href="javascript:void(0)" onclick="go('pacientes')" style="align-self:flex-end">Ver ficha</a>`:''}
+  </div>`;
+  body.innerHTML = planStyles() + head + topbar
+    + `<div class="pl-grid"><div class="pl-left">${odontogramHTML()}</div><div class="pl-right">${phasesHTML()}</div></div>`
+    + `<div class="pl-summary">
+         <div class="pl-sum-row"><span>Subtotal</span><b>${money(subtotal)}</b></div>
+         <div class="pl-sum-row"><span>Desconto</span><span class="pl-disc">R$ <input type="number" step="0.01" min="0" value="${pl.discount?Number(pl.discount).toFixed(2):''}" placeholder="0,00" onchange="planSetDiscount(this.value)"></span></div>
+         <div class="pl-sum-row total"><span>Total</span><b>${money(total)}</b></div>
+         <div class="pl-sum-actions">
+           <button class="btn btn-ghost btn-sm" onclick="planPDF()">Gerar PDF</button>
+           <button class="btn btn-primary btn-sm" onclick="planSend()">Enviar pro paciente</button>
+         </div>
+       </div>`;
+}
+function odontogramHTML(){
+  const pl=window._plan;
+  const up = pl.dentition==='adulto'?FDI_ADULT_UP:FDI_CHILD_UP;
+  const lo = pl.dentition==='adulto'?FDI_ADULT_LO:FDI_CHILD_LO;
+  const tooth=(n)=>{ const c=pl.odontogram[n]; const col=c?condColor(c):'#fff'; const has=pl.items.some(it=>String(it.tooth)===String(n));
+    return `<button class="od-tooth${c?' marked':''}${has?' hasproc':''}" style="${c?`background:${col};border-color:${col};color:#fff`:''}" onclick="openToothModal(${n})" title="${c?condLabel(c):''}">${n}</button>`; };
+  return `<div class="od-wrap">
+    <div class="od-title">Odontograma <span>· toque num dente</span></div>
+    <div class="od-arch">${up.map(tooth).join('')}</div>
+    <div class="od-arch">${lo.map(tooth).join('')}</div>
+    <div class="od-legend">${TOOTH_CONDITIONS.filter(c=>['cariado','restaurado','higido','ausente'].includes(c[0])).map(c=>`<span><i style="background:${c[2]}"></i>${c[1]}</span>`).join('')}</div>
+  </div>`;
+}
+function itemSubtotal(it){ const q = it.unit==='face' ? (Number(it.faces)||1) : (Number(it.qty)||1); return (Number(it.price)||0)*q; }
+function phasesHTML(){
+  const pl=window._plan;
+  return `<div class="ph-wrap"><div class="ph-title">Procedimentos do plano</div>`+PLAN_PHASES.map(([pk,plabel],i)=>{
+    const items=pl.items.map((it,idx)=>({it,idx})).filter(x=>x.it.phase===pk);
+    const sub=items.reduce((s,x)=>s+itemSubtotal(x.it),0);
+    const rows=items.map(({it,idx})=>{
+      const qtyCtrl = it.unit==='face'
+        ? `<span class="ph-q">faces <input type="number" min="1" max="5" value="${it.faces||1}" onchange="planSetQty(${idx},'faces',this.value)"></span>`
+        : `<span class="ph-q">qtd <input type="number" min="1" value="${it.qty||1}" onchange="planSetQty(${idx},'qty',this.value)"></span>`;
+      return `<div class="ph-item"><div class="ph-item-main"><b>${esc(it.name)}</b>${it.tooth?` <span class="ph-tooth">dente ${it.tooth}</span>`:''}<div class="ph-sp">${esc(it.specialty||'')}</div></div>
+        ${qtyCtrl}
+        <div class="ph-val">${it.price?money(itemSubtotal(it)):'<span class="semvalor">sem valor</span>'}</div>
+        <button class="ph-del" title="Remover" onclick="planRemoveItem(${idx})">×</button></div>`;
+    }).join('');
+    return `<div class="ph-phase"><div class="ph-ph-h"><span class="ph-num">${i+1}</span><span class="ph-ph-name">${plabel}</span><span class="ph-ph-sub">${money(sub)}</span></div>${rows||'<div class="ph-empty">Nenhum procedimento. Toque num dente pra adicionar.</div>'}</div>`;
+  }).join('')+`</div>`;
+}
+function planChoosePatient(){
+  const id=document.getElementById('planPat').value;
+  const p=(window._planPats||[]).find(x=>x.id===id);
+  window._plan.patient_id=id||null; window._plan.patient_name=p?p.name:'';
+  renderPlanoView();
+}
+function planSetDentition(d){ window._plan.dentition=d; renderPlanoView(); }
+function planSetDiscount(v){ window._plan.discount=parseFloat(String(v).replace(',','.'))||0; renderPlanoView(); }
+function planSetQty(idx,field,v){ const n=parseInt(v,10)||1; if(window._plan.items[idx]){ window._plan.items[idx][field]=Math.max(1,n); renderPlanoView(); } }
+function planRemoveItem(idx){ window._plan.items.splice(idx,1); renderPlanoView(); }
+function planReset(){ if(window._plan.items.length && !confirm('Começar um plano novo? As alterações não salvas serão perdidas.'))return; window._plan=newPlan(); renderPlanoView(); }
+function openToothModal(n){
+  const pl=window._plan; const cur=pl.odontogram[n]||'';
+  const condGroups=[['tratar','A tratar'],['tratado','Tratado'],['saudavel','Saudável'],['ausencia','Ausência']];
+  const condHTML=condGroups.map(([gk,gl])=>`<div class="tm-cg"><div class="tm-cg-h">${gl}</div><div class="tm-conds">${TOOTH_CONDITIONS.filter(c=>c[3]===gk).map(c=>`<button type="button" class="tm-cond${cur===c[0]?' active':''}" style="${cur===c[0]?`background:${c[2]};border-color:${c[2]};color:#fff`:''}" onclick="setToothCond(${n},'${c[0]}')">${c[1]}</button>`).join('')}</div></div>`).join('');
+  const catHTML=CATALOG.map(s=>`<div class="tm-spec"><div class="tm-spec-h">${esc(s.spec)}</div>`+s.groups.map(gr=>gr.items.map(it=>{ const price=procPriceOf(it[0]); return `<button type="button" class="tm-proc" data-nm="${esc(it[1].toLowerCase())}" onclick="planAddItem(${n},'${it[0]}')"><span class="tm-proc-n">${esc(it[1])}${it[2]==='face'?' · por face':''}</span><span class="tm-proc-p">${price?money(price):'sem valor'}</span></button>`; }).join('')).join('')+`</div>`).join('');
+  const customs=Object.values(window._procPrices||{}).filter(r=>r.is_custom);
+  const customHTML=customs.length?`<div class="tm-spec"><div class="tm-spec-h">Meus procedimentos</div>`+customs.map(c=>`<button type="button" class="tm-proc" data-nm="${esc((c.name||'').toLowerCase())}" onclick="planAddItem(${n},'${c.proc_key}')"><span class="tm-proc-n">${esc(c.name||'')}</span><span class="tm-proc-p">${c.price?money(c.price):'sem valor'}</span></button>`).join('')+`</div>`:'';
+  const html=`<div class="pf-head"><h3 style="font-family:'Fraunces',serif">Dente ${n}</h3><button class="rep-close" onclick="closeModal()" title="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="tm-section-t">Condição do dente</div>
+    ${condHTML}
+    <div style="display:flex;gap:8px;margin:6px 0 14px"><button type="button" class="btn btn-ghost btn-sm" onclick="setToothCond(${n},'')">Limpar condição</button></div>
+    <div class="tm-section-t">Adicionar procedimento <input id="tmProcSearch" class="pt-search" placeholder="Buscar…" oninput="tmFilterProc()" style="margin-top:8px;width:100%"></div>
+    <div class="tm-cat">${customHTML}${catHTML}</div>
+    <div class="pf-foot" style="justify-content:flex-end"><button type="button" class="btn btn-primary btn-sm" onclick="closeModal()">Concluir</button></div>`;
+  document.getElementById('modal').classList.add('modal-lg'); showModal(html);
+}
+function tmFilterProc(){ const q=(document.getElementById('tmProcSearch')?.value||'').toLowerCase().trim();
+  document.querySelectorAll('#modal .tm-proc').forEach(b=>{ b.style.display=(!q||(b.getAttribute('data-nm')||'').includes(q))?'':'none'; });
+  document.querySelectorAll('#modal .tm-spec').forEach(s=>{ const any=[...s.querySelectorAll('.tm-proc')].some(b=>b.style.display!=='none'); s.style.display=any?'':'none'; });
+}
+function setToothCond(n,c){ if(c)window._plan.odontogram[n]=c; else delete window._plan.odontogram[n]; const m=document.getElementById('modal'); if(m){ openToothModal(n); } renderPlanoBg(); }
+function renderPlanoBg(){ /* re-render do fundo sem fechar modal */ const b=document.getElementById('appBody'); if(b && document.querySelector('#appBody .od-wrap')) { const scrollY=window.scrollY; renderPlanoView(); window.scrollTo(0,scrollY);} }
+function planAddItem(n,key){
+  const cat=CAT_INDEX[key]||window._procPrices?.[key];
+  const name=procNameOf(key); const unit=procUnitOf(key);
+  const phase=(CAT_INDEX[key]?CAT_INDEX[key].phase:(window._procPrices?.[key]?.phase||'adequacao'));
+  const specialty=(CAT_INDEX[key]?CAT_INDEX[key].specialty:(window._procPrices?.[key]?.specialty||'Meu'));
+  window._plan.items.push({ tooth:n, key, name, specialty, phase, unit, price:procPriceOf(key), qty:1, faces:1 });
+  toast(name+' adicionado','ok');
+  renderPlanoBg();
+}
+function planStyles(){ return `<style>
+  .pl-top{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:10px 0 16px}
+  .pl-top select{min-width:220px}
+  .pl-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;align-items:start}
+  .pl-left,.pl-right{min-width:0}
+  .od-wrap{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  .od-title{font-weight:700;color:var(--primary-d);font-size:14px;margin-bottom:12px}
+  .od-title span{color:var(--muted);font-weight:400}
+  .od-arch{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin-bottom:6px}
+  .od-tooth{aspect-ratio:1/1.4;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:10px;font-weight:700;color:var(--ink);cursor:pointer;padding:0;transition:.1s;position:relative}
+  .od-tooth:hover{border-color:var(--primary)}
+  .od-tooth.hasproc::after{content:"";position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--accent,#c2a063)}
+  .od-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:11.5px;color:var(--muted)}
+  .od-legend span{display:flex;align-items:center;gap:5px}
+  .od-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .ph-wrap{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  .ph-title{font-weight:700;color:var(--primary-d);font-size:14px;margin-bottom:10px}
+  .ph-phase{margin-bottom:12px}
+  .ph-ph-h{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+  .ph-num{width:20px;height:20px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);font-size:11px;font-weight:700;display:grid;place-items:center;flex:none}
+  .ph-ph-name{flex:1;font-size:13px;font-weight:700;color:var(--ink)}
+  .ph-ph-sub{font-size:13px;font-weight:700;color:var(--primary-d)}
+  .ph-empty{font-size:12px;color:var(--muted);padding:8px 0 4px}
+  .ph-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+  .ph-item-main{flex:1;min-width:0;font-size:13px}
+  .ph-tooth{font-size:11px;background:var(--primary-soft);color:var(--primary-d);border-radius:20px;padding:1px 7px;font-weight:700}
+  .ph-sp{font-size:11px;color:var(--muted);margin-top:1px}
+  .ph-q{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+  .ph-q input{width:48px;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font:inherit;font-size:12px;text-align:center}
+  .ph-val{font-size:13px;font-weight:700;color:var(--ink);min-width:80px;text-align:right}
+  .semvalor{color:#b23a3a;font-weight:600;font-size:11.5px}
+  .ph-del{border:none;background:none;color:var(--danger);font-size:18px;cursor:pointer;line-height:1}
+  .pl-summary{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow);margin-top:18px;max-width:420px;margin-left:auto}
+  .pl-sum-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:14px}
+  .pl-sum-row.total{border-top:1px solid var(--border);margin-top:4px;padding-top:10px;font-size:17px;color:var(--primary-d)}
+  .pl-disc input{width:100px;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font:inherit;text-align:right}
+  .pl-sum-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+  .tm-section-t{font-weight:700;color:var(--primary-d);font-size:13.5px;margin:12px 0 8px}
+  .tm-cg{margin-bottom:10px}
+  .tm-cg-h{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:5px}
+  .tm-conds{display:flex;flex-wrap:wrap;gap:6px}
+  .tm-cond{border:1px solid var(--border);background:#fff;border-radius:20px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--ink)}
+  .tm-cat{max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:8px}
+  .tm-spec{margin-bottom:10px}
+  .tm-spec-h{font-size:12px;font-weight:700;color:var(--primary-d);margin:4px 0}
+  .tm-proc{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;border:none;background:none;border-bottom:1px solid var(--border);padding:8px 2px;cursor:pointer;text-align:left;font:inherit}
+  .tm-proc:hover{background:var(--primary-soft)}
+  .tm-proc-n{font-size:13px;color:var(--ink)}
+  .tm-proc-p{font-size:12px;font-weight:700;color:var(--primary-d);flex:none}
+  @media(max-width:860px){.pl-grid{grid-template-columns:1fr}.od-tooth{font-size:9px}}
+</style>`; }
+
+async function planSave(silent){
+  const pl=window._plan;
+  if(!pl.patient_id){ toast('Escolha o paciente','err'); return null; }
+  const subtotal=pl.items.reduce((s,it)=>s+itemSubtotal(it),0);
+  const total=Math.max(0,subtotal-(Number(pl.discount)||0));
+  const payload={ professional_id:currentProf.id, patient_id:pl.patient_id, patient_name:pl.patient_name||null,
+    title:pl.title||'Plano de tratamento', dentition:pl.dentition, odontogram:pl.odontogram, items:pl.items,
+    discount:Number(pl.discount)||0, total, status:pl.status||'rascunho', updated_at:new Date().toISOString() };
+  let res;
+  if(pl.id){ res=await sb.from('treatment_plans').update(payload).eq('id',pl.id).select('id,token').maybeSingle(); }
+  else { res=await sb.from('treatment_plans').insert(payload).select('id,token').maybeSingle(); }
+  if(res.error){ toast('Erro ao salvar: '+res.error.message,'err'); return null; }
+  pl.id=res.data.id; pl.token=res.data.token;
+  if(!silent) toast('Plano salvo!','ok');
+  return pl;
+}
+function planStatusLabel(s){return ({rascunho:'Rascunho',enviado:'Enviado',autorizado:'Autorizado',recusado:'Recusado'})[s]||s;}
+async function planOpenSaved(){
+  let q=sb.from('treatment_plans').select('id,patient_name,title,total,status,updated_at,created_at').order('updated_at',{ascending:false});
+  if(window._plan.patient_id) q=q.eq('patient_id',window._plan.patient_id);
+  const { data } = await q;
+  const rows=(data||[]).map(p=>`<div class="pt-row" onclick="planLoad('${p.id}')"><div class="pt-info"><div class="pt-name">${esc(p.patient_name||'Paciente')} · ${money(p.total)}</div><div class="pt-sub">${esc(p.title||'')} · ${planStatusLabel(p.status)} · ${new Date(p.updated_at||p.created_at).toLocaleDateString('pt-BR')}</div></div><svg class="pt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></div>`).join('');
+  showModal(`${ptStyles()}<div class="pf-head"><h3 style="font-family:'Fraunces',serif">Planos salvos</h3><button class="rep-close" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>${rows?`<div class="pt-list">${rows}</div>`:'<p class="sub">Nenhum plano salvo ainda.</p>'}`);
+}
+async function planLoad(id){
+  const { data:p, error } = await sb.from('treatment_plans').select('*').eq('id',id).maybeSingle();
+  if(error||!p){ toast('Erro ao abrir','err'); return; }
+  window._plan={ id:p.id, patient_id:p.patient_id, patient_name:p.patient_name||'', title:p.title||'Plano de tratamento', dentition:p.dentition||'adulto', odontogram:p.odontogram||{}, items:p.items||[], discount:Number(p.discount)||0, status:p.status||'rascunho', token:p.token };
+  closeModal();
+  if(!window._planPats){ await renderPlano(); } else { renderPlanoView(); }
+}
+async function planSend(){
+  const pl=window._plan;
+  if(!pl.patient_id){ toast('Escolha o paciente','err'); return; }
+  if(!pl.items.length){ toast('Adicione ao menos um procedimento','err'); return; }
+  pl.status='enviado';
+  const saved=await planSave(true); if(!saved)return;
+  await sb.from('treatment_plans').update({ sent_at:new Date().toISOString() }).eq('id',pl.id);
+  const link='https://endodoc.com.br/orcamento?token='+pl.token;
+  const pat=(window._planPats||[]).find(x=>x.id===pl.patient_id);
+  const phone=(pat&&pat.phone)?pat.phone.replace(/\D/g,''):'';
+  const wa=phone?('https://wa.me/55'+phone+'?text='+encodeURIComponent('Olá! Segue seu orçamento do tratamento: '+link)):'';
+  showModal(`<div class="pf-head"><h3 style="font-family:'Fraunces',serif">Orçamento pronto</h3><button class="rep-close" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <p class="sub">O paciente abre o link, vê o plano e pode autorizar.</p>
+    <div class="linkbox" style="margin:12px 0"><span style="flex:1;word-break:break-all">${link}</span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${link}');toast('Link copiado','ok')">Copiar link</button>
+      ${wa?`<a class="btn btn-primary btn-sm" href="${wa}" target="_blank" rel="noopener">Enviar no WhatsApp</a>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="planPDF()">Baixar PDF</button>
+    </div>`);
+  renderPlanoBg();
+}
+function planPDF(){
+  const pl=window._plan;
+  if(!pl.items.length){ toast('Adicione procedimentos primeiro','err'); return; }
+  const JS=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
+  if(!JS){ toast('PDF indisponível (recarregue a página)','err'); return; }
+  const doc=new JS({unit:'pt',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(); const mX=40; let y=52;
+  const prof=currentProf||{};
+  doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(14,54,52); doc.text(prof.name||'Dentista', mX, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120,120,120);
+  doc.text([prof.specialty||'Odontologia', prof.cro?('CRO '+prof.cro):''].filter(Boolean).join(' · '), mX, y+16);
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(14,54,52); doc.text('Orçamento', W-mX, 52, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120,120,120); doc.text(new Date().toLocaleDateString('pt-BR'), W-mX, 68, {align:'right'});
+  y+=38; doc.setDrawColor(220,220,220); doc.line(mX,y,W-mX,y); y+=20;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(40,40,40); doc.text('Paciente: '+(pl.patient_name||'—'), mX, y); y+=22;
+  const subtotal=pl.items.reduce((s,it)=>s+itemSubtotal(it),0);
+  const total=Math.max(0,subtotal-(Number(pl.discount)||0));
+  PLAN_PHASES.forEach(([pk,plabel])=>{
+    const items=pl.items.filter(it=>it.phase===pk); if(!items.length)return;
+    if(y>760){ doc.addPage(); y=52; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(14,54,52); doc.text(plabel, mX, y); y+=16;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(50,50,50);
+    items.forEach(it=>{ if(y>790){ doc.addPage(); y=52; }
+      const q=it.unit==='face'?(it.faces||1):(it.qty||1); const qtxt=it.unit==='face'?` (${q} face${q>1?'s':''})`:(q>1?` (x${q})`:'');
+      doc.text((it.tooth?('Dente '+it.tooth+' — '):'')+it.name+qtxt, mX, y);
+      doc.text(it.price?money(itemSubtotal(it)):'a combinar', W-mX, y, {align:'right'}); y+=15;
+    });
+    y+=8;
+  });
+  if(y>740){ doc.addPage(); y=52; }
+  doc.setDrawColor(220,220,220); doc.line(mX,y,W-mX,y); y+=18;
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(80,80,80);
+  doc.text('Subtotal', W-mX-130, y); doc.text(money(subtotal), W-mX, y, {align:'right'}); y+=16;
+  if((Number(pl.discount)||0)>0){ doc.text('Desconto', W-mX-130, y); doc.text('- '+money(pl.discount), W-mX, y, {align:'right'}); y+=16; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(14,54,52);
+  doc.text('Total', W-mX-130, y+4); doc.text(money(total), W-mX, y+4, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(140,140,140);
+  doc.text('Orçamento sujeito a avaliação clínica. Valores podem variar conforme o caso.', mX, 812);
+  doc.save('orcamento-'+String(pl.patient_name||'paciente').replace(/\s+/g,'-').toLowerCase()+'.pdf');
+}
+
 /* ========================= PACIENTES ========================= */
 const PT_COLORS=['#cfe2f3','#d9d2e9','#d9ead3','#f6cfe0','#fce5cd'];
 function ptInitials(name){const p=(name||'').trim().split(/\s+/);return (((p[0]||'')[0]||'')+((p.length>1?(p[p.length-1][0]||''):''))).toUpperCase();}
