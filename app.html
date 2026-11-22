@@ -2722,16 +2722,35 @@ function renderPlanoView(){
          </div>
        </div>`;
 }
+function toothSVG(n,cond,upper){
+  const d=n%10;
+  const type=(d===1||d===2)?'incisor':(d===3?'canine':(d===4||d===5)?'premolar':'molar');
+  const col=cond?condColor(cond):'#ffffff';
+  const stroke=cond?condColor(cond):'#8a9b9a';
+  // orientação canônica: coroa embaixo (y44-70), raízes apontando pra CIMA (arcada superior)
+  const blade=(bx,w,tx,ty)=>`M${bx-w} 44 C${bx-w} 34 ${tx-1} ${ty+8} ${tx} ${ty} C${tx+1} ${ty+8} ${bx+w} 34 ${bx+w} 44`;
+  let crown, roots=[];
+  if(type==='incisor'){ crown='M12 44 L28 44 Q30 44 30 47 L30 63 Q30 70 23 70 L17 70 Q10 70 10 63 L10 47 Q10 44 12 44 Z'; roots=[blade(20,6,20,7)]; }
+  else if(type==='canine'){ crown='M11 44 L29 44 L29 57 Q29 64 21 71 Q13 64 11 57 Z'; roots=[blade(20,6,20,2)]; }
+  else if(type==='premolar'){ crown='M11 44 L29 44 Q30 44 30 48 L30 62 Q30 69 23 69 L21 66 L19 69 L17 69 Q10 69 10 62 L10 48 Q10 44 11 44 Z'; roots=[blade(20,6,20,7)]; }
+  else { crown='M8 44 L32 44 Q34 44 34 48 L34 62 Q34 69 27 69 L24 66 L21 69 L19 66 L16 69 L13 69 Q6 69 6 62 L6 48 Q6 44 8 44 Z';
+    roots = upper ? [blade(12,4,6,9),blade(20,4,20,5),blade(28,4,34,9)] : [blade(15,5,11,6),blade(25,5,29,6)]; }
+  const inner=`<path d="${crown}" fill="${col}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>`+roots.map(r=>`<path d="${r}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round"/>`).join('');
+  const g = upper ? inner : `<g transform="translate(0,76) scale(1,-1)">${inner}</g>`;
+  return `<svg viewBox="0 0 40 76" class="tooth-svg">${g}</svg>`;
+}
 function odontogramHTML(){
   const pl=window._plan;
   const up = pl.dentition==='adulto'?FDI_ADULT_UP:FDI_CHILD_UP;
   const lo = pl.dentition==='adulto'?FDI_ADULT_LO:FDI_CHILD_LO;
-  const tooth=(n)=>{ const c=pl.odontogram[n]; const col=c?condColor(c):'#fff'; const has=pl.items.some(it=>String(it.tooth)===String(n));
-    return `<button class="od-tooth${c?' marked':''}${has?' hasproc':''}" style="${c?`background:${col};border-color:${col};color:#fff`:''}" onclick="openToothModal(${n})" title="${c?condLabel(c):''}">${n}</button>`; };
+  const cols=up.length;
+  const tooth=(n,upper)=>{ const c=pl.odontogram[n]; const has=pl.items.some(it=>String(it.tooth)===String(n));
+    return `<button class="od-tooth${has?' hasproc':''}" onclick="openToothModal(${n})" title="${c?esc(condLabel(c)):'Dente '+n}">${toothSVG(n,c,upper)}<span class="od-num">${n}</span></button>`; };
+  const arch=(arr,upper)=>`<div class="od-arch" style="grid-template-columns:repeat(${cols},minmax(26px,1fr))">${arr.map(n=>tooth(n,upper)).join('')}</div>`;
   return `<div class="od-wrap">
     <div class="od-title">Odontograma <span>· toque num dente</span></div>
-    <div class="od-arch">${up.map(tooth).join('')}</div>
-    <div class="od-arch">${lo.map(tooth).join('')}</div>
+    <div class="od-sides"><span>Direita do paciente</span><span>Esquerda do paciente</span></div>
+    <div class="od-scroll">${arch(up,true)}${arch(lo,false)}</div>
     <div class="od-legend">${TOOTH_CONDITIONS.filter(c=>['cariado','restaurado','higido','ausente'].includes(c[0])).map(c=>`<span><i style="background:${c[2]}"></i>${c[1]}</span>`).join('')}</div>
   </div>`;
 }
@@ -2803,10 +2822,14 @@ function planStyles(){ return `<style>
   .od-wrap{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
   .od-title{font-weight:700;color:var(--primary-d);font-size:14px;margin-bottom:12px}
   .od-title span{color:var(--muted);font-weight:400}
-  .od-arch{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin-bottom:6px}
-  .od-tooth{aspect-ratio:1/1.4;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:10px;font-weight:700;color:var(--ink);cursor:pointer;padding:0;transition:.1s;position:relative}
-  .od-tooth:hover{border-color:var(--primary)}
-  .od-tooth.hasproc::after{content:"";position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--accent,#c2a063)}
+  .od-sides{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+  .od-scroll{overflow-x:auto;padding-bottom:2px}
+  .od-arch{display:grid;gap:3px;margin-bottom:8px;min-width:420px}
+  .od-tooth{display:flex;flex-direction:column;align-items:center;gap:1px;border:none;background:none;cursor:pointer;padding:2px 0;position:relative}
+  .od-tooth .tooth-svg{width:100%;max-width:30px;height:auto;transition:.12s}
+  .od-tooth:hover .tooth-svg{transform:translateY(-2px)}
+  .od-tooth.hasproc::after{content:"";position:absolute;top:0;right:22%;width:6px;height:6px;border-radius:50%;background:var(--accent,#c2a063);border:1px solid #fff}
+  .od-num{font-size:9.5px;font-weight:700;color:var(--muted)}
   .od-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:11.5px;color:var(--muted)}
   .od-legend span{display:flex;align-items:center;gap:5px}
   .od-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
@@ -2887,17 +2910,30 @@ async function planSend(){
   await sb.from('treatment_plans').update({ sent_at:new Date().toISOString() }).eq('id',pl.id);
   const link='https://endodoc.com.br/orcamento?token='+pl.token;
   const pat=(window._planPats||[]).find(x=>x.id===pl.patient_id);
-  const phone=(pat&&pat.phone)?pat.phone.replace(/\D/g,''):'';
-  const wa=phone?('https://wa.me/55'+phone+'?text='+encodeURIComponent('Olá! Segue seu orçamento do tratamento: '+link)):'';
+  const hasPhone=!!(pat&&pat.phone);
   showModal(`<div class="pf-head"><h3 style="font-family:'Fraunces',serif">Orçamento pronto</h3><button class="rep-close" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
     <p class="sub">O paciente abre o link, vê o plano e pode autorizar.</p>
     <div class="linkbox" style="margin:12px 0"><span style="flex:1;word-break:break-all">${link}</span></div>
+    ${!hasPhone?'<p style="font-size:12.5px;color:#b23a3a;margin-bottom:8px">Paciente sem WhatsApp na ficha — adicione pra enviar automático.</p>':''}
     <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
       <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${link}');toast('Link copiado','ok')">Copiar link</button>
-      ${wa?`<a class="btn btn-primary btn-sm" href="${wa}" target="_blank" rel="noopener">Enviar no WhatsApp</a>`:''}
       <button class="btn btn-ghost btn-sm" onclick="planPDF()">Baixar PDF</button>
+      ${hasPhone?`<button class="btn btn-primary btn-sm" id="orcWaBtn" onclick="sendOrcamentoWhatsApp('${pl.id}')">Enviar pelo WhatsApp</button>`:''}
     </div>`);
   renderPlanoBg();
+}
+async function sendOrcamentoWhatsApp(planId){
+  const btn=document.getElementById('orcWaBtn'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
+  toast('Enviando pelo WhatsApp…','');
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    const tok=session?.access_token||'';
+    const res=await fetch(SUPA_URL+'/functions/v1/send-whatsapp-orcamento',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({plan_id:planId})});
+    const t=await res.text();
+    if(!res.ok) throw new Error(t||('http '+res.status));
+    toast('✓ Orçamento enviado pro WhatsApp do paciente!','ok');
+    closeModal();
+  }catch(e){ toast('Erro ao enviar: '+(e.message||e),'err'); if(btn){ btn.disabled=false; btn.textContent='Enviar pelo WhatsApp'; } }
 }
 function planPDF(){
   const pl=window._plan;
