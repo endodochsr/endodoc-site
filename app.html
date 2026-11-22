@@ -570,6 +570,7 @@
     <nav id="appNav">
       <button data-v="visao"      class="active" onclick="go('visao')"     ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>Visão geral</button>
       <button data-v="agenda"                    onclick="go('agenda')"    ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></span>Agenda</button>
+      <button data-v="pacientes"                 onclick="go('pacientes')" ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Pacientes</button>
       <button data-v="dispo"                     onclick="go('dispo')"     ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Disponibilidade</button>
       <button data-v="historico"                 onclick="go('historico')" ><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span>Histórico</button>
       <button data-v="financeiro"                onclick="go('financeiro')"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>Financeiro</button>
@@ -1235,6 +1236,7 @@ function go(v){
     body.innerHTML=lockedView(v);
   }
   else if(v==='agenda'){ body.innerHTML='<div class="page-head"><h1>Agenda</h1><p>Carregando…</p></div>'; renderAgenda(); }
+  else if(v==='pacientes'){ body.innerHTML='<div class="page-head"><h1>Pacientes</h1><p>Carregando…</p></div>'; renderPacientes(); }
   else if(v==='dispo'){ body.innerHTML=dispoShell(); loadDispoSlots(); setTimeout(updateRecPreview,0); }
   else if(v==='historico'){ body.innerHTML='<div class="page-head"><h1>Histórico</h1><p>Carregando…</p></div>'; renderHistorico(); }
   else if(v==='financeiro'){ body.innerHTML='<div class="page-head"><h1>Financeiro</h1><p>Carregando…</p></div>'; renderFinanceiro(); }
@@ -2528,6 +2530,230 @@ async function exportConsentPDF(){
 }
 
 /* ===== Novo agendamento manual (pelo dentista) ===== */
+/* ========================= PACIENTES ========================= */
+const PT_COLORS=['#cfe2f3','#d9d2e9','#d9ead3','#f6cfe0','#fce5cd'];
+function ptInitials(name){const p=(name||'').trim().split(/\s+/);return (((p[0]||'')[0]||'')+((p.length>1?(p[p.length-1][0]||''):''))).toUpperCase();}
+function ptHashColor(name){let h=0;const s=name||'';for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return PT_COLORS[Math.abs(h)%PT_COLORS.length];}
+function ptColorOf(p){return p.color||ptHashColor(p.name);}
+function ptAge(birth){if(!birth)return null;const b=new Date(birth+'T00:00:00');if(isNaN(b))return null;const n=new Date();let a=n.getFullYear()-b.getFullYear();const m=n.getMonth()-b.getMonth();if(m<0||(m===0&&n.getDate()<b.getDate()))a--;return a;}
+
+async function renderPacientes(){
+  const body=document.getElementById('appBody');
+  const [patRes, bkRes] = await Promise.all([
+    sb.from('patients').select('*').order('created_at',{ascending:false}),
+    sb.from('bookings').select('patient_id,status,completed_at').not('patient_id','is',null)
+  ]);
+  if(patRes.error){ body.innerHTML='<div class="page-head"><h1>Pacientes</h1></div><div class="card">Erro: '+esc(patRes.error.message)+'</div>'; return; }
+  window._patients = patRes.data||[];
+  const pm={};
+  (bkRes.data||[]).forEach(b=>{ if(!b.patient_id)return; const m=pm[b.patient_id]||(pm[b.patient_id]={c:false,a:false}); if(b.completed_at)m.c=true; else if(b.status==='active'||b.status==='pending')m.a=true; });
+  window._patBookStatus=pm;
+  renderPacientesView();
+}
+function renderPacientesView(){
+  const body=document.getElementById('appBody');
+  const pats=window._patients||[]; const pm=window._patBookStatus||{};
+  const now=new Date(); const ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const total=pats.length;
+  const esteMes=pats.filter(p=>(p.created_at||'').slice(0,7)===ym).length;
+  let atend=0,emTrat=0,naoVieram=0;
+  pats.forEach(p=>{const s=pm[p.id]; if(s&&s.c)atend++; if(s&&s.a)emTrat++; if(!s)naoVieram++;});
+  const aniv=pats.filter(p=>p.birth_date && new Date(p.birth_date+'T00:00:00').getMonth()===now.getMonth()).length;
+  const cards=[
+    ['Paciente',total,(esteMes?'+'+esteMes+' este mês':''),'var(--primary-d)'],
+    ['Em tratamento',emTrat,'','#1E7167'],
+    ['Em aberto',0,'','#8a6d27'],
+    ['Atendidos',atend,'','#2e7d57'],
+    ['Ainda não vieram',naoVieram,'','#b23a3a'],
+    ['Aniversariantes',aniv,'','#a0397a'],
+  ];
+  body.innerHTML = ptStyles() + `
+    <div class="page-head"><h1>Pacientes</h1><p>Seu cadastro de pacientes.</p></div>
+    <div class="pt-cards">${cards.map((c,i)=>`<div class="pt-card${i===0?' first':''}"><div class="pt-card-n" style="color:${c[3]}">${c[1]}</div><div class="pt-card-l">${c[0]}</div>${c[2]?`<div class="pt-card-s">${c[2]}</div>`:''}</div>`).join('')}</div>
+    <div class="pt-controls">
+      <input id="patSearch" class="pt-search" placeholder="Nome, telefone, CPF" oninput="patientsApplyFilter()">
+      <button class="btn btn-primary btn-sm" onclick="openNewPatient()">+ Novo paciente</button>
+      <select id="patSex" class="pt-sel" onchange="patientsApplyFilter()"><option value="">Todos os sexos</option><option value="F">Feminino</option><option value="M">Masculino</option><option value="O">Outro</option></select>
+      <div class="pt-sort"><button id="patSortRec" class="active" onclick="patSetSort('rec')">Recentes</button><button id="patSortAz" onclick="patSetSort('az')">A–Z</button></div>
+    </div>
+    <div id="patListBox"></div>`;
+  window._patSort='rec';
+  patientsApplyFilter();
+}
+function patSetSort(s){ window._patSort=s; const r=document.getElementById('patSortRec'),a=document.getElementById('patSortAz'); if(r&&a){r.classList.toggle('active',s==='rec');a.classList.toggle('active',s==='az');} patientsApplyFilter(); }
+function patientsApplyFilter(){
+  const box=document.getElementById('patListBox'); if(!box)return;
+  const q=(document.getElementById('patSearch')?.value||'').toLowerCase().trim();
+  const qd=q.replace(/\D/g,'');
+  const sex=document.getElementById('patSex')?.value||'';
+  const sort=window._patSort||'rec';
+  let list=(window._patients||[]).slice();
+  if(sex) list=list.filter(p=>(p.sex||'')===sex);
+  if(q) list=list.filter(p=> (p.name||'').toLowerCase().includes(q) || (qd && ((p.phone||'').replace(/\D/g,'').includes(qd) || (p.cpf||'').replace(/\D/g,'').includes(qd))) );
+  if(sort==='az') list.sort((a,b)=>(a.name||'').localeCompare(b.name||'')); else list.sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
+  if(!list.length){ box.innerHTML='<div class="card" style="text-align:center;color:var(--muted);padding:26px">Nenhum paciente encontrado.</div>'; return; }
+  const pm=window._patBookStatus||{};
+  box.innerHTML='<div class="pt-list">'+list.map(p=>{
+    const age=ptAge(p.birth_date); const col=ptColorOf(p); const s=pm[p.id];
+    const badge = (s&&s.c) ? '<span class="pt-badge done">Atendido</span>' : (s&&s.a) ? '<span class="pt-badge trat">Em tratamento</span>' : '<span class="pt-badge novo">Novo</span>';
+    const sub=[age!=null?age+' anos':'', p.phone?formatPhone(p.phone):''].filter(Boolean).join(' · ');
+    return `<div class="pt-row" onclick="openEditPatient('${p.id}')">
+      <div class="pt-av" style="background:${col}">${esc(ptInitials(p.name))}</div>
+      <div class="pt-info"><div class="pt-name">${esc(p.name)}</div><div class="pt-sub">${esc(sub)}</div></div>
+      ${badge}
+      <svg class="pt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </div>`;
+  }).join('')+'</div>';
+}
+function openNewPatient(){ patientForm(null); }
+function openEditPatient(id){ const p=(window._patients||[]).find(x=>x.id===id); if(!p){ toast('Paciente não encontrado','err'); return; } patientForm(p); }
+function ptPick(hiddenId,v,btn){ const h=document.getElementById(hiddenId); if(h)h.value=v; [...btn.parentElement.children].forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+function ptPickColor(c,btn){ const h=document.getElementById('ptColor'); if(h)h.value=c; [...btn.parentElement.children].forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+async function buscarCepPaciente(){
+  const el=document.getElementById('ptCep'); if(!el)return;
+  const cep=(el.value||'').replace(/\D/g,''); if(cep.length!==8)return;
+  try{
+    const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/'); const d=await r.json();
+    if(d.erro)return;
+    const setF=(id,v)=>{const e=document.getElementById(id); if(e)e.value=v||'';};
+    setF('ptStreet',d.logradouro); setF('ptDistrict',d.bairro); setF('ptCity',d.localidade); setF('ptUf',d.uf);
+  }catch(_){}
+}
+function patientForm(p){
+  p=p||{}; const isEdit=!!p.id; const v=(s)=>esc(s==null?'':String(s));
+  const sexBtn=(code,lbl)=>`<button type="button" class="seg-btn${(p.sex||'')===code?' active':''}" onclick="ptPick('ptSex','${code}',this)">${lbl}</button>`;
+  const priorBtn=(code,lbl)=>`<button type="button" class="seg-btn${(p.prior_procedure?'sim':'nao')===code?' active':''}" onclick="ptPick('ptPrior','${code}',this)">${lbl}</button>`;
+  const cur=p.color||'';
+  const chips=`<button type="button" class="pt-chip auto${!cur?' active':''}" onclick="ptPickColor('',this)">Automática</button>`+
+    PT_COLORS.map(c=>`<button type="button" class="pt-chip${cur===c?' active':''}" style="background:${c}" onclick="ptPickColor('${c}',this)">PA</button>`).join('');
+  const hows=['Não informado','Indicação','Instagram','Google','Facebook','Passando na rua','Convênio','Outro'];
+  const html=`<div class="pf-head"><h3 style="font-family:'Fraunces',serif">${isEdit?'Editar paciente':'Novo paciente'}</h3><button class="rep-close" onclick="closeModal()" title="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <form id="pfForm" onsubmit="event.preventDefault();savePatient(${isEdit?`'${p.id}'`:'null'})">
+      <input type="hidden" id="ptSex" value="${v(p.sex)}">
+      <input type="hidden" id="ptPrior" value="${p.prior_procedure?'sim':'nao'}">
+      <input type="hidden" id="ptColor" value="${v(p.color)}">
+      <div class="field"><label>Nome completo *</label><input id="ptName" required value="${v(p.name)}" placeholder="Como no documento"></div>
+      <div class="row2">
+        <div class="field"><label>Celular / WhatsApp</label><input id="ptPhone" value="${v(p.phone)}" placeholder="(11) 99999-0000" inputmode="tel"></div>
+        <div class="field"><label>Nascimento</label><input id="ptBirth" type="date" value="${v(p.birth_date)}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>CPF</label><input id="ptCpf" value="${v(p.cpf)}" placeholder="000.000.000-00" inputmode="numeric"></div>
+        <div class="field"><label>E-mail</label><input id="ptEmail" value="${v(p.email)}" placeholder="nome@exemplo.com" inputmode="email"></div>
+      </div>
+      <div class="field"><label>Sexo</label><div class="seg">${sexBtn('F','Feminino')}${sexBtn('M','Masculino')}${sexBtn('O','Outro')}</div></div>
+      <details class="pf-acc"><summary>+ Adicionar responsável</summary>
+        <div class="row2" style="margin-top:10px">
+          <div class="field"><label>Nome do responsável</label><input id="ptRespName" value="${v(p.responsible_name)}"></div>
+          <div class="field"><label>Telefone</label><input id="ptRespPhone" value="${v(p.responsible_phone)}" inputmode="tel"></div>
+        </div>
+        <div class="field"><label>Parentesco</label><input id="ptRespRelation" value="${v(p.responsible_relation)}" placeholder="Ex.: mãe, pai, filho(a)"></div>
+      </details>
+      <details class="pf-acc"><summary>Endereço</summary>
+        <div class="row2" style="margin-top:10px">
+          <div class="field"><label>CEP</label><input id="ptCep" value="${v(p.cep)}" placeholder="00000-000" inputmode="numeric" onblur="buscarCepPaciente()"></div>
+          <div class="field"><label>Rua</label><input id="ptStreet" value="${v(p.street)}"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Número</label><input id="ptNumber" value="${v(p.number)}"></div>
+          <div class="field"><label>Complemento</label><input id="ptComplement" value="${v(p.complement)}" placeholder="Apto, bloco..."></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>Bairro</label><input id="ptDistrict" value="${v(p.district)}"></div>
+          <div class="field"><label>Cidade</label><input id="ptCity" value="${v(p.city)}"></div>
+          <div class="field"><label>UF</label><input id="ptUf" value="${v(p.uf)}" maxlength="2" style="text-transform:uppercase"></div>
+        </div>
+      </details>
+      <details class="pf-acc"><summary>Mais</summary>
+        <div class="field" style="margin-top:10px"><label>Já fez procedimento com você?</label><div class="seg">${priorBtn('nao','Ainda não')}${priorBtn('sim','Sim, já foi')}</div></div>
+        <div class="field"><label>Como chegou até você</label><select id="ptHowArrived">${hows.map(o=>`<option${(p.how_arrived||'Não informado')===o?' selected':''}>${o}</option>`).join('')}</select></div>
+      </details>
+      <div class="field"><label>Cor do paciente (opcional)</label><div class="pt-chips">${chips}</div></div>
+      <div class="field"><label>Observações</label><textarea id="ptNotes" rows="2" placeholder="Ex.: prefere manhã">${v(p.notes)}</textarea></div>
+      <div class="pf-foot">
+        ${isEdit?`<button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger-soft)" onclick="deletePatient('${p.id}')">Excluir</button>`:'<span></span>'}
+        <div style="display:flex;gap:10px"><button type="button" class="btn btn-ghost btn-sm" onclick="closeModal()">Cancelar</button><button type="submit" class="btn btn-primary btn-sm" id="pfSave">${isEdit?'Salvar':'Cadastrar paciente'}</button></div>
+      </div>
+    </form>`;
+  document.getElementById('modal').classList.add('modal-lg');
+  showModal(html);
+}
+async function savePatient(id){
+  const name=val('ptName'); if(!name){ toast('Informe o nome','err'); return; }
+  const patch={
+    name,
+    phone: val('ptPhone')||null,
+    birth_date: (document.getElementById('ptBirth').value||null),
+    cpf: val('ptCpf')||null,
+    email: val('ptEmail')||null,
+    sex: document.getElementById('ptSex').value||null,
+    color: document.getElementById('ptColor').value||null,
+    cep: val('ptCep')||null, street: val('ptStreet')||null, number: val('ptNumber')||null,
+    complement: val('ptComplement')||null, district: val('ptDistrict')||null,
+    city: val('ptCity')||null, uf: (val('ptUf')||'').toUpperCase()||null,
+    prior_procedure: document.getElementById('ptPrior').value==='sim',
+    how_arrived: document.getElementById('ptHowArrived').value||null,
+    responsible_name: val('ptRespName')||null, responsible_phone: val('ptRespPhone')||null, responsible_relation: val('ptRespRelation')||null,
+    notes: val('ptNotes')||null,
+  };
+  const btn=document.getElementById('pfSave'); if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
+  toast('Salvando…','');
+  let error;
+  if(id){ ({ error } = await sb.from('patients').update({...patch, updated_at:new Date().toISOString()}).eq('id',id)); }
+  else { patch.professional_id=currentProf.id; ({ error } = await sb.from('patients').insert(patch)); }
+  if(error){ toast('Erro: '+error.message,'err'); if(btn){ btn.disabled=false; btn.textContent=id?'Salvar':'Cadastrar paciente'; } return; }
+  toast(id?'Paciente atualizado!':'Paciente cadastrado!','ok');
+  closeModal();
+  renderPacientes();
+}
+async function deletePatient(id){
+  if(!confirm('Excluir este paciente do seu cadastro?\n\nOs atendimentos ligados a ele permanecem, apenas deixam de ficar vinculados.')) return;
+  const { error } = await sb.from('patients').delete().eq('id',id);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast('Paciente excluído','ok'); closeModal(); renderPacientes();
+}
+function ptStyles(){ return `<style>
+  .pt-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:14px 0}
+  .pt-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .pt-card.first{border-color:var(--primary);background:var(--primary-soft)}
+  .pt-card-n{font-size:22px;font-weight:800;line-height:1}
+  .pt-card-l{font-size:12px;color:var(--muted);margin-top:3px;font-weight:600}
+  .pt-card-s{font-size:11px;color:var(--primary);margin-top:2px;font-weight:600}
+  .pt-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}
+  .pt-search{flex:1;min-width:180px;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font:inherit;font-size:14px;background:#fff}
+  .pt-sel{border:1px solid var(--border);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;background:#fff}
+  .pt-sort{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .pt-sort button{border:none;background:#fff;padding:9px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .pt-sort button.active{background:var(--primary-d);color:#fff}
+  .pt-list{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+  .pt-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+  .pt-row:last-child{border-bottom:none}
+  .pt-row:hover{background:var(--primary-soft)}
+  .pt-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#2a3a39;flex:none}
+  .pt-info{flex:1;min-width:0}
+  .pt-name{font-weight:700;color:var(--ink);font-size:15px}
+  .pt-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .pt-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;flex:none}
+  .pt-badge.done{background:#dff1ec;color:#0f5d5b}
+  .pt-badge.trat{background:#e3f1f0;color:#1E7167}
+  .pt-badge.novo{background:#f0f2f1;color:#5e706f}
+  .pt-chev{width:18px;height:18px;color:var(--muted);flex:none}
+  .pf-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+  .pf-acc{margin:12px 0;border:1px solid var(--border);border-radius:10px;padding:10px 13px}
+  .pf-acc summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--primary-d)}
+  .pf-foot{margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .seg{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .seg-btn{flex:1;border:none;background:#fff;padding:10px;font:inherit;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .seg-btn.active{background:var(--primary-d);color:#fff}
+  .seg-btn + .seg-btn{border-left:1px solid var(--border)}
+  .pt-chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pt-chip{width:46px;height:40px;border-radius:12px;border:2px solid transparent;cursor:pointer;font-size:11px;font-weight:700;color:#3a4a49}
+  .pt-chip.auto{width:auto;padding:0 14px;background:#fff;border:1px solid var(--border)}
+  .pt-chip.active{border-color:var(--primary-d)}
+  .row3{display:grid;grid-template-columns:1fr 1fr 70px;gap:12px}
+  @media(max-width:640px){.pt-cards{grid-template-columns:repeat(2,1fr)}.row3{grid-template-columns:1fr 1fr 70px}}
+</style>`; }
+
 // ===== Editar dados de um atendimento (aplica a todos os slots do grupo) =====
 async function openEditBooking(bookingId){
   toast('Carregando…','');
@@ -2604,6 +2830,8 @@ function openNewBooking(){
     <p class="sub">Você marca direto, já confirmada. O paciente recebe a anamnese e os lembretes no WhatsApp automaticamente.</p>
     <form id="nbForm" onsubmit="event.preventDefault();saveNewBooking()" style="margin-top:10px">
       <div class="section-title" style="margin-top:4px">Paciente</div>
+      <div class="field"><label>Paciente cadastrado (opcional)</label><select id="nbPatientSelect" onchange="nbPatientChosen()"><option value="">— Novo paciente (digitar abaixo) —</option></select></div>
+      <input type="hidden" id="nbPatientId" value="">
       <div class="row2">
         <div class="field"><label>Nome do paciente *</label><input id="nbPatientName" required placeholder="Ex.: João da Silva"></div>
         <div class="field"><label>WhatsApp do paciente *</label><input id="nbPatientPhone" required placeholder="(11) 90000-0000" inputmode="tel"></div>
@@ -2641,6 +2869,21 @@ function openNewBooking(){
       </div>
     </form>`;
   showModal(html);
+  loadNbPatients();
+}
+async function loadNbPatients(){
+  const sel=document.getElementById('nbPatientSelect'); if(!sel)return;
+  const { data } = await sb.from('patients').select('id,name,phone').order('name');
+  window._nbPats=data||[];
+  sel.innerHTML='<option value="">— Novo paciente (digitar abaixo) —</option>'+(data||[]).map(p=>`<option value="${p.id}">${esc(p.name)}${p.phone?' · '+esc(formatPhone(p.phone)):''}</option>`).join('');
+}
+function nbPatientChosen(){
+  const sel=document.getElementById('nbPatientSelect'); const id=sel.value;
+  const hid=document.getElementById('nbPatientId'); if(hid)hid.value=id;
+  if(!id)return;
+  const p=(window._nbPats||[]).find(x=>x.id===id); if(!p)return;
+  const n=document.getElementById('nbPatientName'); if(n)n.value=p.name||'';
+  const ph=document.getElementById('nbPatientPhone'); if(ph&&p.phone)ph.value=formatPhone(p.phone);
 }
 async function saveNewBooking(){
   const name   = val('nbPatientName');
@@ -2685,6 +2928,7 @@ async function saveNewBooking(){
       p_office_address: officeAddr || null,
       p_office_lat: null,
       p_office_lng: null,
+      p_patient_id: (document.getElementById('nbPatientId') && document.getElementById('nbPatientId').value) || null,
     });
     if(error) throw error;
     toast('✓ Consulta criada! Anamnese e lembretes enviados.','ok');
