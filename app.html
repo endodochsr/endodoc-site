@@ -3091,6 +3091,7 @@ function ptColorOf(p){return p.color||ptHashColor(p.name);}
 function ptAge(birth){if(!birth)return null;const b=new Date(birth+'T00:00:00');if(isNaN(b))return null;const n=new Date();let a=n.getFullYear()-b.getFullYear();const m=n.getMonth()-b.getMonth();if(m<0||(m===0&&n.getDate()<b.getDate()))a--;return a;}
 
 async function renderPacientes(){
+  window._pdCurrent=null;
   const body=document.getElementById('appBody');
   const [patRes, bkRes] = await Promise.all([
     sb.from('patients').select('*').order('created_at',{ascending:false}),
@@ -3150,7 +3151,7 @@ function patientsApplyFilter(){
     const age=ptAge(p.birth_date); const col=ptColorOf(p); const s=pm[p.id];
     const badge = (s&&s.c) ? '<span class="pt-badge done">Atendido</span>' : (s&&s.a) ? '<span class="pt-badge trat">Em tratamento</span>' : '<span class="pt-badge novo">Novo</span>';
     const sub=[age!=null?age+' anos':'', p.phone?formatPhone(p.phone):''].filter(Boolean).join(' · ');
-    return `<div class="pt-row" onclick="openEditPatient('${p.id}')">
+    return `<div class="pt-row" onclick="openPatientDetail('${p.id}')">
       <div class="pt-av" style="background:${col}">${esc(ptInitials(p.name))}</div>
       <div class="pt-info"><div class="pt-name">${esc(p.name)}</div><div class="pt-sub">${esc(sub)}</div></div>
       ${badge}
@@ -3257,7 +3258,7 @@ async function savePatient(id){
   if(error){ toast('Erro: '+error.message,'err'); if(btn){ btn.disabled=false; btn.textContent=id?'Salvar':'Cadastrar paciente'; } return; }
   toast(id?'Paciente atualizado!':'Paciente cadastrado!','ok');
   closeModal();
-  renderPacientes();
+  if(id && window._pdCurrent===id) openPatientDetail(id); else renderPacientes();
 }
 async function deletePatient(id){
   if(!confirm('Excluir este paciente do seu cadastro?\n\nOs atendimentos ligados a ele permanecem, apenas deixam de ficar vinculados.')) return;
@@ -3265,6 +3266,131 @@ async function deletePatient(id){
   if(error){ toast('Erro: '+error.message,'err'); return; }
   toast('Paciente excluído','ok'); closeModal(); renderPacientes();
 }
+/* ---------- Ficha geral do paciente ---------- */
+function fmtDateBR(iso){ if(!iso)return ''; const s=String(iso).slice(0,10); const [y,m,d]=s.split('-'); return d+'/'+m+'/'+y; }
+function patientNovoPlano(id,name){ window._plan=newPlan(); window._plan.patient_id=id; window._plan.patient_name=name||''; go('plano'); }
+function orcStatusTxt(x){
+  if(x.status==='autorizado') return 'Autorizado em '+(x.authorized_at?new Date(x.authorized_at).toLocaleDateString('pt-BR'):'—');
+  if(x.status==='enviado')    return 'Apresentado em '+(x.sent_at?new Date(x.sent_at).toLocaleDateString('pt-BR'):new Date(x.created_at).toLocaleDateString('pt-BR'));
+  if(x.status==='recusado')   return 'Recusado';
+  return 'Rascunho';
+}
+async function openPatientDetail(id){
+  window._pdCurrent=id;
+  const body=document.getElementById('appBody');
+  body.innerHTML='<div class="page-head"><h1>Paciente</h1><p>Carregando…</p></div>';
+  const [patR, planR, bkR] = await Promise.all([
+    sb.from('patients').select('*').eq('id',id).maybeSingle(),
+    sb.from('treatment_plans').select('id,title,total,status,created_at,sent_at,authorized_at,scheduled_at,items').eq('patient_id',id).order('created_at',{ascending:false}),
+    sb.from('bookings').select('id,slot_date,slot_time,status,completed_at,consultation_value,payment_status,procedure').eq('patient_id',id)
+  ]);
+  const p=patR.data; if(!p){ toast('Paciente não encontrado','err'); renderPacientes(); return; }
+  window._patients=(window._patients||[]).map(x=>x.id===p.id?p:x);
+  const plans=planR.data||[]; const bks=bkR.data||[]; const today=todayISO();
+  const age=ptAge(p.birth_date); const col=ptColorOf(p);
+  const sexLbl={F:'Feminino',M:'Masculino',O:'Outro'}[p.sex]||'';
+  const hasActive=bks.some(b=>(b.status==='active'||b.status==='pending')&&!b.completed_at);
+  const hasDone=bks.some(b=>b.completed_at);
+  const statusBadge = hasActive?'<span class="pt-badge trat">Em tratamento</span>':(hasDone?'<span class="pt-badge done">Atendido</span>':'<span class="pt-badge novo">Novo</span>');
+  const future=bks.filter(b=>b.slot_date>=today && !b.completed_at).sort((a,b)=>a.slot_date.localeCompare(b.slot_date));
+  const prox=future[0]?(fmtDateBR(future[0].slot_date)+(future[0].slot_time?(' '+future[0].slot_time.slice(0,5)):'')):'—';
+  const doneB=bks.filter(b=>b.completed_at).sort((a,b)=>String(b.completed_at).localeCompare(String(a.completed_at)));
+  const ultima=doneB[0]?new Date(doneB[0].completed_at).toLocaleDateString('pt-BR'):'—';
+  const authTotal=plans.filter(x=>x.status==='autorizado').reduce((s,x)=>s+(Number(x.total)||0),0);
+  const recebido=bks.filter(b=>b.payment_status==='paid').reduce((s,b)=>s+(Number(b.consultation_value)||0),0);
+  const falta=Math.max(0,authTotal-recebido);
+  const orcAberto=plans.filter(x=>x.status==='enviado').reduce((s,x)=>s+(Number(x.total)||0),0);
+  const phoneDigits=(p.phone||'').replace(/\D/g,'');
+  const wa=phoneDigits?('https://wa.me/55'+phoneDigits):'';
+  // timeline
+  let ev=[];
+  if(p.created_at) ev.push([p.created_at,'Entrou na sua lista de pacientes']);
+  plans.forEach(x=>{ if(x.sent_at)ev.push([x.sent_at,'Orçamento apresentado · '+money(x.total)]); if(x.authorized_at)ev.push([x.authorized_at,'Autorizou o tratamento']); if(x.scheduled_at)ev.push([x.scheduled_at,'Orçamento virou atendimento']); });
+  bks.forEach(b=>{ if(b.completed_at)ev.push([b.completed_at,'Atendimento realizado'+(b.procedure?(' · '+b.procedure):'')]); else ev.push([(b.slot_date||'')+'T'+((b.slot_time)||'00:00'),'Consulta agendada · '+fmtDateBR(b.slot_date)]); });
+  ev.sort((a,b)=>String(b[0]).localeCompare(String(a[0])));
+  const timeline=ev.length?ev.map(e=>`<div class="pd-tl-item"><span class="pd-tl-dot"></span><div><div class="pd-tl-label">${esc(e[1])}</div><div class="pd-tl-date">${new Date(e[0]).toLocaleDateString('pt-BR')}</div></div></div>`).join(''):'<p class="sub">Sem eventos ainda.</p>';
+  const orcRows=plans.length?plans.map(x=>`<div class="pd-orc"><div><b>${money(x.total)}</b><div class="pd-orc-s">${esc(orcStatusTxt(x))}</div></div><div class="pd-orc-a">${orcBadge(x.status)}${x.status==='enviado'?`<button class="pill done" onclick="orcamentoAuth('${x.id}');setTimeout(()=>openPatientDetail('${id}'),400)">Autorizar</button>`:''}<button class="pill" onclick="orcamentoOpen('${x.id}')">Abrir</button></div></div>`).join(''):'<p class="sub">Nenhum orçamento ainda.</p>';
+  const afazer=[]; plans.filter(x=>x.status==='autorizado').forEach(x=>(x.items||[]).forEach(it=>afazer.push(it)));
+  const afazerHTML=afazer.length?afazer.map(it=>`<div class="pd-todo">${esc(it.name)}${it.tooth?` <span class="pd-tooth">— ${esc(it.tooth)}</span>`:''}</div>`).join(''):'<p class="sub">Nada pendente.</p>';
+  const endereco=[p.street,p.number].filter(Boolean).join(', ')+(p.district?' · '+p.district:'')+(p.city?' · '+p.city+(p.uf?'/'+p.uf:''):'')+(p.cep?' · CEP '+p.cep:'');
+  const row=(l,v)=>v?`<div class="pd-d"><div class="pd-d-l">${l}</div><div class="pd-d-v">${esc(v)}</div></div>`:'';
+
+  body.innerHTML = ptStyles() + pdStyles() + `
+    <button class="btn btn-ghost btn-sm" onclick="renderPacientes()" style="margin-bottom:12px">← Pacientes</button>
+    <div class="card pd-head">
+      <div class="pd-av" style="background:${col}">${esc(ptInitials(p.name))}</div>
+      <div class="pd-head-main">
+        <h1 style="margin:0;font-size:22px">${esc(p.name)}</h1>
+        <div class="pd-sub">${[age!=null?age+' anos':'',sexLbl,p.phone?formatPhone(p.phone):''].filter(Boolean).join(' · ')}</div>
+        <div style="margin-top:6px">${statusBadge}</div>
+      </div>
+      <div class="pd-quick">
+        ${wa?`<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>`:''}
+        ${phoneDigits?`<a class="btn btn-ghost btn-sm" href="tel:+55${phoneDigits}">Ligar</a>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="openNewBooking({patient_id:'${p.id}',patient_name:${JSON.stringify(p.name||'').replace(/"/g,'&quot;')},patient_phone:'${phoneDigits}'})">Agendar</button>
+        <button class="btn btn-primary btn-sm" onclick="patientNovoPlano('${p.id}',${JSON.stringify(p.name||'').replace(/"/g,'&quot;')})">Novo plano</button>
+      </div>
+    </div>
+    <div class="pd-kpis">
+      <div class="pd-kpi"><div class="pd-kpi-l">Próximo</div><div class="pd-kpi-v">${esc(prox)}</div></div>
+      <div class="pd-kpi"><div class="pd-kpi-l">Última visita</div><div class="pd-kpi-v">${esc(ultima)}</div></div>
+      <div class="pd-kpi"><div class="pd-kpi-l">Falta receber</div><div class="pd-kpi-v" style="color:#b23a3a">${money(falta)}</div></div>
+      <div class="pd-kpi"><div class="pd-kpi-l">Orçamento aberto</div><div class="pd-kpi-v" style="color:#8a6d27">${money(orcAberto)}</div></div>
+    </div>
+    <div class="pd-grid">
+      <div class="card"><div class="pd-sec-h">Histórico</div><div class="pd-timeline">${timeline}</div></div>
+      <div class="card"><div class="pd-sec-h">Orçamentos</div>${orcRows}</div>
+    </div>
+    <div class="pd-grid">
+      <div class="card"><div class="pd-sec-h">Tratamentos a fazer</div>${afazerHTML}
+        <div class="pd-fin"><span>Recebido <b>${money(recebido)}</b></span><span>Falta <b style="color:#b23a3a">${money(falta)}</b></span></div>
+      </div>
+      <div class="card"><div class="pd-sec-h" style="display:flex;justify-content:space-between;align-items:center">Dados <button class="pill" onclick="openEditPatient('${p.id}')">Editar</button></div>
+        ${row('Nascimento', p.birth_date?(fmtDateBR(p.birth_date)+(age!=null?(' · '+age+' anos'):'')):'')}
+        ${row('Sexo', sexLbl)}
+        ${row('CPF', p.cpf)}
+        ${row('Celular', p.phone?formatPhone(p.phone):'')}
+        ${row('E-mail', p.email)}
+        ${row('Endereço', endereco.replace(/^,\s*/,'').trim()||'')}
+        ${row('Como chegou', p.how_arrived)}
+        ${p.responsible_name?row('Responsável', p.responsible_name+(p.responsible_relation?(' ('+p.responsible_relation+')'):'')+(p.responsible_phone?(' · '+p.responsible_phone):'')):''}
+        ${p.notes?row('Observações', p.notes):''}
+      </div>
+    </div>`;
+}
+function pdStyles(){ return `<style>
+  .pd-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .pd-av{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:20px;color:#2a3a39;flex:none}
+  .pd-head-main{flex:1;min-width:160px}
+  .pd-sub{font-size:13.5px;color:var(--muted);margin-top:3px}
+  .pd-quick{display:flex;gap:8px;flex-wrap:wrap}
+  .pd-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+  .pd-kpi{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+  .pd-kpi-l{font-size:12px;color:var(--muted);font-weight:600}
+  .pd-kpi-v{font-size:18px;font-weight:800;color:var(--primary-d);margin-top:3px}
+  .pd-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .pd-sec-h{font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--primary-d);margin-bottom:12px}
+  .pd-timeline{display:flex;flex-direction:column;gap:2px}
+  .pd-tl-item{display:flex;gap:12px;padding:8px 0;position:relative}
+  .pd-tl-dot{width:10px;height:10px;border-radius:50%;background:var(--primary);flex:none;margin-top:4px;box-shadow:0 0 0 3px var(--primary-soft)}
+  .pd-tl-label{font-size:13.5px;color:var(--ink);font-weight:600}
+  .pd-tl-date{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .pd-orc{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .pd-orc:last-child{border-bottom:none}
+  .pd-orc b{font-size:15px}
+  .pd-orc-s{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .pd-orc-a{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .pd-todo{font-size:13.5px;color:var(--ink);padding:7px 0;border-bottom:1px solid var(--border)}
+  .pd-tooth{color:var(--muted);font-size:12px}
+  .pd-fin{display:flex;gap:18px;margin-top:12px;font-size:13px;color:var(--muted)}
+  .pd-fin b{color:var(--ink)}
+  .pd-d{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .pd-d:last-child{border-bottom:none}
+  .pd-d-l{font-size:12.5px;color:var(--muted);width:110px;flex:none}
+  .pd-d-v{font-size:13.5px;color:var(--ink);font-weight:500}
+  @media(max-width:760px){.pd-kpis{grid-template-columns:repeat(2,1fr)}.pd-grid{grid-template-columns:1fr}}
+</style>`; }
+
 function ptStyles(){ return `<style>
   .pt-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:14px 0}
   .pt-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
