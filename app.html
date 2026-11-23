@@ -400,6 +400,14 @@
   .pt-entry-meta{color:var(--muted);font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pt-entry-tag{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:6px;background:var(--primary);color:#fff}
   .pt-entry-body{font-size:13.5px;line-height:1.55;color:var(--ink);white-space:pre-wrap;background:var(--surface-2);padding:10px 12px;border-radius:8px;margin-top:4px}
+  .clin-tests{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+  .clin-tests-h{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--primary-d);font-weight:700;margin-bottom:8px}
+  .clin-test{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0}
+  .clin-test-l{font-size:12.5px;color:var(--ink);font-weight:600}
+  .clin-test-opts{display:flex;gap:5px;flex-wrap:wrap}
+  .clin-opt{border:1.5px solid var(--border);background:#fff;border-radius:20px;padding:4px 11px;font:inherit;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .clin-opt.active{background:var(--primary-d);color:#fff;border-color:var(--primary-d)}
+  .clin-summary{font-size:11.5px;color:var(--muted);background:var(--primary-soft);border-radius:8px;padding:7px 10px;margin-bottom:6px;line-height:1.5}
   .pt-entry-body.empty{color:var(--muted);font-style:italic;text-align:center;padding:14px}
   .pt-entry-actions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
   .pt-entry textarea{min-height:140px;width:100%;padding:12px;border:1.5px solid var(--primary);border-radius:10px;font:inherit;font-size:14px;line-height:1.55;color:var(--ink);background:#fff;resize:vertical;margin-top:6px}
@@ -3666,7 +3674,7 @@ async function openProntuario(bookingId){
   toast('Carregando…','');
   // 1) busca o booking atual
   const { data:bk, error } = await sb.from('bookings')
-    .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,patient_id,clinical_notes,clinical_notes_updated_at')
+    .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,patient_id,tooth,clinical_notes,clinical_tests,clinical_notes_updated_at')
     .eq('id',bookingId).maybeSingle();
   if(error || !bk){ toast('Erro ao carregar','err'); return; }
 
@@ -3676,7 +3684,7 @@ async function openProntuario(bookingId){
   try{
     if(bk.patient_id){
       const { data } = await sb.from('bookings')
-        .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,clinical_notes,clinical_notes_updated_at')
+        .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,tooth,clinical_notes,clinical_tests,clinical_notes_updated_at')
         .eq('patient_id', bk.patient_id);
       hist = data||[];
     } else if(bk.patient_phone){
@@ -3686,7 +3694,7 @@ async function openProntuario(bookingId){
   }catch(err){ console.error(err); }
   if(!hist.find(e=>e.id===bk.id)){
     hist.unshift({ id:bk.id, slot_date:bk.slot_date, slot_time:bk.slot_time, office_name:bk.office_name,
-      patient_name:bk.patient_name, patient_phone:bk.patient_phone, clinical_notes:bk.clinical_notes, clinical_notes_updated_at:bk.clinical_notes_updated_at });
+      patient_name:bk.patient_name, patient_phone:bk.patient_phone, tooth:bk.tooth, clinical_notes:bk.clinical_notes, clinical_tests:bk.clinical_tests, clinical_notes_updated_at:bk.clinical_notes_updated_at });
   }
 
   // 3) colapsa multi-slot do MESMO dia num único registro (consulta de 2h = 1 sessão, não 2 blocos)
@@ -3708,10 +3716,34 @@ async function openProntuario(bookingId){
   renderProntuarioModal();
 }
 
+const CLIN_TESTS=[
+  {k:'percussao_v',label:'Percussão vertical',opts:[['positivo','Positivo'],['negativo','Negativo']]},
+  {k:'percussao_h',label:'Percussão horizontal',opts:[['positivo','Positivo'],['negativo','Negativo']]},
+  {k:'palpacao',label:'Palpação',opts:[['positivo','Positivo'],['negativo','Negativo']]},
+  {k:'mobilidade',label:'Mobilidade',opts:[['positivo','Positivo'],['negativo','Negativo']]},
+  {k:'vitalidade',label:'Teste de vitalidade',opts:[['positivo','Positivo'],['negativo','Negativo'],['inconclusivo','Inconclusivo']]},
+  {k:'fratura',label:'Fratura',opts:[['presente','Presente'],['ausente','Ausente'],['coronaria','Coronária'],['radicular','Radicular']]},
+  {k:'fistula',label:'Fístula',opts:[['presente','Presente'],['ausente','Ausente']]},
+];
+function ptTestPick(k,val,btn){
+  if(!window._prontTests) window._prontTests={};
+  if(window._prontTests[k]===val) delete window._prontTests[k]; else window._prontTests[k]=val;
+  [...btn.parentElement.children].forEach(b=>b.classList.remove('active'));
+  if(window._prontTests[k]===val) btn.classList.add('active');
+}
+function clinTestsHTML(){
+  return `<div class="clin-tests"><div class="clin-tests-h">Testes clínicos</div>${CLIN_TESTS.map(t=>`<div class="clin-test"><span class="clin-test-l">${t.label}</span><div class="clin-test-opts">${t.opts.map(o=>`<button type="button" class="clin-opt${(window._prontTests||{})[t.k]===o[0]?' active':''}" onclick="ptTestPick('${t.k}','${o[0]}',this)">${o[1]}</button>`).join('')}</div></div>`).join('')}</div>`;
+}
+function clinTestsSummary(tests){
+  if(!tests) return '';
+  const parts=CLIN_TESTS.filter(t=>tests[t.k]).map(t=>{ const o=t.opts.find(x=>x[0]===tests[t.k]); return t.label.replace('Percussão','Perc.')+': '+(o?o[1]:tests[t.k]); });
+  return parts.length?`<div class="clin-summary">${parts.map(esc).join(' · ')}</div>`:'';
+}
 function renderProntuarioModal(){
   const bk = window._prontBk;
   const entries = window._prontEntries || [];
   const editingId = window._prontEditingId;
+  window._prontTests = {...(((window._prontEntries||[]).find(x=>x.id===editingId)||{}).clinical_tests||{})};
   const total = entries.length;
 
   // header: paciente + contagem de sessões
@@ -3732,6 +3764,7 @@ function renderProntuarioModal(){
     let bodyHtml;
     if(isEditing){
       bodyHtml = `
+        ${clinTestsHTML()}
         <textarea id="prontText_${e.id}" placeholder="Escreva a evolução desta sessão. Ex:
 - Acesso coronário + isolamento absoluto
 - Localizados 4 condutos no 36 (MV, ML, DV, DL)
@@ -3748,12 +3781,14 @@ function renderProntuarioModal(){
         </div>`;
     } else if(e.clinical_notes){
       bodyHtml = `
+        ${clinTestsSummary(e.clinical_tests)}
         <div class="pt-entry-body">${esc(e.clinical_notes)}</div>
         <div class="pt-entry-actions">
           <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>
         </div>`;
     } else {
       bodyHtml = `
+        ${clinTestsSummary(e.clinical_tests)}
         <div class="pt-entry-body empty">Sem evolução registrada nesta sessão.</div>
         <div class="pt-entry-actions">
           <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Adicionar evolução</button>
@@ -3824,8 +3859,11 @@ async function saveProntuario(bookingId){
   const ta = document.getElementById('prontText_'+id);
   const txt = (ta?.value || '').trim();
   toast('Salvando…','');
+  const tests = window._prontTests || {};
   const { error } = await sb.rpc('save_clinical_notes',{ p_booking_id: id, p_notes: txt || null });
   if(error){ toast('Erro: '+(error.message||'falha'),'err'); return; }
+  // salva os testes clínicos (coluna própria; não vai pro relatório)
+  try{ await sb.from('bookings').update({ clinical_tests: tests }).eq('id', id); }catch(_){}
   toast('✓ Evolução salva','ok');
 
   // atualiza a entry localmente pra refletir no modal sem nova consulta
@@ -3833,6 +3871,7 @@ async function saveProntuario(bookingId){
     const ent = window._prontEntries.find(e=>e.id===id);
     if(ent){
       ent.clinical_notes = txt || null;
+      ent.clinical_tests = {...tests};
       ent.clinical_notes_updated_at = new Date().toISOString();
     }
     // se editou uma entrada anterior, volta visualização da entrada atual (da data atual)
@@ -3953,10 +3992,8 @@ async function openHistoryDetail(bookingId){
         <button class="pill prontuario-filled" onclick="closeHistoryDetail();openProntuario('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Editar prontuário</button>
         <span style="font-size:12px;color:var(--muted);align-self:center">Atualizado em ${new Date(bk.clinical_notes_updated_at).toLocaleString('pt-BR')}</span>
       </div>`;
-  } else if(isCompleted){
-    prontBlock = `<div class="hd-actions-row"><button class="pill prontuario-empty" onclick="closeHistoryDetail();openProntuario('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Adicionar prontuário</button></div>`;
   } else {
-    prontBlock = `<div class="hd-prontuario empty">Marque o atendimento como realizado pra escrever o prontuário.</div>`;
+    prontBlock = `<div class="hd-actions-row"><button class="pill prontuario-empty" onclick="closeHistoryDetail();openProntuario('${bk.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Adicionar prontuário</button></div>`;
   }
 
   // seção TCLE (consentimento)
