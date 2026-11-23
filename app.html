@@ -408,6 +408,19 @@
   .clin-opt{border:1.5px solid var(--border);background:#fff;border-radius:20px;padding:4px 11px;font:inherit;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer}
   .clin-opt.active{background:var(--primary-d);color:#fff;border-color:var(--primary-d)}
   .clin-summary{font-size:11.5px;color:var(--muted);background:var(--primary-soft);border-radius:8px;padding:7px 10px;margin-bottom:6px;line-height:1.5}
+  .pront-extra{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .pront-tooth-row{display:flex;align-items:center;gap:8px}
+  .pront-tooth-row label{font-size:12px;color:var(--muted);font-weight:700}
+  .pront-tooth-row input{width:90px;border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px}
+  .pront-rx-grid{display:flex;gap:8px;flex-wrap:wrap}
+  .pront-rx-thumb{position:relative;width:70px;height:70px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+  .pront-rx-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .pront-rx-rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:13px;line-height:1;cursor:pointer}
+  .pront-rx-add{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--primary-d);cursor:pointer;border:1.5px dashed var(--border);border-radius:9px;padding:8px 12px;width:fit-content}
+  .pront-rx-add:hover{border-color:var(--primary)}
+  .pront-extra-view{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .pront-tooth-badge{font-size:11px;font-weight:700;background:var(--primary-soft);color:var(--primary-d);border-radius:20px;padding:2px 9px}
+  .pront-rx-grid.view .pront-rx-thumb{width:54px;height:54px}
   .pt-entry-body.empty{color:var(--muted);font-style:italic;text-align:center;padding:14px}
   .pt-entry-actions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
   .pt-entry textarea{min-height:140px;width:100%;padding:12px;border:1.5px solid var(--primary);border-radius:10px;font:inherit;font-size:14px;line-height:1.55;color:var(--ink);background:#fff;resize:vertical;margin-top:6px}
@@ -3674,7 +3687,7 @@ async function openProntuario(bookingId){
   toast('Carregando…','');
   // 1) busca o booking atual
   const { data:bk, error } = await sb.from('bookings')
-    .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,patient_id,tooth,clinical_notes,clinical_tests,clinical_notes_updated_at')
+    .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,patient_id,tooth,clinical_notes,clinical_tests,prontuario_images,clinical_notes_updated_at')
     .eq('id',bookingId).maybeSingle();
   if(error || !bk){ toast('Erro ao carregar','err'); return; }
 
@@ -3684,7 +3697,7 @@ async function openProntuario(bookingId){
   try{
     if(bk.patient_id){
       const { data } = await sb.from('bookings')
-        .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,tooth,clinical_notes,clinical_tests,clinical_notes_updated_at')
+        .select('id,slot_date,slot_time,office_name,patient_name,patient_phone,tooth,clinical_notes,clinical_tests,prontuario_images,clinical_notes_updated_at')
         .eq('patient_id', bk.patient_id);
       hist = data||[];
     } else if(bk.patient_phone){
@@ -3694,7 +3707,7 @@ async function openProntuario(bookingId){
   }catch(err){ console.error(err); }
   if(!hist.find(e=>e.id===bk.id)){
     hist.unshift({ id:bk.id, slot_date:bk.slot_date, slot_time:bk.slot_time, office_name:bk.office_name,
-      patient_name:bk.patient_name, patient_phone:bk.patient_phone, tooth:bk.tooth, clinical_notes:bk.clinical_notes, clinical_tests:bk.clinical_tests, clinical_notes_updated_at:bk.clinical_notes_updated_at });
+      patient_name:bk.patient_name, patient_phone:bk.patient_phone, tooth:bk.tooth, clinical_notes:bk.clinical_notes, clinical_tests:bk.clinical_tests, prontuario_images:bk.prontuario_images, clinical_notes_updated_at:bk.clinical_notes_updated_at });
   }
 
   // 3) colapsa multi-slot do MESMO dia num único registro (consulta de 2h = 1 sessão, não 2 blocos)
@@ -3739,11 +3752,55 @@ function clinTestsSummary(tests){
   const parts=CLIN_TESTS.filter(t=>tests[t.k]).map(t=>{ const o=t.opts.find(x=>x[0]===tests[t.k]); return t.label.replace('Percussão','Perc.')+': '+(o?o[1]:tests[t.k]); });
   return parts.length?`<div class="clin-summary">${parts.map(esc).join(' · ')}</div>`:'';
 }
+function rxPubUrl(p){ try{ return sb.storage.from('consultation-reports').getPublicUrl(p).data.publicUrl; }catch(_){ return ''; } }
+function prontRxThumbs(id, paths, editable){
+  return (paths||[]).map((p,i)=>`<div class="pront-rx-thumb"><a href="${rxPubUrl(p)}" target="_blank" rel="noopener"><img src="${rxPubUrl(p)}" alt="RX"></a>${editable!==false?`<button type="button" class="pront-rx-rm" onclick="prontRemoveRx('${id}',${i})">×</button>`:''}</div>`).join('');
+}
+function prontEntryExtras(e){
+  const tooth = e.tooth?`<span class="pront-tooth-badge">Dente ${esc(e.tooth)}</span>`:'';
+  const imgs = e.prontuario_images||[];
+  const thumbs = imgs.length?`<div class="pront-rx-grid view">${prontRxThumbs(e.id, imgs, false)}</div>`:'';
+  return (tooth||thumbs)?`<div class="pront-extra-view">${tooth}${thumbs}</div>`:'';
+}
+async function prontUploadRx(id, files){
+  if(!files||!files.length) return;
+  const area=document.getElementById('prontRxArea_'+id);
+  for(const file of files){
+    if(!file.type.startsWith('image/')){ toast('"'+file.name+'" não é imagem','err'); continue; }
+    if(file.size>8*1024*1024){ toast('"'+file.name+'" passa de 8MB','err'); continue; }
+    try{
+      toast('Enviando imagem…','');
+      const compressed=await compressImage(file,1600,0.85);
+      const ext=(compressed.type.split('/')[1]||'jpg').replace('jpeg','jpg');
+      const ts=Date.now()+'-'+Math.random().toString(36).slice(2,8);
+      const path=`${currentProf.id}/pront/${id}/${ts}.${ext}`;
+      const { error }=await sb.storage.from('consultation-reports').upload(path, compressed, { contentType: compressed.type });
+      if(error){ toast('Erro no upload: '+error.message,'err'); continue; }
+      window._prontImages.push(path);
+    }catch(e){ toast('Falha: '+(e.message||e),'err'); }
+  }
+  await sb.from('bookings').update({ prontuario_images: window._prontImages }).eq('id', id);
+  const ent=(window._prontEntries||[]).find(e=>e.id===id); if(ent) ent.prontuario_images=[...window._prontImages];
+  if(area) area.innerHTML=prontRxThumbs(id, window._prontImages, true);
+  toast('✓ Imagem anexada','ok');
+}
+async function prontRemoveRx(id, idx){
+  const p=window._prontImages[idx]; if(!p) return;
+  if(!confirm('Remover essa imagem?')) return;
+  try{ await sb.storage.from('consultation-reports').remove([p]); }catch(_){}
+  window._prontImages.splice(idx,1);
+  await sb.from('bookings').update({ prontuario_images: window._prontImages }).eq('id', id);
+  const ent=(window._prontEntries||[]).find(e=>e.id===id); if(ent) ent.prontuario_images=[...window._prontImages];
+  const area=document.getElementById('prontRxArea_'+id); if(area) area.innerHTML=prontRxThumbs(id, window._prontImages, true);
+}
 function renderProntuarioModal(){
   const bk = window._prontBk;
   const entries = window._prontEntries || [];
   const editingId = window._prontEditingId;
-  window._prontTests = {...(((window._prontEntries||[]).find(x=>x.id===editingId)||{}).clinical_tests||{})};
+  const _edEntry=((window._prontEntries||[]).find(x=>x.id===editingId)||{});
+  window._prontTests = {...(_edEntry.clinical_tests||{})};
+  window._prontImages = [...(_edEntry.prontuario_images||[])];
+  window._prontTooth = _edEntry.tooth||'';
   const total = entries.length;
 
   // header: paciente + contagem de sessões
@@ -3775,6 +3832,11 @@ function renderProntuarioModal(){
           <button type="button" class="mic-btn" id="micBtn_${e.id}" onclick="toggleVoiceRecord('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></svg> Ditado por voz</button>
           <span class="mic-label" id="micLabel_${e.id}"></span>
         </div>
+        <div class="pront-extra">
+          <div class="pront-tooth-row"><label>Dente</label><input id="prontTooth_${e.id}" value="${esc(e.tooth||'')}" placeholder="Ex.: 36" inputmode="numeric"></div>
+          <div class="pront-rx-grid" id="prontRxArea_${e.id}">${prontRxThumbs(e.id, window._prontImages, true)}</div>
+          <label class="pront-rx-add"><input type="file" accept="image/*" multiple style="display:none" onchange="prontUploadRx('${e.id}', this.files)"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Anexar RX / foto</label>
+        </div>
         <div class="pt-entry-actions">
           ${total > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="cancelEditEntry()">Cancelar</button>` : ''}
           <button type="button" class="btn btn-primary btn-sm" onclick="saveProntuario('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar</button>
@@ -3782,6 +3844,7 @@ function renderProntuarioModal(){
     } else if(e.clinical_notes){
       bodyHtml = `
         ${clinTestsSummary(e.clinical_tests)}
+        ${prontEntryExtras(e)}
         <div class="pt-entry-body">${esc(e.clinical_notes)}</div>
         <div class="pt-entry-actions">
           <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>
@@ -3789,6 +3852,7 @@ function renderProntuarioModal(){
     } else {
       bodyHtml = `
         ${clinTestsSummary(e.clinical_tests)}
+        ${prontEntryExtras(e)}
         <div class="pt-entry-body empty">Sem evolução registrada nesta sessão.</div>
         <div class="pt-entry-actions">
           <button type="button" class="btn btn-ghost btn-sm" onclick="editProntuarioEntry('${e.id}')"><svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg> Adicionar evolução</button>
@@ -3860,10 +3924,11 @@ async function saveProntuario(bookingId){
   const txt = (ta?.value || '').trim();
   toast('Salvando…','');
   const tests = window._prontTests || {};
+  const toothVal = (document.getElementById('prontTooth_'+id)?.value || '').trim();
   const { error } = await sb.rpc('save_clinical_notes',{ p_booking_id: id, p_notes: txt || null });
   if(error){ toast('Erro: '+(error.message||'falha'),'err'); return; }
-  // salva os testes clínicos (coluna própria; não vai pro relatório)
-  try{ await sb.from('bookings').update({ clinical_tests: tests }).eq('id', id); }catch(_){}
+  // salva testes clínicos + dente (colunas próprias; testes não vão pro relatório)
+  try{ await sb.from('bookings').update({ clinical_tests: tests, tooth: toothVal||null }).eq('id', id); }catch(_){}
   toast('✓ Evolução salva','ok');
 
   // atualiza a entry localmente pra refletir no modal sem nova consulta
@@ -3872,6 +3937,7 @@ async function saveProntuario(bookingId){
     if(ent){
       ent.clinical_notes = txt || null;
       ent.clinical_tests = {...tests};
+      ent.tooth = toothVal||null;
       ent.clinical_notes_updated_at = new Date().toISOString();
     }
     // se editou uma entrada anterior, volta visualização da entrada atual (da data atual)
