@@ -426,6 +426,14 @@
   .pt-entry textarea{min-height:140px;width:100%;padding:12px;border:1.5px solid var(--primary);border-radius:10px;font:inherit;font-size:14px;line-height:1.55;color:var(--ink);background:#fff;resize:vertical;margin-top:6px}
   .pt-entry textarea:focus{outline:none;box-shadow:0 0 0 3px var(--primary-soft)}
   .pt-empty-state{text-align:center;padding:32px 16px;color:var(--muted);font-size:13.5px}
+  .pt-notes-sec{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
+  .pt-notes-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .pt-notes-h>span{font-weight:700;font-size:13.5px;color:var(--text)}
+  .pt-note{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--card)}
+  .pt-note-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .pt-note-date{font-weight:700;font-size:12.5px;color:var(--accent)}
+  .pt-note-actions{margin-left:auto}
+  .pt-note-body{font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.45}
   .pill.session-count{background:var(--accent);color:#fff;font-weight:700;font-size:11px;padding:3px 9px;border-radius:6px;display:inline-block;margin-left:6px}
   /* ===== Detalhe do atendimento (modal big do histórico) ===== */
   .hist-row{cursor:pointer;transition:background .15s}
@@ -3721,6 +3729,12 @@ async function openProntuario(bookingId){
   });
   const entries=Object.values(byDate).sort((a,b)=> (b.slot_date+(b.slot_time||'')).localeCompare(a.slot_date+(a.slot_time||'')));
 
+  // anotações avulsas (outras datas) do paciente
+  let notes=[];
+  try{ if(bk.patient_id){ const {data}=await sb.from('prontuario_notes').select('*').eq('patient_id',bk.patient_id).order('entry_date',{ascending:false}); notes=data||[]; } }catch(_){}
+  window._prontNotes=notes;
+  window._prontPatientId=bk.patient_id||null;
+
   window._prontBk = bk;
   window._prontEntries = entries;
   window._prontDate = bk.slot_date;                   // identifica a sessão atual pela data
@@ -3792,6 +3806,43 @@ async function prontRemoveRx(id, idx){
   await sb.from('bookings').update({ prontuario_images: window._prontImages }).eq('id', id);
   const ent=(window._prontEntries||[]).find(e=>e.id===id); if(ent) ent.prontuario_images=[...window._prontImages];
   const area=document.getElementById('prontRxArea_'+id); if(area) area.innerHTML=prontRxThumbs(id, window._prontImages, true);
+}
+function reopenPront(){ renderProntuarioModal(); }
+function openNoteModal(id){
+  const n = id ? (window._prontNotes||[]).find(x=>x.id===id) : null;
+  const today=todayISO();
+  const html=`<div class="pf-head"><h3 style="font-family:'Fraunces',serif">${n?'Editar anotação':'Nova anotação'}</h3><button class="rep-close" onclick="reopenPront()" title="Voltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <p class="sub">Para registrar receita, atestado, solicitação de exame ou pós-operatório na data certa.</p>
+    <div class="row2" style="margin-top:10px">
+      <div class="field"><label>Data</label><input type="date" id="noteDate" value="${n?n.entry_date:today}" max="${today}"></div>
+      <div class="field"><label>Dente (opcional)</label><input id="noteTooth" value="${n?esc(n.tooth||''):''}" placeholder="Ex.: 36" inputmode="numeric"></div>
+    </div>
+    <div class="field"><label>Anotação</label><textarea id="noteBody" rows="4" placeholder="Ex.: Receita de amoxicilina 500mg, 1 cápsula de 8/8h por 7 dias.">${n?esc(n.body||''):''}</textarea></div>
+    <div class="pf-foot">${n?`<button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger-soft)" onclick="deleteNote('${n.id}')">Excluir</button>`:'<span></span>'}<div style="display:flex;gap:10px"><button type="button" class="btn btn-ghost btn-sm" onclick="reopenPront()">Voltar</button><button type="button" class="btn btn-primary btn-sm" onclick="saveNote(${n?`'${n.id}'`:'null'})">Salvar</button></div></div>`;
+  showModal(html);
+}
+async function saveNote(id){
+  const entry_date=document.getElementById('noteDate').value;
+  const body=(document.getElementById('noteBody').value||'').trim();
+  const tooth=(document.getElementById('noteTooth').value||'').trim();
+  if(!entry_date){ toast('Informe a data','err'); return; }
+  if(!body && !tooth){ toast('Escreva a anotação','err'); return; }
+  let error;
+  if(id){ ({ error } = await sb.from('prontuario_notes').update({ entry_date, body:body||null, tooth:tooth||null, updated_at:new Date().toISOString() }).eq('id',id)); }
+  else { ({ error } = await sb.from('prontuario_notes').insert({ professional_id:currentProf.id, patient_id:window._prontPatientId, entry_date, body:body||null, tooth:tooth||null })); }
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  toast('Anotação salva','ok');
+  const { data } = await sb.from('prontuario_notes').select('*').eq('patient_id',window._prontPatientId).order('entry_date',{ascending:false});
+  window._prontNotes=data||[];
+  renderProntuarioModal();
+}
+async function deleteNote(id){
+  if(!confirm('Excluir esta anotação?')) return;
+  const { error } = await sb.from('prontuario_notes').delete().eq('id',id);
+  if(error){ toast('Erro: '+error.message,'err'); return; }
+  window._prontNotes=(window._prontNotes||[]).filter(n=>n.id!==id);
+  toast('Anotação excluída','ok');
+  renderProntuarioModal();
 }
 function renderProntuarioModal(){
   const bk = window._prontBk;
@@ -3871,6 +3922,12 @@ function renderProntuarioModal(){
       </div>`;
   }).join('');
 
+  const notesHtml = (window._prontNotes||[]).map(n=>{
+    const dt = n.entry_date ? new Date(n.entry_date+'T12:00:00').toLocaleDateString('pt-BR') : '';
+    return `<div class="pt-note"><div class="pt-note-head"><span class="pt-note-date">${dt}</span>${n.tooth?`<span class="pront-tooth-badge">Dente ${esc(n.tooth)}</span>`:''}<div class="pt-note-actions"><button type="button" class="pill" onclick="openNoteModal('${n.id}')">Editar</button></div></div>${n.body?`<div class="pt-note-body">${esc(n.body)}</div>`:''}</div>`;
+  }).join('');
+  const notesSection = window._prontPatientId ? `<div class="pt-notes-sec"><div class="pt-notes-h"><span>Anotações avulsas · outras datas</span><button type="button" class="btn btn-ghost btn-sm" onclick="openNoteModal(null)">+ Nova anotação</button></div>${notesHtml||`<p class="sub" style="font-size:12.5px;margin-top:4px">Receita, atestado, solicitação de exame, pós-operatório… registre na data correta.</p>`}</div>` : '';
+
   const html = `
     <div class="rep-head">
       <div>
@@ -3883,6 +3940,7 @@ function renderProntuarioModal(){
     <div class="pt-timeline">
       ${entries.length ? timelineHtml : '<div class="pt-empty-state">Nenhum atendimento encontrado.</div>'}
     </div>
+    ${notesSection}
     <div class="rep-actions">
       <button type="button" class="btn btn-ghost btn-sm" onclick="closeProntuario()">Fechar</button>
     </div>`;
