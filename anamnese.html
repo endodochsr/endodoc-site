@@ -67,7 +67,7 @@
 <script>
 const SUPA_URL='https://tuolwdniugjwbepujqoy.supabase.co';
 
-const QUESTIONS = [
+let QUESTIONS = [
   { id:'telefone',     type:'tel',     label:'Seu telefone (WhatsApp)' },
   { id:'queixa',       type:'text',    label:'Queixa Principal' },
   { id:'tratamento',   type:'snn',     label:'Está sob algum tratamento médico?',                         detail:'Qual tratamento?' },
@@ -121,6 +121,11 @@ async function init(){
     if(r.status===404){ renderError('Este link não foi encontrado. Pode ter sido apagado ou estar incorreto.'); return; }
     if(!r.ok){ renderError('Não consegui carregar agora. Tente recarregar a página.'); return; }
     state.anamnese = await r.json();
+    if(Array.isArray(state.anamnese.questions) && state.anamnese.questions.length){
+      QUESTIONS = state.anamnese.questions.filter(q=>q && q.label && q.id).map(q=>({
+        id:q.id, type:(q.type==='text'||q.type==='tel'||q.type==='snn')?q.type:'text', label:q.label, detail:q.detail||undefined
+      }));
+    }
     render();
   }catch(e){
     renderError('Erro de conexão. Verifique sua internet e tente de novo.');
