@@ -681,7 +681,9 @@ const SUPA_URL = 'https://tuolwdniugjwbepujqoy.supabase.co';
 const SUPA_KEY = 'sb_publishable_NwPGO0Ntxu92Lr_CkdMtvg_Je__gZMr';
 let sb = null;
 
-const SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+const SLOT_MIN=30; // granularidade da agenda, em minutos (30 = de meia em meia hora)
+// horários de início possíveis, de SLOT_MIN em SLOT_MIN, das 08:00 às 20:30
+const SLOTS=(()=>{const a=[];for(let m=8*60;m<=20*60+30;m+=SLOT_MIN){a.push(String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'));}return a;})();
 const DOW=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const PROCEDURES_LIST=['Tratamento Endodôntico','Retratamento Endodôntico','Consulta de Urgência','Selamento de Perfuração','Instalação de Retentores Intraradiculares','Clareamento Interno','Cirurgia Endodôntica','Confecção de Provisórios','Restauração em Resina'];
 let currentProf=null, appView='visao', dispoDate=todayISO();
@@ -702,6 +704,11 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return iso(d);}
 function hhmm(t){return (t||'').slice(0,5);}
+// helpers de tempo em minutos (base para a granularidade de 30 min)
+function toMin(t){const p=(t||'0:0').split(':');return (+p[0])*60+(+p[1]||0);}
+function addMin(t,mins){let x=toMin(t)+mins;x=((x%1440)+1440)%1440;return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');}
+// rótulo de duração a partir do número de slots de SLOT_MIN (ex.: 1->30min, 2->1h, 3->1h30)
+function durLabel(nSlots){const tot=nSlots*SLOT_MIN;const h=Math.floor(tot/60),m=tot%60;if(h&&m)return h+'h'+String(m).padStart(2,'0');if(h)return h+'h';return m+'min';}
 function msg(text,type){const m=document.getElementById('msg');m.textContent=text;m.className='msg '+(type||'');}
 function clearMsg(){const m=document.getElementById('msg');m.className='msg';m.textContent='';}
 let tT;function toast(t,type,ms){const e=document.getElementById('toast');e.textContent=(type==='ok'?'✓ ':type==='err'?'⚠ ':'')+t;e.className='toast show '+(type||'');clearTimeout(tT);tT=setTimeout(()=>e.className='toast',ms||2600);}
@@ -1891,7 +1898,7 @@ function dispoShell(){
       <div class="field"><label>Das</label><select id="recStart" onchange="updateRecPreview()">${hourOpts.replace('value="09:00"','value="09:00" selected')}</select></div>
       <div class="field"><label>Até as</label><select id="recEnd" onchange="updateRecPreview()">${hourOpts.replace('value="18:00"','value="18:00" selected')}</select></div>
     </div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:2px 0 14px"><input type="checkbox" id="recSkipLunch" checked onchange="updateRecPreview()" style="width:16px;height:16px;accent-color:var(--primary)"> Pular o horário de almoço (12:00 e 13:00)</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:2px 0 14px"><input type="checkbox" id="recSkipLunch" checked onchange="updateRecPreview()" style="width:16px;height:16px;accent-color:var(--primary)"> Pular o horário de almoço (12:00 às 14:00)</label>
 
     <div id="recPreview" class="hint" style="margin-bottom:12px">Vai abrir <b>—</b> horários.</div>
     <button class="btn btn-primary" onclick="applyRecurring()">Aplicar período</button>
@@ -1914,11 +1921,11 @@ function getRecHours(){
   const end   = (document.getElementById('recEnd')?.value)   || '18:00';
   const skip  = document.getElementById('recSkipLunch')?.checked;
   const list = [];
-  const [sh] = start.split(':').map(Number);
-  const [eh] = end.split(':').map(Number);
-  for(let h = sh; h < eh; h++){
-    const s = String(h).padStart(2,'0')+':00';
-    if(skip && (s==='12:00' || s==='13:00')) continue;
+  const startM = toMin(start), endM = toMin(end);
+  for(let m = startM; m < endM; m += SLOT_MIN){
+    const s = String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+    // pular almoço = 12:00–13:59 (12:00, 12:30, 13:00, 13:30)
+    if(skip && m >= 12*60 && m < 14*60) continue;
     list.push(s);
   }
   return list;
@@ -1944,7 +1951,7 @@ function updateRecPreview(){
   if(!days.length){ el.innerHTML = '⚠️ Escolha pelo menos um dia da semana e um período válido.'; el.className='hint gold'; return; }
   if(!hours.length){ el.innerHTML = '⚠️ A hora final precisa ser maior que a inicial.'; el.className='hint gold'; return; }
   el.className = 'hint';
-  el.innerHTML = `Vai abrir <b>${total}</b> horário${total===1?'':'s'} (${days.length} dia${days.length===1?'':'s'} × ${hours.length}h por dia).`;
+  el.innerHTML = `Vai abrir <b>${total}</b> horário${total===1?'':'s'} de ${SLOT_MIN} min (${days.length} dia${days.length===1?'':'s'} × ${hours.length} por dia).`;
 }
 function setDispoDate(v){dispoDate=v;loadDispoSlots();}
 async function loadDispoSlots(){
@@ -2353,7 +2360,7 @@ function groupBookings(list){
   const groups=[]; let cur=null;
   for(const b of list){
     const key=b.slot_date+'|'+b.office_name+'|'+(b.office_phone||'')+'|'+(b.patient_phone||b.patient_name||'');
-    if(cur && cur.key===key && cur.lastTime && hourDiff(cur.lastTime,b.slot_time)===1){
+    if(cur && cur.key===key && cur.lastTime && (toMin(b.slot_time)-toMin(cur.lastTime))===SLOT_MIN){
       cur.bookings.push(b); cur.lastTime=b.slot_time;
     } else {
       cur={key,bookings:[b],lastTime:b.slot_time};
@@ -2395,9 +2402,9 @@ function bookingCard(g, opts){
   const ids=g.bookings.map(x=>x.id);
   const parts=first.slot_date.split('-');const d=+parts[2],m=+parts[1];
   const tStart=hhmm(first.slot_time);
-  const tEnd=(()=>{const [h]=last.slot_time.split(':').map(Number);return String(h+1).padStart(2,'0')+':00';})();
+  const tEnd=addMin(hhmm(last.slot_time), SLOT_MIN);
   const dur=g.bookings.length;
-  const horario = dur>1 ? `${tStart} às ${tEnd} <span style="font-weight:400;color:var(--muted)">(${dur}h)</span>` : tStart;
+  const horario = dur>1 ? `${tStart} às ${tEnd} <span style="font-weight:400;color:var(--muted)">(${durLabel(dur)})</span>` : `${tStart} <span style="font-weight:400;color:var(--muted)">(${durLabel(dur)})</span>`;
   const q=encodeURIComponent(first.office_address||'');
   const idsAttr = JSON.stringify(ids);
 
@@ -3714,10 +3721,13 @@ function openNewBooking(prefill){
       <div class="row2">
         <div class="field"><label>Duração</label>
           <select id="nbDuration">
-            <option value="1" selected>1 hora</option>
-            <option value="2">2 horas</option>
-            <option value="3">3 horas</option>
-            <option value="4">4 horas</option>
+            <option value="1">30 min</option>
+            <option value="2" selected>1 hora</option>
+            <option value="3">1h30</option>
+            <option value="4">2 horas</option>
+            <option value="5">2h30</option>
+            <option value="6">3 horas</option>
+            <option value="8">4 horas</option>
           </select>
         </div>
         <div class="field"><label>&nbsp;</label><div style="font-size:12px;color:var(--muted);padding-top:10px">Consultas longas reservam horários seguidos.</div></div>
@@ -4334,13 +4344,13 @@ async function openHistoryDetail(bookingId){
   const ICLOCK='<svg class="eico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
   const durationSection = canResize ? `
     <div class="hd-section">
-      <h4>${ICLOCK} Duração <span class="h4-meta">${curDur}h</span></h4>
+      <h4>${ICLOCK} Duração <span class="h4-meta">${durLabel(curDur)}</span></h4>
       <div class="hd-actions-row" style="align-items:center;gap:10px">
-        <button class="pill" ${curDur<=1?'disabled style=\"opacity:.5;cursor:default\"':''} onclick="(async()=>{await resizeBooking(${gIds},${curDur-1});hdRefresh('${anchorId}')})()">− 1 hora</button>
-        <span style="font-weight:700;color:var(--primary-d);font-size:15px;min-width:34px;text-align:center">${curDur}h</span>
-        <button class="pill" onclick="(async()=>{await resizeBooking(${gIds},${curDur+1});hdRefresh('${anchorId}')})()">+ 1 hora</button>
+        <button class="pill" ${curDur<=1?'disabled style=\"opacity:.5;cursor:default\"':''} onclick="(async()=>{await resizeBooking(${gIds},${curDur-1});hdRefresh('${anchorId}')})()">− 30 min</button>
+        <span style="font-weight:700;color:var(--primary-d);font-size:15px;min-width:52px;text-align:center">${durLabel(curDur)}</span>
+        <button class="pill" onclick="(async()=>{await resizeBooking(${gIds},${curDur+1});hdRefresh('${anchorId}')})()">+ 30 min</button>
       </div>
-      <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">Esticar adiciona a próxima hora livre; encurtar libera a última hora. O início não muda.</p>
+      <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">Esticar adiciona os próximos 30 min livres; encurtar libera os últimos 30 min. O início não muda.</p>
     </div>` : '';
 
   const html = `
@@ -5475,6 +5485,7 @@ async function renderAgenda(){
 
 /* ===== AGENDA — time-grid estilo calendário (dia/semana/mês) ===== */
 const AG_START=8, AG_END=21, AG_HH=48, AG_DAYHEAD=36;
+const AG_SLOT_PX=AG_HH*SLOT_MIN/60; // altura em px de um slot de SLOT_MIN (ex.: 24px para 30 min)
 const AG_MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const AG_MESABR=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const AG_DOW=['dom','seg','ter','qua','qui','sex','sáb'];
@@ -5515,9 +5526,9 @@ function agResizeStart(ev, handle){
   let newDur = curDur;
   appt.classList.add('resizing');
   function move(e){
-    const dh = Math.round((e.clientY - startY)/AG_HH);
-    newDur = Math.min(12, Math.max(1, curDur + dh));
-    appt.style.height = (newDur*AG_HH-3)+'px';
+    const dh = Math.round((e.clientY - startY)/AG_SLOT_PX);
+    newDur = Math.min(24, Math.max(1, curDur + dh));
+    appt.style.height = (newDur*AG_SLOT_PX-3)+'px';
   }
   function up(){
     document.removeEventListener('mousemove',move);
@@ -5601,11 +5612,11 @@ function agTimeGrid(days, all){
       const [h,mi]=(b.slot_time||'08:00').split(':').map(Number);
       const top=(h+(mi||0)/60-AG_START)*AG_HH;
       const dur=g.bookings.length;
-      const height=Math.max(AG_HH-3, dur*AG_HH-3);
+      const height=Math.max(AG_SLOT_PX-3, dur*AG_SLOT_PX-3);
       const isEval=/avalia/i.test(b.procedure||'');
       const isPend=b.status==='pending';
       const cls=['tg-appt',isEval?'eval':'',isPend?'pend':''].filter(Boolean).join(' ');
-      const tEnd=String(h+dur).padStart(2,'0')+':00';
+      const tEnd=addMin((b.slot_time||'08:00').slice(0,5), dur*SLOT_MIN);
       const idsAttr=JSON.stringify(g.bookings.map(x=>x.id)).replace(/"/g,'&quot;');
       const csCol=b.consult_status?consultColor(b.consult_status):'';
       return `<div class="${cls}" data-ids="${idsAttr}" data-dur="${dur}" style="top:${top}px;height:${height}px${csCol?';border-left:5px solid '+csCol:''}" onclick="agOpenPop(event,'${b.id}')">
@@ -5681,7 +5692,7 @@ function agOpenPop(ev, id){
   const initial=((b.patient_name||'P').trim()[0]||'P').toUpperCase();
   const [h]=(b.slot_time||'08:00').split(':').map(Number);
   const dur=all.filter(x=>x.slot_date===b.slot_date&&(x.patient_name||'')===(b.patient_name||'')&&(x.office_name||'')===(b.office_name||'')).length||1;
-  const timeStr=(b.slot_time||'').slice(0,5)+' – '+String(h+dur).padStart(2,'0')+':00';
+  const timeStr=(b.slot_time||'').slice(0,5)+' – '+addMin((b.slot_time||'08:00').slice(0,5), dur*SLOT_MIN);
   const dt=b.slot_date?new Date(b.slot_date+'T12:00:00'):null;
   const dateStr=dt?`${AG_DOW[dt.getDay()]}, ${dt.getDate()} ${AG_MESABR[dt.getMonth()]} ${dt.getFullYear()}`:'';
   const status=b.status==='pending'?'Aguardando confirmação':(b.completed_at?'Finalizada':'Confirmada');
@@ -5762,7 +5773,7 @@ function agStyles(){
     .tg-dayhead{height:${AG_DAYHEAD}px;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);text-transform:capitalize}
     .tg-dayhead.today{color:#fff;background:var(--primary-d)}
     .tg-daybody{position:relative}
-    .tg-hourline{height:${AG_HH}px;border-bottom:1px dashed var(--border)}
+    .tg-hourline{height:${AG_HH}px;border-bottom:1px dashed var(--border);background-image:linear-gradient(var(--border),var(--border));background-size:100% 1px;background-position:0 ${AG_SLOT_PX}px;background-repeat:no-repeat}
     .tg-appt{position:absolute;left:3px;right:3px;background:var(--primary-soft);border-left:3px solid var(--primary);border-radius:7px;padding:5px 7px;overflow:hidden;cursor:pointer;transition:filter .12s}
     .tg-appt:hover{filter:brightness(.97)}
     .tg-appt.resizing{opacity:.9;box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:5}
@@ -6485,7 +6496,7 @@ async function loadHistorico(){
     const first=g.bookings[0]; const last=g.bookings[g.bookings.length-1];
     const dur=g.bookings.length;
     const tStart=hhmm(first.slot_time);
-    const tEnd=(()=>{const [h]=last.slot_time.split(':').map(Number);return String(h+1).padStart(2,'0')+':00';})();
+    const tEnd=addMin(hhmm(last.slot_time), SLOT_MIN);
     const horario = dur>1 ? `${tStart}–${tEnd}` : tStart;
     const isCancelled = first.status==='cancelled';
     const isCompleted = !isCancelled && !!first.completed_at;
@@ -7027,7 +7038,7 @@ function renderReschedule(){
   const fmt = d => d.split('-').reverse().join('/');
   const dur = s.dur;
   showModal(`<h3>Reagendar consulta</h3>
-    <p class="sub">${esc(s.officeName)} · ${fmt(s.origDate)} ${s.origTimes[0]}${dur>1?' às '+addHourLocal(s.origTimes[dur-1],1):''} (${dur}h)</p>
+    <p class="sub">${esc(s.officeName)} · ${fmt(s.origDate)} ${s.origTimes[0]}${dur>1?' às '+addMin(s.origTimes[dur-1],SLOT_MIN):''} (${durLabel(dur)})</p>
     <div class="section-title">Escolha a nova data</div>
     ${renderMiniCal()}
     <div id="reSlots" style="margin-top:14px"></div>
@@ -7098,11 +7109,11 @@ async function pickRescheduleDate(ds){
   const chips = avail.map(t=>{
     // pra durar `dur` horas, precisa de t, t+1, ..., t+(dur-1) todos disponíveis
     let fits=true;
-    for(let i=0;i<dur;i++){ if(!set.has(addHourLocal(t,i))){ fits=false; break; } }
+    for(let i=0;i<dur;i++){ if(!set.has(addMin(t,i*SLOT_MIN))){ fits=false; break; } }
     if(!fits) return `<button class="chip no-fit" disabled>${t}</button>`;
     return `<button class="chip" onclick="pickRescheduleTime('${t}')" data-t="${t}">${t}</button>`;
   }).join('');
-  slotsEl.innerHTML = `<div class="section-title">Novo horário inicial${dur>1?` (a consulta dura ${dur}h)`:''}</div>
+  slotsEl.innerHTML = `<div class="section-title">Novo horário inicial${dur>1?` (a consulta dura ${durLabel(dur)})`:''}</div>
     <div class="chips">${chips}</div>`;
 }
 function pickRescheduleTime(t){
